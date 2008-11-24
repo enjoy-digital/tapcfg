@@ -13,6 +13,7 @@ def set_options(opt):
 
 def configure(conf):
 	conf.check_tool('compiler_cc')
+	conf.env['PREFIX'] = '..'
 
 def build(bld):
 	bld.add_subdirs('src')
