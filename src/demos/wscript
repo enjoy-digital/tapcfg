@@ -1,0 +1,30 @@
+#! /usr/bin/env python
+# encoding: utf-8
+# Juho Vähä-Herttua, 2008
+
+import sys
+
+def build(bld):
+	common = ['compat.c','listener.c','taplog.c']
+
+	test_server = bld.new_task_gen('cc', 'program')
+	test_server.source = ['test_server.c'] + common
+	test_server.target = 'test_server'
+	test_server.uselib_local = 'tapcfg'
+	test_server.includes = '../include'
+	test_server.lib = 'pthread'
+
+	test_client = bld.new_task_gen('cc', 'program')
+	test_client.source = ['test_client.c'] + common
+	test_client.target = 'test_client'
+	test_client.uselib_local = 'tapcfg'
+	test_client.includes = '../include'
+	test_client.lib = 'pthread'
+
+	test_forwarder = bld.new_task_gen('cc', 'program')
+	test_forwarder.source = ['test_forwarder.c'] + common
+	test_forwarder.target = 'test_forwarder'
+	test_forwarder.uselib_local = 'tapcfg'
+	test_forwarder.includes = '../include'
+	test_forwarder.lib = 'pthread'
+

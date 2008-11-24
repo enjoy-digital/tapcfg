@@ -1,0 +1,12 @@
+#! /usr/bin/env python
+# encoding: utf-8
+# Juho Vähä-Herttua, 2008
+
+import sys
+
+def build(bld):
+	staticlib = bld.new_task_gen('cc', 'staticlib')
+	staticlib.source = ['compat.c','taplog.c','tapcfg_unix.c','tapcfg_windows.c']
+	staticlib.target = 'tapcfg'
+	staticlib.includes = '../include'
+
