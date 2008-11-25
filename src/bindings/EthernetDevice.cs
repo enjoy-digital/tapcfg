@@ -5,7 +5,9 @@ using System.Runtime.InteropServices;
 namespace TAPCfg {
 	public class EthernetDevice : IDisposable {
 		private const int MTU = 1522;
+
 		private IntPtr handle;
+		private bool disposed = false;
 
 		public EthernetDevice() {
 			handle = tapcfg_init();
@@ -42,15 +44,21 @@ namespace TAPCfg {
 		}
 
 		public void Dispose() {
-			this.Dispose(true);
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 
-		protected virtual void Dispose(bool fromDisposeMethod) {
-			tapcfg_stop(handle);
-			tapcfg_destroy(handle);
+		protected virtual void Dispose(bool disposing) {
+			if (!disposed) {
+				if (disposing) {
+					// Managed resources can be disposed here
+				}
 
-			if (fromDisposeMethod) {
-				GC.SuppressFinalize(this);
+				tapcfg_stop(handle);
+				tapcfg_destroy(handle);
+				handle = IntPtr.Zero;
+
+				disposed = true;
 			}
 		}
 
@@ -87,8 +95,8 @@ namespace TAPCfg {
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, Uint8 netbits);
+		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, Byte netbits);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, Uint8 netbits);
+		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, Byte netbits);
 	}
 }
