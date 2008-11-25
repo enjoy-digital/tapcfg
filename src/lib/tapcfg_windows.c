@@ -318,12 +318,12 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 }
 
 int
-tapcfg_has_data(tapcfg_t *tapcfg)
+tapcfg_can_read(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
 
 	if (!tapcfg->started) {
-		return -1;
+		return 0;
 	}
 
 	return tapcfg_wait_for_data(tapcfg, 0);
@@ -360,6 +360,18 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	taplog_log_ethernet_info(buf, ret);
 
 	return ret;
+}
+
+int
+tapcfg_can_write(tapcfg_t *tapcfg)
+{
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	return 1;
 }
 
 int
