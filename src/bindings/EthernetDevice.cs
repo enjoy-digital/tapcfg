@@ -87,8 +87,8 @@ namespace TAPCfg {
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte[] netbits);
+		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, Uint8 netbits);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, byte[] netbits);
+		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, Uint8 netbits);
 	}
 }
