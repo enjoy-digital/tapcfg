@@ -6,5 +6,5 @@ def configure(conf):
 	pass
 
 def build(bld):
-	bld.add_subdirs('lib demos')
+	bld.add_subdirs('lib bindings demos')
 
