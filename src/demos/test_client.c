@@ -193,7 +193,7 @@ main(int argc, char *argv[])
 			}
 		}
 
-		if (tapcfg_has_data(tapcfg)) {
+		if (tapcfg_can_read(tapcfg)) {
 			ret = tapcfg_read(tapcfg, buffer+2, sizeof(buffer)-2);
 			if (ret < 0) {
 				printf("Error reading from TAP device\n");

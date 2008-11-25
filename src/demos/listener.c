@@ -249,7 +249,7 @@ listener_thread(LPVOID arg)
 		/* Do the actual select operation for all sockets concurrently */
 		retval = select(highest_fd+1, &rfds, NULL, NULL, &tv);
 
-		while (tapcfg && tapcfg_has_data(tapcfg)) {
+		while (tapcfg && tapcfg_can_read(tapcfg)) {
 			listener_log(TAPLOG_INFO, "Reading from device...\n");
 			retval = tapcfg_read(tapcfg, buf, sizeof(buf));
 			if (retval <= 0) {

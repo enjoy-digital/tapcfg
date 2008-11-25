@@ -157,7 +157,7 @@ err:
 }
 
 int
-tapcfg_has_data(tapcfg_t *tapcfg)
+tapcfg_can_read(tapcfg_t *tapcfg)
 {
 	fd_set rfds;
 	struct timeval tv;
@@ -218,6 +218,34 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 
 	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:\n");
 	taplog_log_ethernet_info(buf, ret);
+
+	return ret;
+}
+
+int
+tapcfg_can_write(tapcfg_t *tapcfg)
+{
+	fd_set wfds;
+	struct timeval tv;
+	int ret;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	FD_ZERO(&wfds);
+	FD_SET(tapcfg->tap_fd, &wfds);
+	ret = select(tapcfg->tap_fd+1, NULL, &wfds, NULL, &tv);
+	if (ret == -1) {
+		/* Error selecting, no data available */
+		return 0;
+	}
+	ret = FD_ISSET(tapcfg->tap_fd, &wfds);
 
 	return ret;
 }

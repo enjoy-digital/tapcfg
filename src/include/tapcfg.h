@@ -39,8 +39,9 @@ void tapcfg_destroy(tapcfg_t *tapcfg);
 int tapcfg_start(tapcfg_t *tapcfg);
 void tapcfg_stop(tapcfg_t *tapcfg);
 
-int tapcfg_has_data(tapcfg_t *tapcfg);
+int tapcfg_can_read(tapcfg_t *tapcfg);
 int tapcfg_read(tapcfg_t *tapcfg, void *buf, int count);
+int tapcfg_can_write(tapcfg_t *tapcfg);
 int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
 
 const char *tapcfg_get_ifname(tapcfg_t *tapcfg);
