@@ -52,7 +52,7 @@ struct tapcfg_s {
 	int enabled;
 
 	HANDLE dev_handle;
-	char ifname[MAX_IFNAME+1];
+	char ifname[MAX_IFNAME];
 
 	int reading;
 	OVERLAPPED overlapped_in;
@@ -150,8 +150,8 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 
 	assert(tapcfg);
 
-	strncpy(tapcfg->ifname, ifname, MAX_IFNAME);
-	if (tapcfg_fixup_adapters(tapcfg->ifname) < 0) {
+	strncpy(tapcfg->ifname, ifname, MAX_IFNAME-1);
+	if (tapcfg_fixup_adapters(tapcfg->ifname, MAX_IFNAME) < 0) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;
 	}

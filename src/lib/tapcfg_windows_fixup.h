@@ -252,8 +252,6 @@ tapcfg_fixup_adapters(char *ifname, int size)
 	unsigned int found=0, valid=0;
 	int ret = 0;
 
-	assert(tapcfg);
-
 	taplog_log(TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:\n");
 
 	/* loop through each TAP adapter registry entry */
@@ -307,7 +305,6 @@ tapcfg_fixup_adapters(char *ifname, int size)
 		taplog_log(TAPLOG_INFO,
 		           "Using adapter '%s' instead of '%s' because it was the only one found\n",
 		           adapter->name, ifname);
-		ifname[size-1] = '\0';
 		strncpy(ifname, adapter->name, size-1);
 	} else {
 		taplog_log(TAPLOG_WARNING,
