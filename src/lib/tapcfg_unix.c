@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
-#ifdef TAPCFG_OS_LINUX
+#ifdef __linux__
 #  include <net/if.h>
 #  include <linux/if_tun.h>
 #endif
@@ -76,7 +76,7 @@ int
 tapcfg_start(tapcfg_t *tapcfg)
 {
 	int tap_fd = -1;
-#ifdef TAPCFG_OS_LINUX
+#ifdef __linux__
 	struct ifreq ifr;
 #else /* BSD */
 	char buf[128];
@@ -90,7 +90,7 @@ tapcfg_start(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-#ifdef TAPCFG_OS_LINUX
+#ifdef __linux__
 	/* Create a new tap device */
 	tap_fd = open("/dev/net/tun", O_RDWR);
 	if (tap_fd == -1) {
@@ -321,7 +321,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 	for (i=netbits; i; i--)
 		mask = (mask >> 1)|(1 << 31);
 
-#ifdef TAPCFG_OS_LINUX
+#ifdef __linux__
 	snprintf(buffer, sizeof(buffer)-1,
 	         "ifconfig %s %s netmask %u.%u.%u.%u",
 	         tapcfg->ifname,
@@ -369,7 +369,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	/* Convert the IPv6 address into a string format */
 	inet_ntop(AF_INET6, addr, addrstr, sizeof(addrstr));
 
-#ifdef TAPCFG_OS_LINUX
+#ifdef __linux__
 	snprintf(buffer, sizeof(buffer)-1,
 	         "ip addr add %s/%d dev %s",
 	         addrstr, netbits,
