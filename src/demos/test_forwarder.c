@@ -16,7 +16,7 @@ handle_sigint(int sign) {
 int
 main(int argc, char *argv[])
 {
-	listener_t *listener;
+	listener_t *listener = NULL;
 
 	if (argc != 2) {
 		printf("Usage: %s <port>\n", argv[0]);

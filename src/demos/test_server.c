@@ -75,7 +75,7 @@ int
 main(int argc, char *argv[])
 {
 	char buffer[256];
-	listener_t *listener;
+	listener_t *listener = NULL;
 	int id;
 
 	if (argc != 2) {

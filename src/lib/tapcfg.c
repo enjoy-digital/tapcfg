@@ -33,7 +33,7 @@ static int tapcfg_address_is_valid(int family, char *addr) {
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_family = family;
-	if (!getaddrinfo(addr, NULL, &hints, &res)) {
+	if (getaddrinfo(addr, NULL, &hints, &res)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error converting string '%s' to "
 		           "address, check the format\n", addr);
