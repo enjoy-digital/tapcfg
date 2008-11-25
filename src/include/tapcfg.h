@@ -16,19 +16,6 @@
 #ifndef TAPCFG_H
 #define TAPCFG_H
 
-#if defined(_WIN32) || defined(_WIN64)
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-
-/* Disable IPv6 support for Windows 2000 */
-#  if (_WIN32_WINNT < 0x0501)
-#    define DISABLE_IPV6
-#  endif
-#else
-#  include <netinet/in.h>
-#endif
-
-
 #define TAPCFG_MIN_BUFSIZE 4096
 
 /* Define syslog style log levels */
@@ -60,8 +47,8 @@ const char *tapcfg_get_ifname(tapcfg_t *tapcfg);
 
 int tapcfg_iface_get_status(tapcfg_t *tapcfg);
 int tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled);
-int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netbits);
-int tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char netbits);
+int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addr, unsigned char netbits);
+int tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addr, unsigned char netbits);
 
 #endif /* TAPCFG_H */
 

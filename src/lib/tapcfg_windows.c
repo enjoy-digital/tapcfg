@@ -443,11 +443,9 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
-tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netbits)
+tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
-	char addrstr[INET_ADDRSTRLEN];
-	struct sockaddr_in sockaddr;
 	unsigned int mask;
 
 	assert(tapcfg);
@@ -467,14 +465,8 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 	for (mask=0; netbits; netbits--)
 		mask = (mask >> 1)|(1 << 31);
 
-	/* Convert the IPv4 address into string format */
-	memset(&sockaddr, 0, sizeof(sockaddr));
-	sockaddr.sin_family = AF_INET;
-	memcpy(&sockaddr.sin_addr, addr, sizeof(struct in_addr));
-	if (getnameinfo((struct sockaddr *) &sockaddr, sizeof(sockaddr),
-	                addrstr, sizeof(addrstr),
-	                NULL, 0, NI_NUMERICHOST)) {
-		/* XXX: Should we print some error */
+	/* Check that the given IPv4 address is valid */
+	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
 		return -1;
 	}
 
@@ -498,10 +490,9 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 
 #ifndef DISABLE_IPV6
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
-	char addrstr[INET6_ADDRSTRLEN];
 	struct sockaddr_in6 sockaddr;
 
 	assert(tapcfg);
@@ -517,14 +508,8 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	/* Make sure the string always ends in null byte */
 	buffer[sizeof(buffer)-1] = '\0';
 
-	/* Convert the IPv6 address into string format */
-	memset(&sockaddr, 0, sizeof(sockaddr));
-	sockaddr.sin6_family = AF_INET6;
-	memcpy(&sockaddr.sin6_addr, addr, sizeof(struct in6_addr));
-	if (getnameinfo((struct sockaddr *) &sockaddr, sizeof(sockaddr),
-	                addrstr, sizeof(addrstr),
-	                NULL, 0, NI_NUMERICHOST)) {
-		/* XXX: Should we print some error */
+	/* Check that the given IPv6 address is valid */
+	if (!tapcfg_address_is_valid(AF_INET6, addrstr)) {
 		return -1;
 	}
 
@@ -554,7 +539,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 }
 #else /* DISABLE_IPV6 */
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addr, unsigned char netbits)
 {
 	/* Always return an error */
 	return -1;

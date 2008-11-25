@@ -20,7 +20,7 @@ def build(bld):
 	obj.uselib = 'socket thread'
 
 	obj = bld.new_task_gen('cc', 'program')
-	obj.source = ['listener.c','test_server.c']
+	obj.source = ['listener.c','test_forwarder.c']
 	obj.target = 'test_forwarder'
 	obj.uselib_local = 'tapcfg'
 	obj.includes = '../include'

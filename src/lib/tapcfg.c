@@ -13,12 +13,43 @@
  *  Lesser General Public License for more details.
  */
 
+#include <string.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#  include <ws2tcpip.h>
+#else
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+#endif
+
+#include "tapcfg.h"
+#include "taplog.h"
+
+static int tapcfg_address_is_valid(int family, char *addr) {
+	struct addrinfo hints, *res;
+
+	/* Try to convert the address string into a structure */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_family = family;
+	if (!getaddrinfo(addr, NULL, &hints, &res)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error converting string '%s' to "
+		           "address, check the format\n", addr);
+		return 0;
+	}
+	freeaddrinfo(res);
+
+	return 1;
+}
+
 #if defined(_WIN32) || defined(_WIN64)
 
-#if (_WIN32_WINNT < 0x0501)
-#  define DISABLE_IPV6
-#  include <ws2tcpip.h>
-#endif
+/* Disable IPv6 support for Windows 2000 */
+#  if (_WIN32_WINNT < 0x0501)
+#    define DISABLE_IPV6
+#  endif
 
 #  include "tapcfg_windows.c"
 #else

@@ -294,10 +294,9 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
-tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netbits)
+tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
-	char addrstr[INET_ADDRSTRLEN];
 	unsigned int mask = 0;
 	int i;
 
@@ -314,8 +313,10 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 	/* Make sure the string always ends in null byte */
 	buffer[sizeof(buffer)-1] = '\0';
 
-	/* Convert the IPv4 address into string format */
-	inet_ntop(AF_INET, addr, addrstr, sizeof(addrstr));
+	/* Check that the given IPv4 address is valid */
+	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
+		return -1;
+	}
 
 	/* Calculate the netmask from the network bit length */
 	for (i=netbits; i; i--)
@@ -348,10 +349,9 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 
 #ifndef DISABLE_IPV6
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
-	char addrstr[INET6_ADDRSTRLEN];
 
 	assert(tapcfg);
 
@@ -366,8 +366,10 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	/* Make sure the string always ends in null byte */
 	buffer[sizeof(buffer)-1] = '\0';
 
-	/* Convert the IPv6 address into a string format */
-	inet_ntop(AF_INET6, addr, addrstr, sizeof(addrstr));
+	/* Check that the given IPv6 address is valid */
+	if (!tapcfg_address_is_valid(AF_INET6, addrstr)) {
+		return -1;
+	}
 
 #ifdef __linux__
 	snprintf(buffer, sizeof(buffer)-1,
