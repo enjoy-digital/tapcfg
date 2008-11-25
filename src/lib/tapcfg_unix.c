@@ -26,15 +26,17 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
+/* This is for IFNAMSIZ and ifreq for linux */
+#include <net/if.h>
+
 #ifdef __linux__
-#  include <net/if.h>
 #  include <linux/if_tun.h>
 #endif
 
 #include "tapcfg.h"
 #include "taplog.h"
 
-#define MAX_IFNAME 16
+#define MAX_IFNAME (IFNAMSIZ-1)
 
 struct tapcfg_s {
 	int started;
@@ -73,7 +75,7 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_start(tapcfg_t *tapcfg)
+tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 {
 	int tap_fd = -1;
 #ifdef __linux__
@@ -105,6 +107,9 @@ tapcfg_start(tapcfg_t *tapcfg)
 
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+	if (ifname && strlen(ifname) < IFNAMSIZ) {
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+	}
 	if (ioctl(tap_fd, TUNSETIFF, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error setting the interface: %s\n",
@@ -116,22 +121,31 @@ tapcfg_start(tapcfg_t *tapcfg)
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", ifr.ifr_name);
 	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
 #else /* BSD */
-	/* Try all possible devices (could have a configurable value first) */
-	for (i=0; i<16; i++) {
-		snprintf(buf, sizeof(buf), "/dev/tap%u", i);
+	buf[sizeof(buf)-1] = '\0';
+
+	/* If we have a configured interface name, try that first */
+	if (ifname && strlen(ifname) <= MAX_IFNAME && !strrchr(ifname, ' ')) {
+		snprintf(buf, sizeof(buf)-1, "/dev/%s", ifname);
 		tap_fd = open(buf, O_RDWR);
-		if (tap_fd >= 0) {
-			/* Found one! Could save this for later... */
-			break;
-		}
 	}
-	if (i == 16) {
-		taplog_log(TAPLOG_ERR,
-		           "Couldn't find a suitable tap device\n");
-		taplog_log(TAPLOG_INFO,
-		           "Check that you are running the program with "
-		           "root privileges and have TUN/TAP driver installed\n");
-		goto err;
+	if (tap_fd < 0) {
+		/* Try all possible devices, because configured name failed */
+		for (i=0; i<16; i++) {
+			snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
+			tap_fd = open(buf, O_RDWR);
+			if (tap_fd >= 0) {
+				/* Found one! Could save this for later... */
+				break;
+			}
+		}
+		if (i == 16) {
+			taplog_log(TAPLOG_ERR,
+				   "Couldn't find a suitable tap device\n");
+			taplog_log(TAPLOG_INFO,
+				   "Check that you are running the program with "
+				   "root privileges and have TUN/TAP driver installed\n");
+			goto err;
+		}
 	}
 
 	/* Set the device name to be the one we found finally */

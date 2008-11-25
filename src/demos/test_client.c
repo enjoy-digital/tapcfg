@@ -135,7 +135,7 @@ main(int argc, char *argv[])
 	tapcfg = tapcfg_init();
 	if (!tapcfg)
 		goto err;
-	if (tapcfg_start(tapcfg))
+	if (tapcfg_start(tapcfg, NULL))
 		goto err;
 
 	sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);

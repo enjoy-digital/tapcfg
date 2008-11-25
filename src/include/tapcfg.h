@@ -36,7 +36,7 @@ typedef struct tapcfg_s tapcfg_t;
 tapcfg_t *tapcfg_init();
 void tapcfg_destroy(tapcfg_t *tapcfg);
 
-int tapcfg_start(tapcfg_t *tapcfg);
+int tapcfg_start(tapcfg_t *tapcfg, const char *ifname);
 void tapcfg_stop(tapcfg_t *tapcfg);
 
 int tapcfg_can_read(tapcfg_t *tapcfg);

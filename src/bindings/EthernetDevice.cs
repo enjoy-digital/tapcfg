@@ -14,7 +14,7 @@ namespace TAPCfg {
 		}
 
 		public void Start() {
-			tapcfg_start(handle);
+			tapcfg_start(handle, null);
 		}
 
 		public byte[] Read() {
@@ -76,7 +76,7 @@ namespace TAPCfg {
 		private static extern void tapcfg_destroy(IntPtr tapcfg);
 
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_start(IntPtr tapcfg);
+		private static extern int tapcfg_start(IntPtr tapcfg, string ifname);
 		[DllImport("libtapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
