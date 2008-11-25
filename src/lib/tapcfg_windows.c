@@ -411,7 +411,7 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	}
 
 	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:\n");
-	taplog_log_ethernet_info(buf, ret);
+	taplog_log_ethernet_info(buf, len);
 
 	return len;
 }
