@@ -12,11 +12,10 @@ def build(bld):
 	obj.includes = '../include'
 	obj.uselib = 'socket'
 
-#	obj = bld.new_task_gen('cc', 'shlib')
-#	obj.source = ['taplog.c','tapcfg.c']
-#	obj.target = 'tapcfg'
-#	obj.name = 'shtapcfg'
-#	obj.includes = '../include'
-#	obj.uselib = 'socket'
-#	obj.lib = 'ws2_32'
+	obj = bld.new_task_gen('cc', 'shlib')
+	obj.source = ['taplog.c','tapcfg.c']
+	obj.target = 'tapcfg'
+	obj.name = 'shtapcfg'
+	obj.includes = '../include'
+	obj.uselib = 'socket'
 
