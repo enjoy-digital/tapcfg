@@ -80,7 +80,7 @@ inet_pton(int af, const char *src, void *dst)
 int
 main(int argc, char *argv[])
 {
-	char buffer[TAPCFG_MIN_BUFSIZE+2];
+	char buffer[4096+2];
 	struct addrinfo hints, *result, *saddr;
 	int sfd, id;
 

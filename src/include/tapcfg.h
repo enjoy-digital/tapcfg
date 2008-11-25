@@ -16,8 +16,6 @@
 #ifndef TAPCFG_H
 #define TAPCFG_H
 
-#define TAPCFG_MIN_BUFSIZE 4096
-
 /* Define syslog style log levels */
 #define TAPLOG_EMERG       0       /* system is unusable */
 #define TAPLOG_ALERT       1       /* action must be taken immediately */

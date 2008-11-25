@@ -26,6 +26,8 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
+#define TAPCFG_MIN_BUFSIZE 4096
+
 static int tapcfg_address_is_valid(int family, char *addr) {
 	struct addrinfo hints, *res;
 

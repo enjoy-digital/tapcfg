@@ -196,7 +196,7 @@ listener_thread(LPVOID arg)
 {
 	listener_t *listener = arg;
 	tapcfg_t *tapcfg = listener->tapcfg;
-	unsigned char buf[TAPCFG_MIN_BUFSIZE];
+	unsigned char buf[4096];
 	int clients[MAX_CLIENTS];
 	int client_fd;
 	int i;
