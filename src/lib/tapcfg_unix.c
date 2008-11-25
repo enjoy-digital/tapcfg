@@ -394,7 +394,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 }
 #else /* DISABLE_IPV6 */
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	/* Always return an error */
 	return -1;
