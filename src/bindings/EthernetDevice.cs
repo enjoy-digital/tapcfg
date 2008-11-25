@@ -81,9 +81,11 @@ namespace TAPCfg {
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_has_data(IntPtr tapcfg);
+		private static extern int tapcfg_can_read(IntPtr tapcfg);
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
+		[DllImport("libtapcfg")]
+		private static extern int tapcfg_can_write(IntPtr tapcfg);
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
