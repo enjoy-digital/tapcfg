@@ -16,9 +16,33 @@
 #ifndef TAPCFG_H
 #define TAPCFG_H
 
-#include "compat.h"
+#if defined(_WIN32) || defined(_WIN64)
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+
+/* Disable IPv6 support for Windows 2000 */
+#  if (_WIN32_WINNT < 0x0501)
+#    define DISABLE_IPV6
+#  endif
+#else
+#  include <netinet/in.h>
+#endif
+
 
 #define TAPCFG_MIN_BUFSIZE 4096
+
+/* Define syslog style log levels */
+#define TAPLOG_EMERG       0       /* system is unusable */
+#define TAPLOG_ALERT       1       /* action must be taken immediately */
+#define TAPLOG_CRIT        2       /* critical conditions */
+#define TAPLOG_ERR         3       /* error conditions */
+#define TAPLOG_WARNING     4       /* warning conditions */
+#define TAPLOG_NOTICE      5       /* normal but significant condition */
+#define TAPLOG_INFO        6       /* informational */
+#define TAPLOG_DEBUG       7       /* debug-level messages */
+
+void taplog_set_level(int level);
+
 
 typedef struct tapcfg_s tapcfg_t;
 

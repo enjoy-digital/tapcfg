@@ -13,12 +13,6 @@
  *  Lesser General Public License for more details.
  */
 
-#include "compat.h"
-#include "tapcfg.h"
-#include "taplog.h"
-
-#ifndef TAPCFG_OS_WINDOWS
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -27,15 +21,18 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <signal.h>
 
 #include <sys/time.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 
 #ifdef TAPCFG_OS_LINUX
 #  include <net/if.h>
 #  include <linux/if_tun.h>
 #endif
+
+#include "tapcfg.h"
+#include "taplog.h"
 
 #define MAX_IFNAME 16
 
@@ -60,9 +57,6 @@ tapcfg_init()
 		return NULL;
 
 	tapcfg->tap_fd = -1;
-
-	/* This is required to continue running after client disconnect */
-	signal(SIGPIPE, SIG_IGN);
 
 	return tapcfg;
 }
@@ -404,5 +398,3 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	return -1;
 }
 #endif /* DISABLE_IPV6 */
-
-#endif /* TAPCFG_OS_WINDOWS */

@@ -5,8 +5,18 @@
 import sys
 
 def build(bld):
-	staticlib = bld.new_task_gen('cc', 'staticlib')
-	staticlib.source = ['compat.c','taplog.c','tapcfg_unix.c','tapcfg_windows.c']
-	staticlib.target = 'tapcfg'
-	staticlib.includes = '../include'
+	obj = bld.new_task_gen('cc', 'staticlib')
+	obj.source = ['taplog.c','tapcfg.c']
+	obj.target = 'tapcfg'
+	obj.name = 'tapcfg'
+	obj.includes = '../include'
+	obj.uselib = 'socket'
+
+#	obj = bld.new_task_gen('cc', 'shlib')
+#	obj.source = ['taplog.c','tapcfg.c']
+#	obj.target = 'tapcfg'
+#	obj.name = 'shtapcfg'
+#	obj.includes = '../include'
+#	obj.uselib = 'socket'
+#	obj.lib = 'ws2_32'
 

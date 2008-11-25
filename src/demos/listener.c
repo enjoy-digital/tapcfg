@@ -5,13 +5,13 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "compat.h"
 #include "listener.h"
-#include "taplog.h"
 #include "tapcfg.h"
 
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 #  include <pthread.h>
 #endif
 
@@ -23,18 +23,52 @@ struct listener_s {
 
 	int running;
 	tapcfg_t *tapcfg;
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 	pthread_t listener_thread;
 #else
 	HANDLE listener_thread;
 #endif
 };
 
+void
+listener_log(int level, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (level > TAPLOG_ERR)
+		return;
+
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+}
+
+void
+listener_log_ethernet_info(unsigned char *buffer, int len) {
+	if (len < 14)
+		return;
+
+	listener_log(TAPLOG_DEBUG,
+	             "Read %d (0x%04x) bytes ethernet frame\n",
+	             len, len);
+	listener_log(TAPLOG_DEBUG,
+	             "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	             (buffer[6])&0xff, (buffer[7])&0xff, (buffer[8])&0xff, (buffer[9])&0xff,
+	             (buffer[10])&0xff, (buffer[11])&0xff);
+	listener_log(TAPLOG_DEBUG,
+	             "Ethernet dst address: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	             (buffer[0])&0xff, (buffer[1])&0xff, (buffer[2])&0xff, (buffer[3])&0xff,
+	             (buffer[4])&0xff, (buffer[5])&0xff);
+	listener_log(TAPLOG_DEBUG,
+	             "EtherType/Length 0x%04x\n",
+	             ((buffer[12] << 8) | buffer[13])&0xffff);
+}
+
 listener_t *
 listener_init()
 {
 	listener_t *listener;
-#ifdef TAPCFG_OS_WINDOWS
+#ifdef _WIN32
 	WORD wVersionRequested;
 	WSADATA wsaData;
 	int ret;
@@ -65,7 +99,7 @@ listener_init()
 void
 listener_destroy(listener_t *listener)
 {
-#ifdef TAPCFG_OS_WINDOWS
+#ifdef _WIN32
 	WSACleanup();
 #endif
 
@@ -134,17 +168,17 @@ listener_create_server(unsigned short *local_port, int use_ipv6, int public)
 
 	server_fd = socket(socket_domain, SOCK_STREAM, 0);
 	if (server_fd == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error opening socket: %s\n",
-		           strerror(errno));
+		listener_log(TAPLOG_ERR,
+		             "Error opening socket: %s\n",
+		             strerror(errno));
 		goto err;
 	}
 
 	ret = bind(server_fd, saddr, saddr_size);
 	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error binding socket: %s\n",
-		           strerror(errno));
+		listener_log(TAPLOG_ERR,
+		             "Error binding socket: %s\n",
+		             strerror(errno));
 		goto err;
 	}
 	getsockname(server_fd, saddr, &saddr_size);
@@ -158,9 +192,9 @@ listener_create_server(unsigned short *local_port, int use_ipv6, int public)
 	}
 
 	if (listen(server_fd, 0) == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error starting to listen socket: %s\n",
-		           strerror(errno));
+		listener_log(TAPLOG_ERR,
+		             "Error starting to listen socket: %s\n",
+		             strerror(errno));
 		goto err;
 	}
 
@@ -173,7 +207,7 @@ err:
 	return -1;
 }
 
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 static void *
 listener_thread(void *arg)
 #else
@@ -228,8 +262,8 @@ listener_thread(LPVOID arg)
 		}
 
 		if (highest_fd < 0) {
-			taplog_log(TAPLOG_ERR,
-			           "No descriptors to select, shouldn't be possible\n");
+			listener_log(TAPLOG_ERR,
+			             "No descriptors to select, shouldn't be possible\n");
 			goto cleanup;
 		}
 
@@ -237,15 +271,15 @@ listener_thread(LPVOID arg)
 		retval = select(highest_fd+1, &rfds, NULL, NULL, &tv);
 
 		while (tapcfg && tapcfg_has_data(tapcfg)) {
-			taplog_log(TAPLOG_INFO, "Reading from device...\n");
+			listener_log(TAPLOG_INFO, "Reading from device...\n");
 			retval = tapcfg_read(tapcfg, buf, sizeof(buf));
 			if (retval <= 0) {
-				taplog_log(TAPLOG_ERR,
-				           "Error reading from TAP device, exiting...\n");
+				listener_log(TAPLOG_ERR,
+				             "Error reading from TAP device, exiting...\n");
 				goto cleanup;
 			}
 
-			taplog_log_ethernet_info(buf, retval);
+			listener_log_ethernet_info(buf, retval);
 
 			for (i=0; i<MAX_CLIENTS; i++) {
 				unsigned char sizebuf[2];
@@ -254,9 +288,9 @@ listener_thread(LPVOID arg)
 				if (clients[i] == -1)
 					continue;
 
-				taplog_log(TAPLOG_INFO,
-				           "Writing %d bytes to client fd %d\n",
-				           retval, clients[i]);
+				listener_log(TAPLOG_INFO,
+				             "Writing %d bytes to client fd %d\n",
+				             retval, clients[i]);
 
 				sizebuf[0] = (retval>>8) & 0xff;
 				sizebuf[1] = retval & 0xff;
@@ -265,18 +299,18 @@ listener_thread(LPVOID arg)
 				tmp = write(clients[i], sizebuf, 2);
 				if (tmp <= 0) {
 					clients[i] = -1;
-					taplog_log(TAPLOG_DEBUG,
-						   "Client %d got disconnected, "
-					           "removing from list\n", i);
+					listener_log(TAPLOG_DEBUG,
+					             "Client %d got disconnected, "
+					             "removing from list\n", i);
 				}
 
 				/* Write received data for all clients */
 				tmp = write(clients[i], buf, retval);
 				if (tmp <= 0) {
 					clients[i] = -1;
-					taplog_log(TAPLOG_DEBUG,
-						   "Client %d got disconnected, "
-					           "removing from list\n", i);
+					listener_log(TAPLOG_DEBUG,
+					             "Client %d got disconnected, "
+					             "removing from list\n", i);
 				}
 			}
 		}
@@ -292,9 +326,9 @@ listener_thread(LPVOID arg)
 				retval = read(clients[i], sizebuf, 2);
 				if (retval <= 0) {
 					clients[i] = -1;
-					taplog_log(TAPLOG_DEBUG,
-						   "Client %d got disconnected, "
-					           "removing from list\n", i);
+					listener_log(TAPLOG_DEBUG,
+					             "Client %d got disconnected, "
+					             "removing from list\n", i);
 					continue;
 				}
 
@@ -302,34 +336,34 @@ listener_thread(LPVOID arg)
 				if (size > sizeof(buf)) {
 					close(clients[i]);
 					clients[i] = -1;
-					taplog_log(TAPLOG_ERR,
-					           "Buffer not big enough for "
-					           "incoming %d bytes frame!\n",
-					           size);
+					listener_log(TAPLOG_ERR,
+					             "Buffer not big enough for "
+					             "incoming %d bytes frame!\n",
+					             size);
 					continue;
 				}
 
 				retval = read(clients[i], buf, size);
 				if (retval <= 0) {
 					clients[i] = -1;
-					taplog_log(TAPLOG_DEBUG,
-						   "Client %d got disconnected, "
-					           "removing from list\n", i);
+					listener_log(TAPLOG_DEBUG,
+					             "Client %d got disconnected, "
+					             "removing from list\n", i);
 					continue;
 				}
 
-				taplog_log(TAPLOG_INFO,
-					   "Read %d bytes from client fd %d\n",
-					   retval, clients[i]);
+				listener_log(TAPLOG_INFO,
+					     "Read %d bytes from client fd %d\n",
+				             retval, clients[i]);
 
-				taplog_log_ethernet_info(buf, retval);
+				listener_log_ethernet_info(buf, retval);
 
 				if (tapcfg) {
 					retval = tapcfg_write(tapcfg, buf, retval);
 					if (retval <= 0) {
-						taplog_log(TAPLOG_ERR,
-							   "Error writing to TAP "
-							   "device, exiting...\n");
+						listener_log(TAPLOG_ERR,
+						             "Error writing to TAP "
+						             "device, exiting...\n");
 						goto cleanup;
 					}
 				} else {
@@ -343,26 +377,26 @@ listener_thread(LPVOID arg)
 						if (clients[j] == -1 || i == j)
 							continue;
 
-						taplog_log(TAPLOG_INFO,
-							   "Writing %d bytes to client fd %d\n",
-							   retval, clients[j]);
+						listener_log(TAPLOG_INFO,
+						             "Writing %d bytes to client fd %d\n",
+						             retval, clients[j]);
 
 						/* Write received data for all clients */
 						tmp = write(clients[j], sizebuf, 2);
 						if (tmp <= 0) {
 							clients[j] = -1;
-							taplog_log(TAPLOG_DEBUG,
-								   "Client %d got disconnected, "
-								   "removing from list\n", j);
+							listener_log(TAPLOG_DEBUG,
+							             "Client %d got disconnected, "
+							             "removing from list\n", j);
 						}
 
 						/* Write received data for all clients */
 						tmp = write(clients[j], buf, retval);
 						if (tmp <= 0) {
 							clients[j] = -1;
-							taplog_log(TAPLOG_DEBUG,
-								   "Client %d got disconnected, "
-								   "removing from list\n", j);
+							listener_log(TAPLOG_DEBUG,
+							             "Client %d got disconnected, "
+							             "removing from list\n", j);
 						}
 					}
 				}
@@ -382,13 +416,13 @@ listener_thread(LPVOID arg)
 			                   (struct sockaddr *) &caddr,
 			                   &caddr_size);
 			if (client_fd == -1) {
-				taplog_log(TAPLOG_ERR,
-				           "Error accepting client socket: %s\n",
-				           strerror(errno));
+				listener_log(TAPLOG_ERR,
+				             "Error accepting client socket: %s\n",
+				             strerror(errno));
 				goto cleanup;
 			}
 
-			taplog_log(TAPLOG_DEBUG, "Accepted connection %d...\n", client_fd);
+			listener_log(TAPLOG_DEBUG, "Accepted connection %d...\n", client_fd);
 			clients[next_client_idx] = client_fd;
 		}
 	}
@@ -400,7 +434,7 @@ cleanup:
 		}
 	}
 
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 	return NULL;
 #else
 	return 0;
@@ -418,23 +452,23 @@ listener_start(listener_t *listener, tapcfg_t *tapcfg)
 	if (server_fd == -1) {
 		goto err;
 	}
-	taplog_log(TAPLOG_DEBUG, "Listening to local port %d\n", listener->port);
+	listener_log(TAPLOG_DEBUG, "Listening to local port %d\n", listener->port);
 
 	/* Mark the current fds and mark thread as running */
 	listener->server_fd = server_fd;
 	listener->tapcfg = tapcfg;
 	listener->running = 1;
 
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 	if (pthread_create(&listener->listener_thread, NULL, listener_thread, listener))
 		listener->listener_thread = 0;
 #else
 	listener->listener_thread = CreateThread(NULL, 0, listener_thread, listener, 0, NULL);
 #endif
 	if (!listener->listener_thread) {
-		taplog_log(TAPLOG_ERR,
-		           "Error creating a listener thread: %s\n",
-		           strerror(errno));
+		listener_log(TAPLOG_ERR,
+		             "Error creating a listener thread: %s\n",
+		             strerror(errno));
 		goto err;
 	}
 

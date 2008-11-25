@@ -13,17 +13,14 @@
  *  Lesser General Public License for more details.
  */
 
-#include "compat.h"
-#include "tapcfg.h"
-#include "taplog.h"
-
-#ifdef TAPCFG_OS_WINDOWS
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <windows.h>
 #include <winioctl.h>
+
+#include "tapcfg.h"
+#include "taplog.h"
 
 #define TAP_CONTROL_CODE(request,method)  CTL_CODE(FILE_DEVICE_UNKNOWN, request, method, FILE_ANY_ACCESS)
 #define TAP_IOCTL_GET_MAC                 TAP_CONTROL_CODE(1, METHOD_BUFFERED)
@@ -450,6 +447,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 {
 	char buffer[1024];
 	char addrstr[INET_ADDRSTRLEN];
+	struct sockaddr_in sockaddr;
 	unsigned int mask;
 
 	assert(tapcfg);
@@ -470,7 +468,15 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, struct in_addr *addr, unsigned char netb
 		mask = (mask >> 1)|(1 << 31);
 
 	/* Convert the IPv4 address into string format */
-	inet_ntop(AF_INET, addr, addrstr, sizeof(addrstr));
+	memset(&sockaddr, 0, sizeof(sockaddr));
+	sockaddr.sin_family = AF_INET;
+	memcpy(&sockaddr.sin_addr, addr, sizeof(struct in_addr));
+	if (getnameinfo((struct sockaddr *) &sockaddr, sizeof(sockaddr),
+	                addrstr, sizeof(addrstr),
+	                NULL, 0, NI_NUMERICHOST)) {
+		/* XXX: Should we print some error */
+		return -1;
+	}
 
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ip set address \"%s\" static %s %u.%u.%u.%u\n",
@@ -496,6 +502,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 {
 	char buffer[1024];
 	char addrstr[INET6_ADDRSTRLEN];
+	struct sockaddr_in6 sockaddr;
 
 	assert(tapcfg);
 
@@ -511,7 +518,15 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	buffer[sizeof(buffer)-1] = '\0';
 
 	/* Convert the IPv6 address into string format */
-	inet_ntop(AF_INET6, addr, addrstr, sizeof(addrstr));
+	memset(&sockaddr, 0, sizeof(sockaddr));
+	sockaddr.sin6_family = AF_INET6;
+	memcpy(&sockaddr.sin6_addr, addr, sizeof(struct in6_addr));
+	if (getnameinfo((struct sockaddr *) &sockaddr, sizeof(sockaddr),
+	                addrstr, sizeof(addrstr),
+	                NULL, 0, NI_NUMERICHOST)) {
+		/* XXX: Should we print some error */
+		return -1;
+	}
 
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
@@ -545,5 +560,3 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, struct in6_addr *addr, unsigned char net
 	return -1;
 }
 #endif /* DISABLE_IPV6 */
-
-#endif /* TAPCFG_OS_WINDOWS */

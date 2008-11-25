@@ -6,10 +6,9 @@
 #include <signal.h>
 #include <time.h>
 
-#include "compat.h"
 #include "tapcfg.h"
 
-#ifndef TAPCFG_OS_WINDOWS
+#ifndef _WIN32
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <netdb.h>
@@ -24,6 +23,57 @@ handle_sigint(int sign) {
 
 	exit(0);
 }
+
+#ifdef _WIN32
+static int
+inet_pton(int af, const char *src, void *dst)
+{
+	struct addrinfo	hints, *res, *ai;
+	int ret=0;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = af;
+
+	if (getaddrinfo(src, NULL, &hints, &res) != 0) {
+		return -1;
+	}
+
+	for (ai = res; ai; ai = ai->ai_next) {
+		if (ai->ai_family == af) {
+			switch (af) {
+			case AF_INET:
+			{
+				struct sockaddr_in *in;
+
+				in = (struct sockaddr_in *) ai->ai_addr;
+				memcpy(dst, &in->sin_addr, sizeof(struct in_addr));
+				break;
+			}
+			case AF_INET6:
+			{
+				struct sockaddr_in6 *in;
+				in = (struct sockaddr_in6 *) ai->ai_addr;
+				memcpy(dst, &in->sin6_addr, sizeof(struct in6_addr));
+				break;
+			}
+			default:
+				/* Unknown address family, return error */
+				ret = -1;
+				break;
+			}
+			break;
+		}
+	}
+
+	if (!ai) {
+		/* No suitable address info structure found */
+		ret = -1;
+	}
+	freeaddrinfo(res);
+
+	return ret;
+}
+#endif
 
 int
 main(int argc, char *argv[])

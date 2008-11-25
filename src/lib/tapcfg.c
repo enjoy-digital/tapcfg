@@ -13,12 +13,15 @@
  *  Lesser General Public License for more details.
  */
 
-#ifndef TAPLOG_H
-#define TAPLOG_H
+#if defined(_WIN32) || defined(_WIN64)
 
-void taplog_set_level(int level);
-void taplog_log(int level, const char *fmt, ...);
-void taplog_log_ethernet_info(unsigned char *buffer, int len);
+#if (_WIN32_WINNT < 0x0501)
+#  define DISABLE_IPV6
+#  include <ws2tcpip.h>
+#endif
 
-#endif /* TAPLOG_H */
+#  include "tapcfg_windows.c"
+#else
+#  include "tapcfg_unix.c"
+#endif
 

@@ -3,7 +3,7 @@
 # Juho Vähä-Herttua, 2008
 
 def configure(conf):
-	conf.sub_config('lib demos')
+	pass
 
 def build(bld):
 	bld.add_subdirs('lib demos')

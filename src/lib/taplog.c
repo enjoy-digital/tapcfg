@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "tapcfg.h"
 #include "taplog.h"
 
 static int taplog_level = TAPLOG_INFO;
