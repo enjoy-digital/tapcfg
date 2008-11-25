@@ -356,6 +356,9 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	memcpy(buf, tapcfg->buffer, tapcfg->buflen);
 	tapcfg->buflen = 0;
 
+	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:\n");
+	taplog_log_ethernet_info(buf, ret);
+
 	return ret;
 }
 
@@ -394,6 +397,9 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 		           GetLastError());
 		return -1;
 	}
+
+	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:\n");
+	taplog_log_ethernet_info(buf, ret);
 
 	return len;
 }

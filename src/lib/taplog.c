@@ -45,7 +45,7 @@ taplog_log_ethernet_info(unsigned char *buffer, int len) {
 		return;
 
 	taplog_log(TAPLOG_DEBUG,
-	           "Read %d (0x%04x) bytes ethernet frame\n",
+	           "Frame length %d (0x%04x) bytes\n",
 	           len, len);
 	taplog_log(TAPLOG_DEBUG,
 	           "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -56,6 +56,6 @@ taplog_log_ethernet_info(unsigned char *buffer, int len) {
 	           (buffer[0])&0xff, (buffer[1])&0xff, (buffer[2])&0xff, (buffer[3])&0xff,
 	           (buffer[4])&0xff, (buffer[5])&0xff);
 	taplog_log(TAPLOG_DEBUG,
-	           "EtherType/Length 0x%04x\n",
+	           "EtherType 0x%04x\n",
 	           ((buffer[12] << 8) | buffer[13])&0xffff);
 }

@@ -43,27 +43,6 @@ listener_log(int level, const char *fmt, ...)
 	va_end(ap);
 }
 
-void
-listener_log_ethernet_info(unsigned char *buffer, int len) {
-	if (len < 14)
-		return;
-
-	listener_log(TAPLOG_DEBUG,
-	             "Read %d (0x%04x) bytes ethernet frame\n",
-	             len, len);
-	listener_log(TAPLOG_DEBUG,
-	             "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	             (buffer[6])&0xff, (buffer[7])&0xff, (buffer[8])&0xff, (buffer[9])&0xff,
-	             (buffer[10])&0xff, (buffer[11])&0xff);
-	listener_log(TAPLOG_DEBUG,
-	             "Ethernet dst address: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	             (buffer[0])&0xff, (buffer[1])&0xff, (buffer[2])&0xff, (buffer[3])&0xff,
-	             (buffer[4])&0xff, (buffer[5])&0xff);
-	listener_log(TAPLOG_DEBUG,
-	             "EtherType/Length 0x%04x\n",
-	             ((buffer[12] << 8) | buffer[13])&0xffff);
-}
-
 listener_t *
 listener_init()
 {
@@ -279,8 +258,6 @@ listener_thread(LPVOID arg)
 				goto cleanup;
 			}
 
-			listener_log_ethernet_info(buf, retval);
-
 			for (i=0; i<MAX_CLIENTS; i++) {
 				unsigned char sizebuf[2];
 				int tmp;
@@ -355,8 +332,6 @@ listener_thread(LPVOID arg)
 				listener_log(TAPLOG_INFO,
 					     "Read %d bytes from client fd %d\n",
 				             retval, clients[i]);
-
-				listener_log_ethernet_info(buf, retval);
 
 				if (tapcfg) {
 					retval = tapcfg_write(tapcfg, buf, retval);
