@@ -33,15 +33,11 @@
 #if (_WIN32_WINNT < 0x0501)
 #define DISABLE_IPV6
 #endif
-#undef DISABLE_IPV6
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #define sleep(x) Sleep((x)*1000)
-
-int inet_pton(int af, const char *src, void *dst);
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt);
 
 #ifndef DISABLE_IPV6
 static const struct in6_addr ip6_any = {{ IN6ADDR_ANY_INIT }};
