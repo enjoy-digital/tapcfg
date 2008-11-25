@@ -8,14 +8,12 @@ def build(bld):
 	obj = bld.new_task_gen('cc', 'staticlib')
 	obj.source = ['taplog.c','tapcfg.c']
 	obj.target = 'tapcfg'
-	obj.name = 'tapcfg'
 	obj.includes = '../include'
 	obj.uselib = 'socket'
 
 	obj = bld.new_task_gen('cc', 'shlib')
 	obj.source = ['taplog.c','tapcfg.c']
-	obj.target = 'tapcfg'
-	obj.name = 'shtapcfg'
+	obj.target = '../bindings/tapcfg'
 	obj.includes = '../include'
 	obj.uselib = 'socket'
 
