@@ -1,6 +1,5 @@
 Import('env')
 
-env.Append(CPPPATH = ['../include'])
 env.Append(LIBPATH = ['../lib'])
 env.Append(LIBS = ['tapcfg','pthread'])
 

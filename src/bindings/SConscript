@@ -1,6 +1,6 @@
 Import('env')
 
-refpaths = ['.']
+env.SharedLibrary('tapcfg', ['../lib/tapcfg.c','../lib/taplog.c'])
 
 sources = Split("""
   EthernetDevice.cs
