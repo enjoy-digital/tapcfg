@@ -1,5 +1,7 @@
 
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace TAPCfg {
@@ -18,7 +20,10 @@ namespace TAPCfg {
 		}
 
 		public void Start(string deviceName) {
-			tapcfg_start(handle, deviceName);
+			int ret = tapcfg_start(handle, deviceName);
+			if (ret < 0) {
+				/* Handle error in starting the device */
+			}
 		}
 
 		public EthernetFrame Read() {
@@ -55,16 +60,38 @@ namespace TAPCfg {
 				}
 			}
 			set {
+				int ret;
+
 				if (value) {
-					tapcfg_iface_change_status(handle, 1);
+					ret = tapcfg_iface_change_status(handle, 1);
 				} else {
-					tapcfg_iface_change_status(handle, 0);
+					ret = tapcfg_iface_change_status(handle, 0);
+				}
+
+				if (ret < 0) {
+					/* Handle error in changing the status */
 				}
 			}
 		}
 
 		public string DeviceName {
 			get { return tapcfg_get_ifname(handle); }
+		}
+
+		public void SetAddress(IPAddress address, byte netbits) {
+			int ret;
+
+			if (address.AddressFamily == AddressFamily.InterNetwork) {
+				ret = tapcfg_iface_set_ipv4(handle, address.ToString(), netbits);
+			} else if (address.AddressFamily == AddressFamily.InterNetworkV6) {
+				ret = tapcfg_iface_add_ipv6(handle, address.ToString(), netbits);
+			} else {
+				return;
+			}
+
+			if (ret < 0) {
+				/* Handle error in setting the address */
+			}
 		}
 
 		public void Dispose() {
@@ -89,6 +116,8 @@ namespace TAPCfg {
 		private static void Main(string[] args) {
 			EthernetDevice dev = new EthernetDevice();
 			dev.Start();
+			dev.SetAddress(IPAddress.Parse("192.168.1.1"), 16);
+			dev.SetAddress(IPAddress.Parse("fc00::1"), 64);
 			dev.Enabled = true;
 
 			System.Threading.Thread.Sleep(100000);
@@ -126,6 +155,6 @@ namespace TAPCfg {
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits);
+		private static extern int tapcfg_iface_add_ipv6(IntPtr tapcfg, string addr, byte netbits);
 	}
 }
