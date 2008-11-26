@@ -1,15 +1,30 @@
 Import('env')
 
+env.Append(CPPPATH = ['include'])
+
+libenv = env.Clone()
+conf = Configure(libenv)
+conf.CheckLib('ws2_32')
+libenv = conf.Finish()
+libenv.Append(CPPPATH = ['lib'])
+
+libsrc = ['lib/tapcfg.c','lib/taplog.c']
+libenv.Library('lib/tapcfg', libsrc)
+libenv.SharedLibrary('bindings/tapcfg', libsrc)
+
 asm = env.CLILibrary('bindings/TAPCfg', ['bindings/EthernetDevice.cs','bindings/EthernetFrame.cs'])
 prog = env.CLIProgram('bindings/TAPCfgTest', ['bindings/TAPCfgTest.cs'], CILLIBS=asm)
 
-env.Append(CPPPATH = ['include'])
-env.Library('lib/tapcfg', ['lib/tapcfg.c','lib/taplog.c'])
-env.SharedLibrary('bindings/tapcfg', ['lib/tapcfg.c','lib/taplog.c'])
+demoenv = env.Clone()
+conf = Configure(demoenv)
+conf.CheckLib('pthread')
+conf.CheckLib('ws2_32')
+demoenv = conf.Finish()
+demoenv.Append(LIBPATH = ['lib'])
+demoenv.Append(LIBS = ['tapcfg'])
 
-env.Append(LIBPATH = ['lib'])
-object = env.Object('demos/listener.c')
-prog1 = env.Program('demos/test_client', ['demos/test_client.c'], LIBS = ['tapcfg'], install=False)
-prog2 = env.Program('demos/test_server', ['demos/listener.o','demos/test_server.c'], LIBS = ['tapcfg'], install=False)
-prog3 = env.Program('demos/test_forwarder', ['demos/listener.o','demos/test_forwarder.c'], LIBS = ['tapcfg'], install=False)
+listener = demoenv.Object('demos/listener.c')
+demoenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
+demoenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)
+demoenv.Program('demos/test_forwarder', [listener,'demos/test_forwarder.c'], install=False)
 
