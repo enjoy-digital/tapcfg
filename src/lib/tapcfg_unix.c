@@ -425,6 +425,18 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 	         addrstr, netbits,
 	         tapcfg->ifname);
 #else /* BSD */
+	/* On Mac OS X we need to add the IPv6 route manually */
+	snprintf(buffer, sizeof(buffer)-1,
+	         "route -q add -inet6 -prefixlen %d %s -interface %s",
+	         netbits, addrstr,
+	         tapcfg->ifname);
+	if (system(buffer)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to add IPv6 route: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
 	snprintf(buffer, sizeof(buffer)-1,
 	         "ifconfig %s inet6 %s prefixlen %d alias",
 	         tapcfg->ifname,
