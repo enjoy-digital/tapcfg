@@ -18,7 +18,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
-namespace TAPCfg {
+namespace Ethernet {
 	public class EthernetDevice : IDisposable {
 		private const int MTU = 1522;
 
@@ -127,38 +127,38 @@ namespace TAPCfg {
 			}
 		}
 
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern IntPtr tapcfg_init();
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern void tapcfg_destroy(IntPtr tapcfg);
 
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_start(IntPtr tapcfg, string ifname);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
 /*
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_can_read(IntPtr tapcfg);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_can_write(IntPtr tapcfg);
 */
 
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern string tapcfg_get_ifname(IntPtr tapcfg);
 
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
-		[DllImport("libtapcfg")]
+		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_add_ipv6(IntPtr tapcfg, string addr, byte netbits);
 	}
 }

@@ -15,7 +15,7 @@
 
 using System;
 
-namespace TAPCfg {
+namespace Ethernet {
 	public enum EtherType : int {
 		InterNetwork   = 0x0800,
 		ARP            = 0x0806,

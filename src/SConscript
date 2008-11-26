@@ -12,7 +12,7 @@ libsrc = ['lib/tapcfg.c','lib/taplog.c']
 libenv.Library('lib/tapcfg', libsrc)
 libenv.SharedLibrary('bindings/tapcfg', libsrc)
 
-asm = env.CLILibrary('bindings/TAPCfg', ['bindings/EthernetDevice.cs','bindings/EthernetFrame.cs'])
+asm = env.CLILibrary('bindings/Ethernet', ['bindings/EthernetDevice.cs','bindings/EthernetFrame.cs'])
 prog = env.CLIProgram('bindings/TAPCfgTest', ['bindings/TAPCfgTest.cs'], CILLIBS=asm)
 
 demoenv = env.Clone()
@@ -21,7 +21,7 @@ conf.CheckLib('pthread')
 conf.CheckLib('ws2_32')
 demoenv = conf.Finish()
 demoenv.Append(LIBPATH = ['lib'])
-demoenv.Append(LIBS = ['tapcfg'])
+demoenv.Prepend(LIBS = ['tapcfg'])
 
 listener = demoenv.Object('demos/listener.c')
 demoenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
