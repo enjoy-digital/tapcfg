@@ -3,7 +3,7 @@ import SCons.Builder
 import SCons.Node.FS
 import SCons.Util
 
-csccom = "$CSC $CSCFLAGS -out:${TARGET.abspath} $SOURCES"
+csccom = "$CSC $CSCFLAGS $_CSCLIBPATH -r:$_CSCLIBS -out:${TARGET.abspath} $SOURCES"
 csclibcom = "$CSC -t:library $CSCLIBFLAGS $_CSCLIBPATH $_CSCLIBS -out:${TARGET.abspath} $SOURCES"
 
 
