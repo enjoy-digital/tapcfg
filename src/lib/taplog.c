@@ -29,14 +29,18 @@ taplog_set_level(int level) {
 void
 taplog_log(int level, const char *fmt, ...)
 {
+	char buffer[4096];
 	va_list ap;
 
 	if (level > taplog_level)
 		return;
 
+	buffer[sizeof(buffer)-1] = '\0';
 	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
+	vsnprintf(buffer, sizeof(buffer)-1, fmt, ap);
 	va_end(ap);
+
+	fprintf(stderr, buffer);
 }
 
 void
