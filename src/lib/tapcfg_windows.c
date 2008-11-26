@@ -420,6 +420,12 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 const char *
 tapcfg_get_ifname(tapcfg_t *tapcfg)
 {
+	assert(tapcfg);
+
+	if (tapcfg->started) {
+		return NULL;
+	}
+
 	return tapcfg->ifname;
 }
 
