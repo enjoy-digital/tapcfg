@@ -1,3 +1,4 @@
+#!/bin/sh
 
 export AR=i586-mingw32msvc-ar
 export RANLIB=i586-mingw32msvc-ranlib
@@ -9,6 +10,5 @@ export LINK_CXX=i586-mingw32msvc-g++
 export WINRC=i586-mingw32msvc-windres
 
 ./waf clean
-./waf configure --nocache --conf-prefix="/usr/i586-mingw32msvc" --prefix=windows/
+./waf configure --nocache --conf-prefix="/usr/i586-mingw32msvc"
 ./waf
-./waf install
