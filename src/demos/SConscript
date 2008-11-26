@@ -1,9 +1,0 @@
-Import('env')
-
-env.Append(LIBPATH = ['../lib'])
-env.Append(LIBS = ['tapcfg','pthread'])
-
-object = env.Object('listener.c');
-prog1 = env.Program('test_client', ['test_client.c'], install=False)
-prog2 = env.Program('test_server', ['listener.o','test_server.c'], install=False)
-prog3 = env.Program('test_forwarder', ['listener.o','test_forwarder.c'], install=False)
