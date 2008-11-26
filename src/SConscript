@@ -2,29 +2,29 @@ Import('env')
 
 env.Append(CPPPATH = ['include'])
 
+# Set up the environment for compiling the libraries
 libenv = env.Clone()
-conf = Configure(libenv)
-conf.CheckLib('ws2_32')
-conf.CheckLib('socket')
-libenv = conf.Finish()
 libenv.Append(CPPPATH = ['lib'])
-
 libsrc = ['lib/tapcfg.c','lib/taplog.c']
-libenv.Library('lib/tapcfg', libsrc)
-libenv.SharedLibrary('bindings/tapcfg', libsrc)
 
+# Compile the static library into lib directory and shared library
+# for the bindings
+libenv.Library('lib/tapcfg', libsrc, install=False)
+libenv.SharedLibrary('bindings/tapcfg', libsrc, install=False)
+
+# Compile the .Net bindings
 asm = env.CLILibrary('bindings/Ethernet', ['bindings/EthernetDevice.cs','bindings/EthernetFrame.cs'])
 prog = env.CLIProgram('bindings/TAPCfgTest', ['bindings/TAPCfgTest.cs'], CILLIBS=asm)
 
+# Set up the environment for compiling the demo tests
 demoenv = env.Clone()
 conf = Configure(demoenv)
 conf.CheckLib('pthread')
-conf.CheckLib('ws2_32')
-conf.CheckLib('socket')
 demoenv = conf.Finish()
 demoenv.Append(LIBPATH = ['lib'])
 demoenv.Prepend(LIBS = ['tapcfg'])
 
+# Compile the demo test executables
 listener = demoenv.Object('demos/listener.c')
 demoenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
 demoenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)

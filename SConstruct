@@ -10,5 +10,10 @@ if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
 	env.Append(CPPDEFINES = ['WINVER=0x0501'])
 
+conf = Configure(env)
+conf.CheckLib('socket')
+conf.CheckLib('ws2_32')
+env = conf.Finish()
+
 env.SConscript('src/SConscript', exports='env')
 
