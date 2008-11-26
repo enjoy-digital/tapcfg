@@ -14,33 +14,57 @@ namespace TAPCfg {
 		}
 
 		public void Start() {
-			tapcfg_start(handle, null);
+			Start(null);
 		}
 
-		public byte[] Read() {
-			int length;
+		public void Start(string deviceName) {
+			tapcfg_start(handle, deviceName);
+		}
+
+		public EthernetFrame Read() {
 			byte[] buffer = new byte[MTU];
 
-			length = tapcfg_read(handle, buffer, buffer.Length);
+			int ret = tapcfg_read(handle, buffer, buffer.Length);
+			if (ret < 0) {
+				/* Handle error in reading */
+			} else if (ret == 0) {
+				/* Handle EOF in reading */
+			}
 
-			byte[] outbuf = new byte[length];
-			Array.Copy(buffer, 0, outbuf, 0, length);
-
-			return outbuf;
+			return new EthernetFrame(buffer);
 		}
 
-		public void Write(byte[] data) {
-			byte[] buffer = new byte[MTU];
+		public void Write(EthernetFrame frame) {
+			byte[] buffer = frame.Data;
 
-			Array.Copy(data, 0, buffer, 0, data.Length);
-			int ret = tapcfg_write(handle, buffer, data.Length);
+			int ret = tapcfg_write(handle, buffer, buffer.Length);
+			if (ret < 0) {
+				/* Handle error in writing */
+			} else if (ret != buffer.Length) {
+				/* Handle not full write */
+			}
 		}
 
-		public void Enabled(bool enabled) {
-			if (enabled)
-				tapcfg_iface_change_status(handle, 1);
-			else
-				tapcfg_iface_change_status(handle, 0);
+		public bool Enabled {
+			get {
+				int ret = tapcfg_iface_get_status(handle);
+				if (ret != 0) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			set {
+				if (value) {
+					tapcfg_iface_change_status(handle, 1);
+				} else {
+					tapcfg_iface_change_status(handle, 0);
+				}
+			}
+		}
+
+		public string DeviceName {
+			get { return tapcfg_get_ifname(handle); }
 		}
 
 		public void Dispose() {
@@ -65,7 +89,7 @@ namespace TAPCfg {
 		private static void Main(string[] args) {
 			EthernetDevice dev = new EthernetDevice();
 			dev.Start();
-			dev.Enabled(true);
+			dev.Enabled = true;
 
 			System.Threading.Thread.Sleep(100000);
 		}
@@ -80,12 +104,15 @@ namespace TAPCfg {
 		[DllImport("libtapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
+/*
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_can_read(IntPtr tapcfg);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
-		[DllImport("libtapcfg")]
 		private static extern int tapcfg_can_write(IntPtr tapcfg);
+*/
+
+		[DllImport("libtapcfg")]
+		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
@@ -97,8 +124,8 @@ namespace TAPCfg {
 		[DllImport("libtapcfg")]
 		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, Byte netbits);
+		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 		[DllImport("libtapcfg")]
-		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, Byte netbits);
+		private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits);
 	}
 }

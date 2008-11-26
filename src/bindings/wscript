@@ -4,7 +4,7 @@
 
 def build(bld):
 	obj = bld.new_task_gen(features='cs')
-	obj.source = ['EthernetDevice.cs']
+	obj.source = ['EthernetDevice.cs','EthernetFrame.cs']
 	obj.target = 'EthernetDevice.exe'
 	obj.uselib_local = 'shtapcfg'
 
