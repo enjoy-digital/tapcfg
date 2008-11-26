@@ -67,9 +67,7 @@ void
 tapcfg_destroy(tapcfg_t *tapcfg)
 {
 	if (tapcfg) {
-		if (tapcfg->tap_fd != -1) {
-			close(tapcfg->tap_fd);
-		}
+		tapcfg_stop(tapcfg);
 	}
 	free(tapcfg);
 }
@@ -168,6 +166,21 @@ err:
 	tapcfg->tap_fd = -1;
 
 	return -1;
+}
+
+void
+tapcfg_stop(tapcfg_t *tapcfg)
+{
+	assert(tapcfg);
+
+	if (tapcfg->started) {
+		if (tapcfg->tap_fd != -1) {
+			close(tapcfg->tap_fd);
+			tapcfg->tap_fd = -1;
+		}
+		tapcfg->started = 0;
+		tapcfg->enabled = 0;
+	}
 }
 
 int
@@ -286,12 +299,6 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	taplog_log_ethernet_info(buf, ret);
 
 	return ret;
-}
-
-void
-tapcfg_stop(tapcfg_t *tapcfg)
-{
-	assert(tapcfg);
 }
 
 const char *

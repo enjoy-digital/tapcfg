@@ -85,10 +85,7 @@ void
 tapcfg_destroy(tapcfg_t *tapcfg)
 {
 	if (tapcfg) {
-		if (tapcfg->dev_handle != INVALID_HANDLE_VALUE) {
-			CloseHandle(tapcfg->dev_handle);
-			tapcfg->dev_handle = INVALID_HANDLE_VALUE;
-		}
+		tapcfg_stop(tapcfg);
 		CloseHandle(tapcfg->overlapped_in.hEvent);
 		CloseHandle(tapcfg->overlapped_out.hEvent);
 	}
@@ -251,7 +248,14 @@ tapcfg_stop(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
 
-	tapcfg->started = 0;
+	if (tapcfg->started) {
+		if (tapcfg->dev_handle != INVALID_HANDLE_VALUE) {
+			CloseHandle(tapcfg->dev_handle);
+			tapcfg->dev_handle = INVALID_HANDLE_VALUE;
+		}
+		tapcfg->started = 0;
+		tapcfg->enabled = 0;
+	}
 }
 
 static int
