@@ -46,13 +46,13 @@ static int tapcfg_address_is_valid(int family, char *addr) {
 
 	return 1;
 #else
-	struct in_addr addr;
+	unsigned long inaddr;
 
 	if (family != AF_INET)
 		return 0;
 
-	addr = inet_addr(addr);
-	if (addr == INADDR_NONE || addr == INADDR_ANY)
+	inaddr = inet_addr(addr);
+	if (inaddr == INADDR_NONE || inaddr == INADDR_ANY)
 		return 0;
 
 	return 1;
