@@ -13,6 +13,8 @@ if GetOption('mingw'):
 conf = Configure(env)
 conf.CheckLib('socket')
 conf.CheckLib('ws2_32')
+if conf.CheckFunc('getaddrinfo'):
+	env.Append(CPPDEFINES = ['HAVE_GETADDRINFO'])
 env = conf.Finish()
 
 env.SConscript('src/SConscript', exports='env')

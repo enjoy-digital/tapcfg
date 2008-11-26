@@ -29,6 +29,7 @@
 #define TAPCFG_BUFSIZE 2048
 
 static int tapcfg_address_is_valid(int family, char *addr) {
+#ifdef HAVE_GETADDRINFO
 	struct addrinfo hints, *res;
 
 	/* Try to convert the address string into a structure */
@@ -44,6 +45,18 @@ static int tapcfg_address_is_valid(int family, char *addr) {
 	freeaddrinfo(res);
 
 	return 1;
+#else
+	struct in_addr addr;
+
+	if (family != AF_INET)
+		return 0;
+
+	addr = inet_addr(addr);
+	if (addr == INADDR_NONE || addr == INADDR_ANY)
+		return 0;
+
+	return 1;
+#endif /* HAVE_GETADDRINFO */
 }
 
 #if defined(_WIN32) || defined(_WIN64)
