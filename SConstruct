@@ -1,5 +1,5 @@
 
-AddOption('--cross-mingw',
+AddOption('--force-mingw',
           action='store_true', dest='mingw', default=False,
           help='Cross compile using MinGW for Windows')
 
