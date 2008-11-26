@@ -26,7 +26,7 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
-#define TAPCFG_MIN_BUFSIZE 4096
+#define TAPCFG_BUFSIZE 2048
 
 static int tapcfg_address_is_valid(int family, char *addr) {
 	struct addrinfo hints, *res;
@@ -47,12 +47,6 @@ static int tapcfg_address_is_valid(int family, char *addr) {
 }
 
 #if defined(_WIN32) || defined(_WIN64)
-
-/* Disable IPv6 support for Windows 2000 */
-#  if (_WIN32_WINNT < 0x0501)
-#    define DISABLE_IPV6
-#  endif
-
 #  include "tapcfg_windows.c"
 #else
 #  include "tapcfg_unix.c"

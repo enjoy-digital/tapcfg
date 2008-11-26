@@ -58,7 +58,7 @@ struct tapcfg_s {
 	OVERLAPPED overlapped_in;
 	OVERLAPPED overlapped_out;
 
-	char buffer[TAPCFG_MIN_BUFSIZE];
+	char buffer[TAPCFG_BUFSIZE];
 	DWORD buflen;
 };
 

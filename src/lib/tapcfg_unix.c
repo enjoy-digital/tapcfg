@@ -45,7 +45,7 @@ struct tapcfg_s {
 	int tap_fd;
 	char ifname[MAX_IFNAME+1];
 
-	char buffer[TAPCFG_MIN_BUFSIZE];
+	char buffer[TAPCFG_BUFSIZE];
 	int buflen;
 };
 
