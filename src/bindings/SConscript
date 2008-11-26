@@ -1,0 +1,21 @@
+Import('env')
+
+
+env.Tool('mcs', toolpath = [''])
+
+refpaths = []
+
+refs = Split("""
+  System
+  System.Net
+  """)
+
+sources = Split("""
+  EthernetDevice.cs
+  EthernetFrame.cs
+  """)
+
+r = env.CLIRefs(refpaths, refs)
+lib = env.CLILibrary('TAPCfg', sources, ASSEMBLYREFS=r)
+env.AddToRefPaths(lib)
+

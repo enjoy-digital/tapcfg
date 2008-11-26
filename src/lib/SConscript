@@ -1,0 +1,4 @@
+Import('env')
+
+env.Append(CPPPATH = ['../include'])
+env.Library('tapcfg', ['tapcfg.c','taplog.c'])

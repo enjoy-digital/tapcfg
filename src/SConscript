@@ -1,0 +1,6 @@
+Import('env')
+
+env.SConscript(['lib/SConscript',
+                'bindings/SConscript',
+                'demos/SConscript'],
+                exports='env')
