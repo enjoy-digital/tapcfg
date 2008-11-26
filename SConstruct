@@ -1,6 +1,6 @@
 
 env = Environment()
-env.Tool('mcs', toolpath = [''])
+env.Tool('gmcs', toolpath = ['scons-tools'])
 env.Append(CPPPATH = '#src/include')
 
 env.SConscript('src/SConscript', exports='env')

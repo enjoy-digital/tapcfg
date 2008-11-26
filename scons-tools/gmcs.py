@@ -19,7 +19,7 @@ def generate(env):
     env['BUILDERS']['CLIProgram'] = McsBuilder
     env['BUILDERS']['CLILibrary'] = McsLibBuilder
 
-    env['CSC']        = 'mcs'
+    env['CSC']        = 'gmcs'
     env['_CSCLIBS']    = "${_stripixes('-r:', CILLIBS, '', '-r', '', __env__)}"
     env['_CSCLIBPATH'] = "${_stripixes('-lib:', CILLIBPATH, '', '-r', '', __env__)}"
     env['CSCFLAGS']   = SCons.Util.CLVar('')
@@ -27,5 +27,5 @@ def generate(env):
     env['CSCLIBCOM']  = SCons.Action.Action(csclibcom)
 
 def exists(env):
-    return internal_zip or env.Detect('mcs')
+    return internal_zip or env.Detect('gmcs')
 
