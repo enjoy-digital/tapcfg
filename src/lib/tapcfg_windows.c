@@ -30,9 +30,9 @@
 #define TAP_IOCTL_CONFIG_POINT_TO_POINT   TAP_CONTROL_CODE(5, METHOD_BUFFERED)
 #define TAP_IOCTL_SET_MEDIA_STATUS        TAP_CONTROL_CODE(6, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_DHCP_MASQ        TAP_CONTROL_CODE(7, METHOD_BUFFERED)
-#define TAP_IOCTL_GET_TAPLOG_LINE         TAP_CONTROL_CODE(8, METHOD_BUFFERED)
+#define TAP_IOCTL_GET_LOG_LINE            TAP_CONTROL_CODE(8, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_DHCP_SET_OPT     TAP_CONTROL_CODE(9, METHOD_BUFFERED)
-#define TAP_IOCTL_CONFIG_TUN              TAP_CONTROL_CODE(10, METHOD_BUFFERED) 
+#define TAP_IOCTL_CONFIG_TUN              TAP_CONTROL_CODE(10, METHOD_BUFFERED)
 
 
 #define TAP_REGISTRY_KEY                  "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
@@ -43,9 +43,6 @@
 #define TAP_WINDOWS_MIN_MINOR               1
 
 #define MAX_IFNAME 128
-
-/* The fixup functions will use the defines, so this has to be here */
-#include "tapcfg_windows_fixup.h"
 
 struct tapcfg_s {
 	int started;
@@ -61,6 +58,9 @@ struct tapcfg_s {
 	char buffer[TAPCFG_BUFSIZE];
 	DWORD buflen;
 };
+
+/* The fixup functions will use the struct, so this has to be here */
+#include "tapcfg_windows_fixup.h"
 
 tapcfg_t *
 tapcfg_init()
@@ -147,8 +147,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 
 	assert(tapcfg);
 
-	strncpy(tapcfg->ifname, ifname, MAX_IFNAME-1);
-	if (tapcfg_fixup_adapters(tapcfg->ifname, MAX_IFNAME) < 0) {
+	if (tapcfg_fixup_adapters(tapcfg) < 0) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;
 	}
@@ -522,7 +521,6 @@ int
 tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
-	struct sockaddr_in6 sockaddr;
 
 	assert(tapcfg);
 
@@ -566,9 +564,9 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 
 	return 0;
 }
-#else /* DISABLE_IPV6 */
+#else
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 {
 	/* Always return an error */
 	return -1;
