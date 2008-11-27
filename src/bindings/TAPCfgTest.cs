@@ -1,5 +1,6 @@
 
 using TAP;
+using System;
 using System.Net;
 
 public class TAPCfgTest {
@@ -10,6 +11,14 @@ public class TAPCfgTest {
 		dev.SetAddress(IPAddress.Parse("fc00::1"), 64);
 		dev.Enabled = true;
 
-		System.Threading.Thread.Sleep(100000);
+		while (true) {
+			EthernetFrame frame = dev.Read();
+			Console.WriteLine("Read Ethernet frame of type {0}",
+			                  frame.EtherType);
+			Console.WriteLine("Source address: {0}",
+			                  BitConverter.ToString(frame.SourceAddress));
+			Console.WriteLine("Destination address: {0}",
+			                  BitConverter.ToString(frame.DestinationAddress));
+		}
 	}
 }
