@@ -1,5 +1,5 @@
 
-using Ethernet;
+using TAP;
 using System.Net;
 
 public class TAPCfgTest {
