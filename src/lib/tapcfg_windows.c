@@ -298,8 +298,10 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 			           "Error calling ReadFile: %d\n",
 			           GetLastError());
 		}
-	} else {
-		retval = WaitForSingleObject(tapcfg->overlapped_in.hEvent, 0);
+	}
+
+	if (tapcfg->reading) {
+		retval = WaitForSingleObject(tapcfg->overlapped_in.hEvent, timeout);
 
 		if (retval == WAIT_OBJECT_0) {
 			taplog_log(TAPLOG_DEBUG, "Calling GetOverlappedResult function\n");
@@ -349,6 +351,8 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	}
 
 	if (!tapcfg_wait_for_data(tapcfg, INFINITE)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error waiting for data in read function\n");
 		return -1;
 	}
 
