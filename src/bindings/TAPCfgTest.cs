@@ -13,6 +13,9 @@ public class TAPCfgTest {
 
 		while (true) {
 			EthernetFrame frame = dev.Read();
+			if (frame == null)
+				break;
+
 			Console.WriteLine("Read Ethernet frame of type {0}",
 			                  frame.EtherType);
 			Console.WriteLine("Source address: {0}",

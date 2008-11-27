@@ -46,8 +46,10 @@ namespace TAP {
 			int ret = tapcfg_read(handle, buffer, buffer.Length);
 			if (ret < 0) {
 				/* Handle error in reading */
+				return null;
 			} else if (ret == 0) {
 				/* Handle EOF in reading */
+				return null;
 			}
 
 			return new EthernetFrame(buffer);
@@ -133,7 +135,7 @@ namespace TAP {
 		private static extern void tapcfg_destroy(IntPtr tapcfg);
 
 		[DllImport("tapcfg")]
-		private static extern int tapcfg_start(IntPtr tapcfg, string ifname);
+		private static extern int tapcfg_start(IntPtr tapcfg, [MarshalAs(UnmanagedType.LPStr)] string ifname);
 		[DllImport("tapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
@@ -150,6 +152,7 @@ namespace TAP {
 		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
 		[DllImport("tapcfg")]
+		[return : MarshalAs(UnmanagedType.LPStr)]
 		private static extern string tapcfg_get_ifname(IntPtr tapcfg);
 
 		[DllImport("tapcfg")]
