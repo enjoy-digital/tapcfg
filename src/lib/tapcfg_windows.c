@@ -44,6 +44,9 @@
 
 #define MAX_IFNAME 128
 
+/* The fixup functions will use the defines, so this has to be here */
+#include "tapcfg_windows_fixup.h"
+
 struct tapcfg_s {
 	int started;
 	int enabled;
@@ -58,9 +61,6 @@ struct tapcfg_s {
 	char buffer[TAPCFG_BUFSIZE];
 	DWORD buflen;
 };
-
-/* The fixup functions will use the struct, so this has to be here */
-#include "tapcfg_windows_fixup.h"
 
 tapcfg_t *
 tapcfg_init()
@@ -147,7 +147,11 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 
 	assert(tapcfg);
 
-	if (tapcfg_fixup_adapters(tapcfg) < 0) {
+	if (ifname && strlen(ifname) < MAX_IFNAME) {
+		strncpy(tapcfg->ifname, ifname, MAX_IFNAME);
+	}
+
+	if (tapcfg_fixup_adapters(tapcfg->ifname, sizeof(tapcfg->ifname)) < 0) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;
 	}

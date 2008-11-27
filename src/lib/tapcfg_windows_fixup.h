@@ -244,7 +244,7 @@ free_panel_reg(struct panel_reg *panel_reg)
 }
 
 static int
-tapcfg_fixup_adapters(tapcfg_t *tapcfg)
+tapcfg_fixup_adapters(char *ifname, int ifnamelen)
 {
 	struct tap_reg *tap_reg = get_tap_reg(), *tr;
 	struct panel_reg *panel_reg = get_panel_reg(), *pr;
@@ -266,7 +266,7 @@ tapcfg_fixup_adapters(tapcfg_t *tapcfg)
 				adapter = pr;
 				links++;
 
-				if (!strcasecmp(tapcfg->ifname, pr->name)) {
+				if (!strcasecmp(ifname, pr->name)) {
 					found++;
 				}
 			}
@@ -300,12 +300,12 @@ tapcfg_fixup_adapters(tapcfg_t *tapcfg)
 	if (found == 1 && valid == 1) {
 		taplog_log(TAPLOG_DEBUG,
 		           "Using configured interface %s\n",
-		           tapcfg->ifname);
+		           ifname);
 	} else if (found == 0 && valid == 1 && adapter) {
 		taplog_log(TAPLOG_INFO,
 		           "Using adapter '%s' instead of '%s' because it was the only one found\n",
-		           adapter->name, tapcfg->ifname);
-		strncpy(tapcfg->ifname, adapter->name, MAX_IFNAME);
+		           adapter->name, ifname);
+		strncpy(ifname, adapter->name, ifnamelen-1);
 	} else {
 		taplog_log(TAPLOG_WARNING,
 		           "Found %u adapters, %u of which were valid, don't know what to use\n",
