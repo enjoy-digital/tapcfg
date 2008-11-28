@@ -117,6 +117,7 @@ int tapcfg_wait_writable(tapcfg_t *tapcfg, int msec);
  * @param buf is a pointer to the buffer where data is written from
  * @param count is the number of bytes in the buffer
  * @return Negative value on error, number of bytes written otherwise.
+ */
 int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
 
 
