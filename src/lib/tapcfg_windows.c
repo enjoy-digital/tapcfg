@@ -58,8 +58,11 @@ struct tapcfg_s {
 	OVERLAPPED overlapped_in;
 	OVERLAPPED overlapped_out;
 
-	char buffer[TAPCFG_BUFSIZE];
-	DWORD buflen;
+	char inbuf[TAPCFG_BUFSIZE];
+	DWORD inbuflen;
+
+	char outbuf[TAPCFG_BUFSIZE];
+	DWORD outbuflen;
 };
 
 tapcfg_t *
@@ -269,8 +272,8 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 
 	assert(tapcfg);
 
-	if (tapcfg->buflen) {
-		taplog_log(TAPLOG_DEBUG, "Found %d bytes from buffer\n", tapcfg->buflen);
+	if (tapcfg->inbuflen) {
+		taplog_log(TAPLOG_DEBUG, "Found %d bytes from buffer\n", tapcfg->inbuflen);
 		return 1;
 	} else if (!tapcfg->reading) {
 		/* No data available, start a new read */
@@ -281,15 +284,15 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 
 		taplog_log(TAPLOG_DEBUG, "Calling ReadFile function\n");
 		retval = ReadFile(tapcfg->dev_handle,
-		                  tapcfg->buffer,
-		                  sizeof(tapcfg->buffer),
+		                  tapcfg->inbuf,
+		                  sizeof(tapcfg->inbuf),
 		                  &len,
 		                  &tapcfg->overlapped_in);
 
 		/* If read successful, mark reading finished */
 		if (retval) {
 			tapcfg->reading = 0;
-			tapcfg->buflen = len;
+			tapcfg->inbuflen = len;
 			ret = 1;
 			taplog_log(TAPLOG_DEBUG, "Finished reading %d bytes with ReadFile\n", len);
 		} else if (GetLastError() != ERROR_IO_PENDING) {
@@ -315,7 +318,7 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 				           GetLastError());
 			} else {
 				tapcfg->reading = 0;
-				tapcfg->buflen = len;
+				tapcfg->inbuflen = len;
 				ret = 1;
 				taplog_log(TAPLOG_DEBUG,
 				           "Finished reading %d bytes with GetOverlappedResult\n",
@@ -356,17 +359,17 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 		return -1;
 	}
 
-	if (count < tapcfg->buflen) {
+	if (count < tapcfg->inbuflen) {
 		taplog_log(TAPLOG_ERR,
 		           "Buffer not big enough for reading, "
 		           "need at least %d bytes\n",
-		           tapcfg->buflen);
+		           tapcfg->inbuflen);
 		return -1;
 	}
 
-	ret = tapcfg->buflen;
-	memcpy(buf, tapcfg->buffer, tapcfg->buflen);
-	tapcfg->buflen = 0;
+	ret = tapcfg->inbuflen;
+	memcpy(buf, tapcfg->inbuf, tapcfg->inbuflen);
+	tapcfg->inbuflen = 0;
 
 	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:\n");
 	taplog_log_ethernet_info(buf, ret);
