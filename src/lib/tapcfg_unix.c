@@ -184,7 +184,7 @@ tapcfg_stop(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_can_read(tapcfg_t *tapcfg)
+tapcfg_wait_readable(tapcfg_t *tapcfg, int msec)
 {
 	fd_set rfds;
 	struct timeval tv;
@@ -196,8 +196,8 @@ tapcfg_can_read(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
+	tv.tv_sec = (msec / 1000);
+	tv.tv_usec = (msec % 1000) * 1000;
 
 	FD_ZERO(&rfds);
 	FD_SET(tapcfg->tap_fd, &rfds);
@@ -250,7 +250,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 }
 
 int
-tapcfg_can_write(tapcfg_t *tapcfg)
+tapcfg_wait_writable(tapcfg_t *tapcfg, int msec)
 {
 	fd_set wfds;
 	struct timeval tv;
@@ -262,8 +262,8 @@ tapcfg_can_write(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
+	tv.tv_sec = (msec / 1000);
+	tv.tv_usec = (msec % 1000) * 1000;
 
 	FD_ZERO(&wfds);
 	FD_SET(tapcfg->tap_fd, &wfds);

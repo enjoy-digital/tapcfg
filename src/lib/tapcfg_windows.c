@@ -328,7 +328,7 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 }
 
 int
-tapcfg_can_read(tapcfg_t *tapcfg)
+tapcfg_wait_readable(tapcfg_t *tapcfg, int msec)
 {
 	assert(tapcfg);
 
@@ -336,7 +336,7 @@ tapcfg_can_read(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	return tapcfg_wait_for_data(tapcfg, 0);
+	return tapcfg_wait_for_data(tapcfg, msec);
 }
 
 int
@@ -375,7 +375,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 }
 
 int
-tapcfg_can_write(tapcfg_t *tapcfg)
+tapcfg_wait_writable(tapcfg_t *tapcfg, int msec)
 {
 	assert(tapcfg);
 
