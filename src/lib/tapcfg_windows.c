@@ -189,6 +189,10 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 
 	/* Create the ANSI native version of the ifname for use in commands */
 	tapcfg->ansi_ifname = utf8_to_ansi(tapcfg->ifname);
+	if (!tapcfg->ansi_ifname) {
+		taplog_log(TAPLOG_ERR, "Interface name doesn't convert to local charset!\n");
+		return -1;
+	}
 
 	taplog_log(TAPLOG_DEBUG, "TAP adapter configured properly\n");
 	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'\n", tapcfg->ifname);
