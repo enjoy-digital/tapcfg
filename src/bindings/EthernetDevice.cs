@@ -138,7 +138,10 @@ namespace TAP {
 		private static extern void tapcfg_destroy(IntPtr tapcfg);
 
 		[DllImport("tapcfg")]
-		private static extern int tapcfg_start(IntPtr tapcfg, [MarshalAs(UnmanagedType.LPStr)] string ifname);
+		private static extern int tapcfg_start(IntPtr tapcfg,
+			[MarshalAs(UnmanagedType.CustomMarshaler,
+			           MarshalTypeRef = typeof(UTF8Marshaler))]
+			string ifname);
 		[DllImport("tapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
@@ -155,7 +158,8 @@ namespace TAP {
 		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
 		[DllImport("tapcfg")]
-		[return : MarshalAs(UnmanagedType.LPStr)]
+		[return : MarshalAs(UnmanagedType.CustomMarshaler,
+		                    MarshalTypeRef = typeof(UTF8Marshaler))]
 		private static extern string tapcfg_get_ifname(IntPtr tapcfg);
 
 		[DllImport("tapcfg")]
