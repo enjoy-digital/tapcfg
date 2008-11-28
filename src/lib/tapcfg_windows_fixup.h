@@ -209,15 +209,19 @@ get_panel_reg()
 		                   TAP_REGISTRY_KEY, (LPBYTE) connection_string);
 		} else {
 			struct panel_reg *reg;
+			int namelen;
 
 			reg = calloc(1, sizeof(struct panel_reg));
 			reg->guid = strdup(enum_name);
 
-			/* Make the UTF-16 to multibyte conversion */
-			reg->name = malloc(MAX_IFNAME);
-			WideCharToMultiByte(CP_ACP, 0,
+			/* Make the UTF-16 to UTF-8 conversion */
+			namelen = WideCharToMultiByte(CP_UTF8, 0,
+			                              (LPCWSTR) name_data, -1,
+			                              NULL, 0, NULL, NULL);
+			reg->name = malloc(namelen);
+			WideCharToMultiByte(CP_UTF8, 0,
 			                    (LPCWSTR) name_data, -1,
-			                    reg->name, MAX_IFNAME,
+			                    reg->name, namelen,
 			                    NULL, NULL);
 
 			/* Update the linked list */
@@ -248,14 +252,14 @@ free_panel_reg(struct panel_reg *panel_reg)
 	}
 }
 
-static int
-tapcfg_fixup_adapters(char *ifname, int ifnamelen)
+static char *
+tapcfg_fixup_adapters(const char *ifname)
 {
 	struct tap_reg *tap_reg = get_tap_reg(), *tr;
 	struct panel_reg *panel_reg = get_panel_reg(), *pr;
 	struct panel_reg *adapter = NULL;
 	unsigned int found=0, valid=0;
-	int ret = 0;
+	char *ret = NULL;
 
 	taplog_log(TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:\n");
 
@@ -306,16 +310,16 @@ tapcfg_fixup_adapters(char *ifname, int ifnamelen)
 		taplog_log(TAPLOG_DEBUG,
 		           "Using configured interface %s\n",
 		           ifname);
+		ret = strdup(ifname);
 	} else if (found == 0 && valid == 1 && adapter) {
 		taplog_log(TAPLOG_INFO,
 		           "Using adapter '%s' instead of '%s' because it was the only one found\n",
 		           adapter->name, ifname);
-		strncpy(ifname, adapter->name, ifnamelen-1);
+		ret = strdup(adapter->name);
 	} else {
 		taplog_log(TAPLOG_WARNING,
 		           "Found %u adapters, %u of which were valid, don't know what to use\n",
 		           found, valid);
-		ret = -1;
 	}
 
 	free_tap_reg(tap_reg);

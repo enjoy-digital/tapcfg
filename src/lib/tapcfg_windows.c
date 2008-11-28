@@ -42,8 +42,6 @@
 #define TAP_WINDOWS_MIN_MAJOR               8
 #define TAP_WINDOWS_MIN_MINOR               1
 
-#define MAX_IFNAME 128
-
 /* The fixup functions will use the defines, so this has to be here */
 #include "tapcfg_windows_fixup.h"
 
@@ -52,7 +50,8 @@ struct tapcfg_s {
 	int enabled;
 
 	HANDLE dev_handle;
-	char ifname[MAX_IFNAME];
+	char *ifname;
+	char *ansi_ifname;
 
 	int reading;
 	OVERLAPPED overlapped_in;
@@ -61,6 +60,33 @@ struct tapcfg_s {
 	char inbuf[TAPCFG_BUFSIZE];
 	DWORD inbuflen;
 };
+
+/* The resulting pointer must be freed after use! */
+static char *
+utf8_to_ansi(const char *str)
+{
+	int wclen, mblen;
+	WCHAR *wcstr;
+	BOOL failed;
+	char *ret;
+
+	wclen = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wcstr = malloc(sizeof(WCHAR) * wclen);
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, wcstr, wclen);
+
+	mblen = WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, NULL, 0, NULL, &failed);
+	if (failed) {
+		/* Invalid characters in input, conversion failed */
+		free(wcstr);
+		return NULL;
+	}
+
+	ret = malloc(sizeof(CHAR) * mblen);
+	WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, ret, mblen, NULL, NULL);
+	free(wcstr);
+
+	return ret;
+}
 
 tapcfg_t *
 tapcfg_init()
@@ -86,6 +112,10 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 {
 	if (tapcfg) {
 		tapcfg_stop(tapcfg);
+
+		free(tapcfg->ifname);
+		free(tapcfg->ansi_ifname);
+
 		CloseHandle(tapcfg->overlapped_in.hEvent);
 		CloseHandle(tapcfg->overlapped_out.hEvent);
 	}
@@ -147,14 +177,18 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 
 	assert(tapcfg);
 
-	if (ifname && strlen(ifname) < MAX_IFNAME) {
-		strncpy(tapcfg->ifname, ifname, MAX_IFNAME);
+	if (!ifname) {
+		ifname = "";
 	}
 
-	if (tapcfg_fixup_adapters(tapcfg->ifname, sizeof(tapcfg->ifname)) < 0) {
+	tapcfg->ifname = tapcfg_fixup_adapters(ifname);
+	if (!tapcfg->ifname) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;
 	}
+
+	/* Create the ANSI native version of the ifname for use in commands */
+	tapcfg->ansi_ifname = utf8_to_ansi(tapcfg->ifname);
 
 	taplog_log(TAPLOG_DEBUG, "TAP adapter configured properly\n");
 	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'\n", tapcfg->ifname);
@@ -508,7 +542,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ip set address \"%s\" static %s %u.%u.%u.%u\n",
-	         tapcfg->ifname, addrstr,
+	         tapcfg->ansi_ifname, addrstr,
 	         (mask >> 24) & 0xff,
 	         (mask >> 16) & 0xff,
 	         (mask >> 8)  & 0xff,
@@ -550,7 +584,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
-	         tapcfg->ifname, addrstr);
+	         tapcfg->ansi_ifname, addrstr);
 
 	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
 	if (system(buffer)) {
@@ -561,7 +595,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ipv6 add route %s/%d \"%s\"\n",
-	         addrstr, netbits, tapcfg->ifname);
+	         addrstr, netbits, tapcfg->ansi_ifname);
 
 	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
 	if (system(buffer)) {
