@@ -60,9 +60,6 @@ struct tapcfg_s {
 
 	char inbuf[TAPCFG_BUFSIZE];
 	DWORD inbuflen;
-
-	char outbuf[TAPCFG_BUFSIZE];
-	DWORD outbuflen;
 };
 
 tapcfg_t *
