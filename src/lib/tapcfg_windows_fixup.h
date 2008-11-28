@@ -41,11 +41,11 @@ get_tap_reg()
 	LONG status;
 	int i;
 
-	status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-	                      TAP_ADAPTER_KEY,
-	                      0,
-	                      KEY_READ,
-	                      &adapter_key);
+	status = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+	                       TAP_ADAPTER_KEY,
+	                       0,
+	                       KEY_READ,
+	                       &adapter_key);
 	if (status != ERROR_SUCCESS) {
 		taplog_log(TAPLOG_ERR,
 		           "Error opening registry key: %s\n",
@@ -62,8 +62,8 @@ get_tap_reg()
 		DWORD len;
 
 		len = sizeof(enum_name);
-		status = RegEnumKeyEx(adapter_key, i, enum_name,
-		                      &len, NULL, NULL, NULL, NULL);
+		status = RegEnumKeyExA(adapter_key, i, enum_name,
+		                       &len, NULL, NULL, NULL, NULL);
 		if (status == ERROR_NO_MORE_ITEMS) {
 			break;
 		} else if (status != ERROR_SUCCESS) {
@@ -75,8 +75,8 @@ get_tap_reg()
 
 		snprintf(unit_string, sizeof(unit_string),
 		         "%s\\%s", TAP_ADAPTER_KEY, enum_name);
-		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, unit_string,
-		                      0, KEY_READ, &unit_key);
+		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, unit_string,
+		                       0, KEY_READ, &unit_key);
 		if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_WARNING,
 			           "Error opening registry key: %s (t1)\n",
@@ -85,10 +85,10 @@ get_tap_reg()
 		}
 
 		len = sizeof(component_id);
-		status = RegQueryValueEx(unit_key, "ComponentId",
-					 NULL, &data_type,
-					 (LPBYTE) component_id,
-					 &len);
+		status = RegQueryValueExA(unit_key, "ComponentId",
+					  NULL, &data_type,
+					  (LPBYTE) component_id,
+		                          &len);
 		if (status != ERROR_SUCCESS || data_type != REG_SZ) {
 			taplog_log(TAPLOG_WARNING,
 				   "Error opening registry key: %s\\ComponentId (t2)\n",
@@ -97,10 +97,10 @@ get_tap_reg()
 			char net_cfg_instance_id[256];
 
 			len = sizeof(net_cfg_instance_id);
-			status = RegQueryValueEx(unit_key, "NetCfgInstanceId",
-						 NULL, &data_type,
-						 (LPBYTE) net_cfg_instance_id,
-						 &len);
+			status = RegQueryValueExA(unit_key, "NetCfgInstanceId",
+						  NULL, &data_type,
+						  (LPBYTE) net_cfg_instance_id,
+						  &len);
 
 			if (status == ERROR_SUCCESS && data_type == REG_SZ) {
 				/* The component ID is usually tap0801 or tap0901
@@ -155,11 +155,11 @@ get_panel_reg()
 	LONG status;
 	int i;
 
-	status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-	                      TAP_REGISTRY_KEY,
-	                      0,
-	                      KEY_READ,
-	                      &network_connections_key);
+	status = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+	                       TAP_REGISTRY_KEY,
+	                       0,
+	                       KEY_READ,
+	                       &network_connections_key);
 	if (status != ERROR_SUCCESS) {
 		taplog_log(TAPLOG_ERR,
 		           "Error opening registry key: %s (p0)\n",
@@ -171,13 +171,13 @@ get_panel_reg()
 		char enum_name[256];
 		char connection_string[256];
 		HKEY connection_key;
-		char name_data[256];
+		BYTE name_data[512];
 		DWORD name_type;
 		DWORD len;
 
 		len = sizeof(enum_name);
-		status = RegEnumKeyEx(network_connections_key, i, enum_name, &len,
-		                      NULL, NULL, NULL, NULL);
+		status = RegEnumKeyExA(network_connections_key, i, enum_name, &len,
+		                       NULL, NULL, NULL, NULL);
 		if (status == ERROR_NO_MORE_ITEMS) {
 			break;
 		} else if (status != ERROR_SUCCESS) {
@@ -191,8 +191,8 @@ get_panel_reg()
 
 		snprintf(connection_string, sizeof(connection_string),
 		         "%s\\%s\\Connection", TAP_REGISTRY_KEY, enum_name);
-		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, connection_string,
-		                      0, KEY_READ, &connection_key);
+		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, connection_string,
+		                       0, KEY_READ, &connection_key);
 		if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_WARNING,
 			           "Error opening registry key: %s (p2)\n",
@@ -201,9 +201,8 @@ get_panel_reg()
 		}
 
 		len = sizeof(name_data);
-		status = RegQueryValueEx(connection_key, "Name", NULL,
-		                         &name_type, (LPBYTE) name_data,
-		                         &len);
+		status = RegQueryValueExW(connection_key, L"Name", NULL,
+		                          &name_type, name_data, &len);
 		if (status != ERROR_SUCCESS || name_type != REG_SZ) {
 			taplog_log(TAPLOG_WARNING,
 			           "Error opening registry key: %s\\%s\\Name (p3)\n",
@@ -212,8 +211,14 @@ get_panel_reg()
 			struct panel_reg *reg;
 
 			reg = calloc(1, sizeof(struct panel_reg));
-			reg->name = strdup(name_data);
 			reg->guid = strdup(enum_name);
+
+			/* Make the UTF-16 to multibyte conversion */
+			reg->name = malloc(MAX_IFNAME);
+			WideCharToMultiByte(CP_ACP, 0,
+			                    (LPCWSTR) name_data, -1,
+			                    reg->name, MAX_IFNAME,
+			                    NULL, NULL);
 
 			/* Update the linked list */
 			if (!first) first = reg;

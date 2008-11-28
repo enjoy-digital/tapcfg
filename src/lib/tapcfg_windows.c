@@ -160,7 +160,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'\n", tapcfg->ifname);
 
 	/* Open registry and look for network adapters */
-	status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TAP_REGISTRY_KEY, 0, KEY_READ, &key);
+	status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, TAP_REGISTRY_KEY, 0, KEY_READ, &key);
 	if (status != ERROR_SUCCESS) {
 		taplog_log(TAPLOG_ERR, "Could not open the networking registry key\n");
 		return -1;
@@ -173,7 +173,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		DWORD len;
 
 		len = sizeof(adapterid);
-		status = RegEnumKeyEx(key, i, adapterid, &len, 0, 0, 0, NULL);
+		status = RegEnumKeyExA(key, i, adapterid, &len, 0, 0, 0, NULL);
 		if (status != ERROR_SUCCESS)
 			break;
 
