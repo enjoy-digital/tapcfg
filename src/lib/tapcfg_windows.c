@@ -574,7 +574,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 		return 0;
 	}
 
-	if (netbits == 0 || netbits > 64) {
+	if (netbits == 0 || netbits > 128) {
 		return -1;
 	}
 
@@ -604,7 +604,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv6 address\n");
+		           "Error trying to configure IPv6 route\n");
 		return -1;
 	}
 

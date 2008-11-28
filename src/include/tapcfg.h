@@ -168,7 +168,7 @@ int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netb
  * @param tapcfg is a pointer to an inited structure
  * @param addr is a string containing the address in standard numeric format
  * @param netbits is the number of bits in the netmask for this subnet,
- *        must be between [1, 64]
+ *        must be between [1, 128]
  */
 int tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
 
