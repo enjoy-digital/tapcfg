@@ -14,6 +14,7 @@
  */
 
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -27,6 +28,9 @@ namespace TAP {
 
 		public EthernetDevice() {
 			handle = tapcfg_init();
+			if (handle == IntPtr.Zero) {
+				throw new Exception("Error initializing the tapcfg library");
+			}
 		}
 
 		public void Start() {
@@ -36,7 +40,7 @@ namespace TAP {
 		public void Start(string deviceName) {
 			int ret = tapcfg_start(handle, deviceName);
 			if (ret < 0) {
-				/* Handle error in starting the device */
+				throw new Exception("Error starting the TAP device");
 			}
 		}
 
@@ -45,11 +49,9 @@ namespace TAP {
 
 			int ret = tapcfg_read(handle, buffer, buffer.Length);
 			if (ret < 0) {
-				/* Handle error in reading */
-				return null;
+				throw new IOException("Error reading Ethernet frame");
 			} else if (ret == 0) {
-				/* Handle EOF in reading */
-				return null;
+				throw new EndOfStreamException("Unexpected EOF");
 			}
 
 			return new EthernetFrame(buffer);
@@ -60,9 +62,10 @@ namespace TAP {
 
 			int ret = tapcfg_write(handle, buffer, buffer.Length);
 			if (ret < 0) {
-				/* Handle error in writing */
+				throw new IOException("Error writing Ethernet frame");
 			} else if (ret != buffer.Length) {
-				/* Handle not full write */
+				/* This shouldn't be possible, writes are blocking */
+				throw new IOException("Incomplete write writing Ethernet frame");
 			}
 		}
 
@@ -85,7 +88,7 @@ namespace TAP {
 				}
 
 				if (ret < 0) {
-					/* Handle error in changing the status */
+					throw new Exception("Error changing TAP interface status");
 				}
 			}
 		}
@@ -106,7 +109,7 @@ namespace TAP {
 			}
 
 			if (ret < 0) {
-				/* Handle error in setting the address */
+				throw new Exception("Error setting IP address: " + address.ToString());
 			}
 		}
 
