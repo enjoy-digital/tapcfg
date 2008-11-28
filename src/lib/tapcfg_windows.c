@@ -517,7 +517,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
-tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
+tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
 	unsigned int mask;
@@ -564,7 +564,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 
 #ifndef DISABLE_IPV6
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];
 
@@ -574,7 +574,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 		return 0;
 	}
 
-	if (netbits == 0 || netbits > 128) {
+	if (netbits == 0 || netbits > 64) {
 		return -1;
 	}
 
@@ -612,7 +612,7 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
 }
 #else
 int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, char *addrstr, unsigned char netbits)
+tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
 	/* Always return an error */
 	return -1;

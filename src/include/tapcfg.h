@@ -21,7 +21,7 @@ void taplog_set_level(int level);
 /**
  * Typedef to the structure used by the library, should never
  * be accessed directly.
- *
+ */
 typedef struct tapcfg_s tapcfg_t;
 
 /**

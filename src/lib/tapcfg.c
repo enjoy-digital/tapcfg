@@ -28,7 +28,7 @@
 
 #define TAPCFG_BUFSIZE 2048
 
-static int tapcfg_address_is_valid(int family, char *addr) {
+static int tapcfg_address_is_valid(int family, const char *addr) {
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo hints, *res;
 
