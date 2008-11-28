@@ -12,9 +12,12 @@ if GetOption('mingw'):
 
 conf = Configure(env)
 conf.CheckLib('socket')
-conf.CheckLib('ws2_32')
-if conf.CheckFunc('getaddrinfo'):
+if conf.CheckLibWithHeader('ws2_32', 'ws2tcpip.h','c','getaddrinfo(0,0,0,0);'):
 	env.Append(CPPDEFINES = ['HAVE_GETADDRINFO'])
+else:
+	if conf.CheckLib('ws2_32'):
+		# We have windows socket lib without getaddrinfo, disable IPv6
+		env.Append(CPPDEFINES = ['DISABLE_IPV6'])
 env = conf.Finish()
 
 env.SConscript('src/SConscript', exports='env')
