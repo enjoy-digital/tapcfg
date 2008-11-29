@@ -165,6 +165,20 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 		ret = -1;
 	}
 
+	taplog_log(TAPLOG_INFO,
+	           "Resetting the MTU (it's ok if this fails)\n");
+
+	snprintf(buffer, sizeof(buffer)-1,
+	         "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent\n",
+	         tapcfg->ansi_ifname, 1500);
+
+	taplog_log(TAPLOG_INFO, "Running command: %s\n", buffer);
+	if (system(buffer)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to reset the MTU\n");
+		ret = -1;
+	}
+
 	return ret;
 }
 
@@ -538,7 +552,7 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 	buffer[sizeof(buffer)-1] = '\0';
 
 	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ip set subinterface \"%s\" mtu=%u\n",
+	         "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent\n",
 	         tapcfg->ansi_ifname, mtu);
 
 	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
