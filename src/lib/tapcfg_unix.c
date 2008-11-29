@@ -353,6 +353,46 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
+tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
+{
+	char buffer[1024];
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	/* 84 is minimum MTU from RFC 791, we limit the upper
+	 * MTU by our internal buffer size minus max header */
+	if (mtu < 68 || mtu > (TAPCFG_BUFSIZE - 22)) {
+		return -1;
+	}
+
+	/* Make sure the string always ends in null byte */
+	buffer[sizeof(buffer)-1] = '\0';
+
+#ifdef __linux__
+	snprintf(buffer, sizeof(buffer)-1,
+	         "ip link set mtu %u dev %s",
+	         mtu, tapcfg->ifname);
+#else /* BSD */
+	snprintf(buffer, sizeof(buffer)-1,
+	         "ifconfig %s mtu %u",
+	         tapcfg->ifname, mtu);
+#endif
+
+	if (system(buffer)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error setting the MTU for device: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
 	char buffer[1024];

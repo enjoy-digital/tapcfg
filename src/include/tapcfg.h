@@ -153,6 +153,16 @@ int tapcfg_iface_get_status(tapcfg_t *tapcfg);
 int tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled);
 
 /**
+ * Set the maximum transfer unit for the device if possible, this function
+ * will fail on some systems like Windows 2000 or Windows XP and that is ok.
+ * The IP stack on those platforms doesn't support dynamic MTU and it should
+ * not cause trouble in any other functionality.
+ * @param tapcfg is a pointer to an inited structure
+ * @param mtu is the new maximum transfer unit after calling the function
+ */
+int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
+
+/**
  * Set the IPv4 address and netmask of the interface and update
  * the routing tables accordingly.
  * @param tapcfg is a pointer to an inited structure

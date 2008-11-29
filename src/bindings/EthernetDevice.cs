@@ -21,7 +21,8 @@ using System.Runtime.InteropServices;
 
 namespace TAP {
 	public class EthernetDevice : IDisposable {
-		private const int MTU = 1522;
+		/* Default MTU 1500 in all systems */
+		private int _MTU = 1500;
 
 		private IntPtr handle;
 		private bool disposed = false;
@@ -45,7 +46,8 @@ namespace TAP {
 		}
 
 		public EthernetFrame Read() {
-			byte[] buffer = new byte[MTU];
+			/* Maximum buffer is MTU plus 22 byte maximum header size */
+			byte[] buffer = new byte[_MTU + 22];
 
 			int ret = tapcfg_read(handle, buffer, buffer.Length);
 			if (ret < 0) {
@@ -95,6 +97,20 @@ namespace TAP {
 
 		public string DeviceName {
 			get { return tapcfg_get_ifname(handle); }
+		}
+
+		public int MTU {
+			get {
+				return _MTU;
+			}
+			set {
+				int ret = tapcfg_iface_set_mtu(handle, value);
+				if (ret < 0) {
+					throw new Exception("Error setting the new MTU value");
+				}
+
+				_MTU = value;
+			}
 		}
 
 		public void SetAddress(IPAddress address, byte netbits) {
@@ -147,9 +163,9 @@ namespace TAP {
 
 /*
 		[DllImport("tapcfg")]
-		private static extern int tapcfg_can_read(IntPtr tapcfg);
+		private static extern int tapcfg_wait_readable(IntPtr tapcfg, int msec);
 		[DllImport("tapcfg")]
-		private static extern int tapcfg_can_write(IntPtr tapcfg);
+		private static extern int tapcfg_wait_writable(IntPtr tapcfg, int msec);
 */
 
 		[DllImport("tapcfg")]
@@ -166,6 +182,8 @@ namespace TAP {
 		private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
+		[DllImport("tapcfg")]
+		private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 		[DllImport("tapcfg")]

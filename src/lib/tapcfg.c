@@ -26,7 +26,7 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
-#define TAPCFG_BUFSIZE 2048
+#define TAPCFG_BUFSIZE 4096
 
 static int tapcfg_address_is_valid(int family, const char *addr) {
 #ifdef HAVE_GETADDRINFO

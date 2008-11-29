@@ -8,6 +8,7 @@ public class TAPCfgTest {
 		EthernetDevice dev = new EthernetDevice();
 		dev.Start();
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
+		dev.MTU = 1280;
 		dev.SetAddress(IPAddress.Parse("192.168.1.1"), 16);
 		dev.SetAddress(IPAddress.Parse("fc00::1"), 64);
 		dev.Enabled = true;
