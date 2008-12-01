@@ -14,8 +14,8 @@
 #include <ws2tcpip.h>
 
 typedef HANDLE thread_handle_t;
-typedef DWORD WINAPI thread_type_t;
 
+#define THREAD_RETVAL DWORD WINAPI
 #define THREAD_CREATE(handle, func, arg) \
 	handle = CreateThread(NULL, 0, func, arg, 0, NULL)
 
@@ -32,8 +32,8 @@ typedef HANDLE mutex_handle_t;
 #include <netinet/in.h>
 
 typedef pthread_t thread_handle_t;
-typedef void * thread_type_t;
 
+#define THREAD_RETVAL void *
 #define THREAD_CREATE(handle, func, arg) \
 	if (pthread_create(&(handle), NULL, func, arg)) handle = 0
 
@@ -102,7 +102,7 @@ remove_client(tapserver_t *server, int idx) {
 	server->clients--;
 }
 
-static thread_type_t
+static THREAD_RETVAL
 reader_thread(void *arg)
 {
 	tapserver_t *server = arg;
@@ -151,7 +151,7 @@ reader_thread(void *arg)
 	return 0;
 }
 
-static thread_type_t
+static THREAD_RETVAL
 writer_thread(void *arg)
 {
 	tapserver_t *server = arg;
@@ -278,6 +278,8 @@ int main() {
 	tapserver_t *server;
 
 #ifdef _WIN32
+#define sleep(x) Sleep((x)*1000)
+
 	WORD wVersionRequested;
 	WSADATA wsaData;
 	int ret;
@@ -287,13 +289,13 @@ int main() {
 	ret = WSAStartup(wVersionRequested, &wsaData);
 	if (ret) {
 		/* Couldn't find WinSock DLL */
-		return NULL;
+		return -1;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 ||
 	    HIBYTE(wsaData.wVersion) != 2) {
 		/* Version mismatch, requested version not found */
-		return NULL;;
+		return -1;
 	}
 #endif
 
