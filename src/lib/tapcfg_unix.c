@@ -78,6 +78,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	int tap_fd = -1;
 #ifdef __linux__
 	struct ifreq ifr;
+	int ret;
 #else /* BSD */
 	char buf[128];
 	int i;
@@ -108,7 +109,15 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	if (ifname && strlen(ifname) < IFNAMSIZ) {
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 	}
-	if (ioctl(tap_fd, TUNSETIFF, &ifr) == -1) {
+	ret = ioctl(tap_fd, TUNSETIFF, &ifr);
+
+	if (ret == -1 && errno == EINVAL) {
+		/* Try again without device name */
+		memset(&ifr, 0, sizeof(ifr));
+		ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+		ret = ioctl(tap_fd, TUNSETIFF, &ifr);
+	}
+	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error setting the interface: %s\n",
 		           strerror(errno));
