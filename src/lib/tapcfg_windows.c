@@ -519,7 +519,17 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
-	return 0;
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	if (mtu < 68 || mtu > (TAPCFG_BUFSIZE - 22)) {
+		return -1;
+	}
+
+	return -1;
 }
 
 int
