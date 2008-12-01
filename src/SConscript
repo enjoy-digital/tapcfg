@@ -24,16 +24,17 @@ asm = env.CLILibrary('bindings/TAP', ['bindings/EthernetDevice.cs','bindings/Eth
 prog = env.CLIProgram('bindings/TAPCfgTest', ['bindings/TAPCfgTest.cs'], CILLIBS=asm)
 
 # Set up the environment for compiling the demo tests
-demoenv = env.Clone()
-conf = Configure(demoenv)
+appenv = env.Clone()
+conf = Configure(appenv)
 conf.CheckLib('pthread')
-demoenv = conf.Finish()
-demoenv.Append(LIBPATH = ['lib'])
-demoenv.Prepend(LIBS = ['tapcfg'])
+appenv = conf.Finish()
+appenv.Append(LIBPATH = ['lib'])
+appenv.Prepend(LIBS = ['tapcfg'])
 
 # Compile the demo test executables
-listener = demoenv.Object('demos/listener.c')
-demoenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
-demoenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)
-demoenv.Program('demos/test_forwarder', [listener,'demos/test_forwarder.c'], install=False)
+listener = appenv.Object('demos/listener.c')
+appenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
+appenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)
+appenv.Program('demos/test_forwarder', [listener,'demos/test_forwarder.c'], install=False)
+appenv.Program('daemon/tapserver', ['daemon/tapserver.c'], install=False)
 
