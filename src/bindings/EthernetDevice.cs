@@ -106,7 +106,7 @@ namespace TAP {
 			set {
 				int ret = tapcfg_iface_set_mtu(handle, value);
 				if (ret >= 0) {
-					_MTU = value
+					_MTU = value;
 				}
 			}
 		}
