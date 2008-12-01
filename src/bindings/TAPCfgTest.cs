@@ -6,7 +6,7 @@ using System.Net;
 public class TAPCfgTest {
 	private static void Main(string[] args) {
 		EthernetDevice dev = new EthernetDevice();
-		dev.Start();
+		dev.Start("Device name");
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
 		dev.MTU = 1280;
 		dev.SetAddress(IPAddress.Parse("192.168.1.1"), 16);

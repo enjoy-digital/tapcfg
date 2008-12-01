@@ -15,14 +15,11 @@
 
 using System;
 using System.Text;
-using System.Collections;
 using System.Runtime.InteropServices;
 
 namespace TAP {
 	public class UTF8Marshaler : ICustomMarshaler {
 		static UTF8Marshaler marshaler = new UTF8Marshaler();
-
-		private Hashtable allocated = new Hashtable();
 
 		public static ICustomMarshaler GetInstance(string cookie) {
 			return marshaler;
@@ -32,8 +29,6 @@ namespace TAP {
 		}
 
 		public void CleanUpNativeData(IntPtr pNativeData) {
-			/* This is a hack not to crash on mono!!! */
-			Console.WriteLine("Freeing pointer: " + pNativeData);
 			Marshal.FreeHGlobal(pNativeData);
 		}
 
@@ -51,11 +46,6 @@ namespace TAP {
 			int size = Marshal.SizeOf(typeof(byte)) * (array.Length + 1);
 
 			IntPtr ptr = Marshal.AllocHGlobal(size);
-			Console.WriteLine("Allocated pointer: " + ptr);
-
-			/* This is a hack not to crash on mono!!! */
-			allocated.Add(ptr, null);
-
 			Marshal.Copy(array, 0, ptr, array.Length);
 			Marshal.WriteByte(ptr, array.Length, 0);
 
@@ -63,7 +53,6 @@ namespace TAP {
 		}
 
 		public object MarshalNativeToManaged(IntPtr pNativeData) {
-			Console.WriteLine("Marshaling pointer: " + pNativeData);
 			if (pNativeData == IntPtr.Zero)
 				return null;
 
