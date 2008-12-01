@@ -20,10 +20,17 @@
 #include "taplog.h"
 
 static int taplog_level = TAPLOG_INFO;
+static taplog_callback_t callback = NULL;
 
 void
 taplog_set_level(int level) {
 	taplog_level = level;
+}
+
+void
+taplog_set_callback(taplog_callback_t cb)
+{
+	callback = cb;
 }
 
 void
@@ -40,7 +47,11 @@ taplog_log(int level, const char *fmt, ...)
 	vsnprintf(buffer, sizeof(buffer)-1, fmt, ap);
 	va_end(ap);
 
-	fprintf(stderr, buffer);
+	if (callback) {
+		callback(buffer);
+	} else {
+		fprintf(stderr, buffer);
+	}
 }
 
 void

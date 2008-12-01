@@ -11,12 +11,22 @@
 #define TAPLOG_INFO        6       /* informational */
 #define TAPLOG_DEBUG       7       /* debug-level messages */
 
+typedef void (*taplog_callback_t)(char *msg);
+
 /**
  * Set the current logging level, all messages with lower
  * significance than the set level will be ignored.
  * @param level is the new level of logging
  */
 void taplog_set_level(int level);
+
+/**
+ * Set callback to receive all the messages to be logged.
+ * If not called at all or called with null parameter, then
+ * all messages will be printed to stderr stream.
+ * @param cb is the callback function for logging
+ */
+void taplog_set_callback(taplog_callback_t cb);
 
 /**
  * Typedef to the structure used by the library, should never
