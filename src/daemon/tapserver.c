@@ -18,6 +18,7 @@ typedef HANDLE thread_handle_t;
 #define THREAD_RETVAL DWORD WINAPI
 #define THREAD_CREATE(handle, func, arg) \
 	handle = CreateThread(NULL, 0, func, arg, 0, NULL)
+#define THREAD_JOIN(handle) WaitForSingleObject(handle, INFINITE)
 
 typedef HANDLE mutex_handle_t;
 
@@ -36,6 +37,7 @@ typedef pthread_t thread_handle_t;
 #define THREAD_RETVAL void *
 #define THREAD_CREATE(handle, func, arg) \
 	if (pthread_create(&(handle), NULL, func, arg)) handle = 0
+#define THREAD_JOIN(handle) pthread_join(handle, NULL)
 
 typedef pthread_mutex_t mutex_handle_t;
 
@@ -112,7 +114,11 @@ reader_thread(void *arg)
 	int i, tmp;
 
 	assert(server);
-	assert(tapcfg);
+
+	/* If we don't have tapcfg, finish the thread */
+	if (!tapcfg) {
+		return 0;
+	}
 
 	do {
 		while (tapcfg_wait_writable(tapcfg, server->waitms)) {
@@ -267,10 +273,19 @@ tapserver_start(tapserver_t *server)
 
 	server->server_fd = create_server(&port, 0, 1);
 
-	if (server->tapcfg) {
-		THREAD_CREATE(server->reader, reader_thread, server);
-	}
+	THREAD_CREATE(server->reader, reader_thread, server);
 	THREAD_CREATE(server->writer, writer_thread, server);
+}
+
+int
+tapserver_stop(tapserver_t *server)
+{
+	MUTEX_LOCK(server->mutex);
+	server->running = 0;
+	MUTEX_UNLOCK(server->mutex);
+
+	THREAD_JOIN(server->reader);
+	THREAD_JOIN(server->writer);
 }
 
 int main() {
@@ -303,6 +318,7 @@ int main() {
 	server = tapserver_init(tapcfg, 1000);
 	tapserver_start(server);
 	sleep(10);
+	tapserver_stop(server);
 	tapserver_destroy(server);
 
 #ifdef _WIN32
