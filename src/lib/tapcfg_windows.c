@@ -519,7 +519,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
-	return -1;
+	return 0;
 }
 
 int
