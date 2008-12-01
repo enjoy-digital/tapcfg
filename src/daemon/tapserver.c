@@ -121,7 +121,7 @@ reader_thread(void *arg)
 	}
 
 	do {
-		while (tapcfg_wait_writable(tapcfg, server->waitms)) {
+		while (tapcfg_wait_readable(tapcfg, server->waitms)) {
 			int len;
 
 			len = tapcfg_read(tapcfg, buf, sizeof(buf));
