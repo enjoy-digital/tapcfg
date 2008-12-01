@@ -72,6 +72,15 @@ namespace TAP {
 			}
 		}
 
+		public bool WaitReadable(int msec) {
+			int ret = tapcfg_wait_readable(handle, msec);
+			if (ret != 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
 		public EthernetFrame Read() {
 			/* Maximum buffer is MTU plus 22 byte maximum header size */
 			byte[] buffer = new byte[_MTU + 22];
@@ -84,6 +93,15 @@ namespace TAP {
 			}
 
 			return new EthernetFrame(buffer);
+		}
+
+		public bool WaitWritable(int msec) {
+			int ret = tapcfg_wait_writable(handle, msec);
+			if (ret != 0) {
+				return true;
+			} else {
+				return false;
+			}
 		}
 
 		public void Write(EthernetFrame frame) {
@@ -186,12 +204,10 @@ namespace TAP {
 		[DllImport("tapcfg")]
 		private static extern void tapcfg_stop(IntPtr tapcfg);
 
-/*
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_wait_readable(IntPtr tapcfg, int msec);
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_wait_writable(IntPtr tapcfg, int msec);
-*/
 
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
