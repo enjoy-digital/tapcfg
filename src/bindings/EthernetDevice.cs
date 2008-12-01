@@ -20,26 +20,10 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace TAP {
-	public class EthernetLogger {
-		private LogCallback callback;
-
-		public EthernetLogger() {
-			callback = new LogCallback(LogMessage);
-			taplog_set_callback(callback);
-		}
-
-		private void LogMessage(string msg) {
-			Console.Write(msg);
-		}
-
-		private delegate void LogCallback(
-			[MarshalAs(UnmanagedType.CustomMarshaler,
-			           MarshalTypeRef = typeof(UTF8Marshaler))]
-			string msg);
-
-		[DllImport("tapcfg")]
-		private static extern IntPtr taplog_set_callback(LogCallback cb);
-	}
+	public delegate void EthernetLogCallback(
+		[MarshalAs(UnmanagedType.CustomMarshaler,
+			   MarshalTypeRef = typeof(UTF8Marshaler))]
+		string msg);
 
 	public class EthernetDevice : IDisposable {
 		/* Default MTU 1500 in all systems */
@@ -48,11 +32,21 @@ namespace TAP {
 		private IntPtr handle;
 		private bool disposed = false;
 
-		private static EthernetLogger logger;
+		private static EthernetLogCallback logger;
+		public static EthernetLogCallback LogCallback {
+			set {
+				logger = value;
+				taplog_set_callback(logger);
+			}
+		}
+
+		private static void defaultCallback(string msg) {
+			Console.WriteLine(msg);
+		}
 
 		public EthernetDevice() {
 			if (logger == null) {
-				logger = new EthernetLogger();
+				logger = new EthernetLogCallback(defaultCallback);
 			}
 
 			handle = tapcfg_init();
@@ -190,6 +184,9 @@ namespace TAP {
 				disposed = true;
 			}
 		}
+
+		[DllImport("tapcfg")]
+		private static extern void taplog_set_callback(EthernetLogCallback cb);
 
 		[DllImport("tapcfg")]
 		private static extern IntPtr tapcfg_init();
