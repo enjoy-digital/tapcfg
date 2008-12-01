@@ -33,13 +33,8 @@ namespace TAP {
 
 		public void CleanUpNativeData(IntPtr pNativeData) {
 			/* This is a hack not to crash on mono!!! */
-			if (allocated.Contains(pNativeData)) {
-				Marshal.FreeHGlobal(pNativeData);
-				allocated.Remove(pNativeData);
-			} else {
-				Console.WriteLine("WARNING: Trying to free an unallocated pointer!");
-				Console.WriteLine("         This is most likely a bug in mono");
-			}
+			Console.WriteLine("Freeing pointer: " + pNativeData);
+			Marshal.FreeHGlobal(pNativeData);
 		}
 
 		public int GetNativeDataSize() {
@@ -56,6 +51,7 @@ namespace TAP {
 			int size = Marshal.SizeOf(typeof(byte)) * (array.Length + 1);
 
 			IntPtr ptr = Marshal.AllocHGlobal(size);
+			Console.WriteLine("Allocated pointer: " + ptr);
 
 			/* This is a hack not to crash on mono!!! */
 			allocated.Add(ptr, null);
@@ -67,6 +63,7 @@ namespace TAP {
 		}
 
 		public object MarshalNativeToManaged(IntPtr pNativeData) {
+			Console.WriteLine("Marshaling pointer: " + pNativeData);
 			if (pNativeData == IntPtr.Zero)
 				return null;
 

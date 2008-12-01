@@ -165,20 +165,6 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 		ret = -1;
 	}
 
-	taplog_log(TAPLOG_INFO,
-	           "Resetting the MTU (it's ok if this fails)\n");
-
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent\n",
-	         tapcfg->ansi_ifname, 1500);
-
-	taplog_log(TAPLOG_INFO, "Running command: %s\n", buffer);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to reset the MTU\n");
-		ret = -1;
-	}
-
 	return ret;
 }
 
@@ -530,39 +516,10 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	return 0;
 }
 
-/* XXX: This function is untested, since I don't have Vista */
 int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
-	char buffer[1024];
-
-	assert(tapcfg);
-
-	if (!tapcfg->started) {
-		return 0;
-	}
-
-	/* 84 is minimum MTU from RFC 791, we limit the upper
-	 * MTU by our internal buffer size minus max header */
-	if (mtu < 68 || mtu > (TAPCFG_BUFSIZE - 22)) {
-		return -1;
-	}
-
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent\n",
-	         tapcfg->ansi_ifname, mtu);
-
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error setting MTU for the device\n");
-		return -1;
-	}
-
-	return 0;
+	return -1;
 }
 
 int
