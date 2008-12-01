@@ -127,8 +127,8 @@ int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
  * was available for use.
  * @param tapcfg is a pointer to an inited structure
  * @return Pointer to a character array containing the interface
- *         name in UTF-8 encoding, should not be freed by the
- *         caller application! NULL if the device is not started.
+ *         name in UTF-8 encoding, should be freed by the caller
+ *         application after use! NULL if the device is not started.
  */
 const char *tapcfg_get_ifname(tapcfg_t *tapcfg);
 

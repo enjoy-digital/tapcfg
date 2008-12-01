@@ -475,7 +475,7 @@ tapcfg_get_ifname(tapcfg_t *tapcfg)
 		return NULL;
 	}
 
-	return tapcfg->ifname;
+	return strdup(tapcfg->ifname);
 }
 
 int
