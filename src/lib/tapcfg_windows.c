@@ -568,7 +568,13 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	         (mask >> 8)  & 0xff,
 	         mask & 0xff);
 
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
+	taplog_log(TAPLOG_INFO, "Running netsh command: "
+	           "netsh interface ip set address \"%s\" static %s %u.%u.%u.%u\n",
+	           tapcfg->ifname, addrstr,
+	           (mask >> 24) & 0xff,
+	           (mask >> 16) & 0xff,
+	           (mask >> 8)  & 0xff,
+	           mask & 0xff);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to configure IPv4 address\n");
@@ -606,7 +612,9 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
 	         tapcfg->ansi_ifname, addrstr);
 
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
+	taplog_log(TAPLOG_INFO, "Running netsh command: "
+	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
+	         tapcfg->ifname, addrstr);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to configure IPv6 address\n");
@@ -617,7 +625,9 @@ tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	         "netsh interface ipv6 add route %s/%d \"%s\"\n",
 	         addrstr, netbits, tapcfg->ansi_ifname);
 
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
+	taplog_log(TAPLOG_INFO, "Running netsh command: "
+	         "netsh interface ipv6 add route %s/%d \"%s\"\n",
+	         addrstr, netbits, tapcfg->ifname);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to configure IPv6 route\n");
