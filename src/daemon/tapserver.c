@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#include "tapcfg.h"
+#include "tapserver.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -58,6 +58,8 @@ struct tapserver_s {
 	unsigned short server_port;
 
 	int running;
+	mutex_handle_t run_mutex;
+
 	int max_clients;
 	tapcfg_t *tapcfg;
 	int waitms;
@@ -69,7 +71,6 @@ struct tapserver_s {
 	thread_handle_t reader;
 	thread_handle_t writer;
 };
-typedef struct tapserver_s tapserver_t;
 
 
 tapserver_t *
@@ -81,6 +82,7 @@ tapserver_init(tapcfg_t *tapcfg, int waitms)
 	ret->max_clients = MAX_CLIENTS;
 	ret->tapcfg = tapcfg;
 	ret->waitms = waitms;
+	MUTEX_CREATE(ret->run_mutex);
 	MUTEX_CREATE(ret->mutex);
 
 	return ret;
@@ -90,11 +92,26 @@ void
 tapserver_destroy(tapserver_t *server)
 {
 	MUTEX_DESTROY(server->mutex);
+	MUTEX_DESTROY(server->run_mutex);
 	free(server);
 }
 
+int
+tapserver_add_client(tapserver_t *server, int fd)
+{
+	MUTEX_LOCK(server->mutex);
+	if (server->clients >= server->max_clients) {
+		MUTEX_UNLOCK(server->mutex);
+		return -1;
+	}
+	server->clienttab[server->clients] = fd;
+	server->clients++;
+	MUTEX_UNLOCK(server->mutex);
+}
+
 static void
-remove_client(tapserver_t *server, int idx) {
+remove_client(tapserver_t *server, int idx)
+{
 	assert(server);
 	assert(idx < server->clients);
 
@@ -158,9 +175,9 @@ reader_thread(void *arg)
 			MUTEX_UNLOCK(server->mutex);
 		}
 
-		MUTEX_LOCK(server->mutex);
+		MUTEX_LOCK(server->run_mutex);
 		running = server->running;
-		MUTEX_UNLOCK(server->mutex);
+		MUTEX_UNLOCK(server->run_mutex);
 	} while (running);
 
 	printf("Stopping reader thread\n");
@@ -232,7 +249,9 @@ writer_thread(void *arg)
 			if (tapcfg) {
 				tmp = tapcfg_write(tapcfg, buf, len);
 				if (tmp <= 0) {
+					MUTEX_LOCK(server->run_mutex);
 					server->running = 0;
+					MUTEX_UNLOCK(server->run_mutex);
 					MUTEX_UNLOCK(server->mutex);
 					goto exit;
 				}
@@ -254,6 +273,7 @@ writer_thread(void *arg)
 				}
 			}
 		}
+		MUTEX_UNLOCK(server->mutex);
 
 		/* Accept a client and add it to the client table */
 		if (FD_ISSET(server->server_fd, &rfds)) {
@@ -269,17 +289,16 @@ writer_thread(void *arg)
 					   &caddr_size);
 			if (client_fd == -1) {
 				/* XXX: This error should definitely be reported */
-				MUTEX_UNLOCK(server->mutex);
 				goto exit;
 			}
 			printf("Accepted a new client\n");
 
-			server->clienttab[server->clients] = client_fd;
-			server->clients++;
+			tapserver_add_client(server, client_fd);
 		}
 
+		MUTEX_LOCK(server->run_mutex);
 		running = server->running;
-		MUTEX_UNLOCK(server->mutex);
+		MUTEX_UNLOCK(server->run_mutex);
 	} while (running);
 
 exit:
@@ -288,7 +307,7 @@ exit:
 	return 0;
 }
 
-int
+void
 tapserver_start(tapserver_t *server)
 {
 	unsigned short port = 1234;
@@ -300,80 +319,14 @@ tapserver_start(tapserver_t *server)
 	THREAD_CREATE(server->writer, writer_thread, server);
 }
 
-int
+void
 tapserver_stop(tapserver_t *server)
 {
-	MUTEX_LOCK(server->mutex);
+	MUTEX_LOCK(server->run_mutex);
 	server->running = 0;
-	MUTEX_UNLOCK(server->mutex);
+	MUTEX_UNLOCK(server->run_mutex);
 
 	THREAD_JOIN(server->reader);
 	THREAD_JOIN(server->writer);
-}
-
-int main() {
-	tapcfg_t *tapcfg;
-	tapserver_t *server;
-	char buffer[256];
-	int id;
-
-#ifdef _WIN32
-#define sleep(x) Sleep((x)*1000)
-
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	int ret;
-
-	wVersionRequested = MAKEWORD(2, 2);
-
-	ret = WSAStartup(wVersionRequested, &wsaData);
-	if (ret) {
-		/* Couldn't find WinSock DLL */
-		return -1;
-	}
-
-	if (LOBYTE(wsaData.wVersion) != 2 ||
-	    HIBYTE(wsaData.wVersion) != 2) {
-		/* Version mismatch, requested version not found */
-		return -1;
-	}
-#endif
-
-	tapcfg = tapcfg_init();
-	if (!tapcfg)
-		return -1;
-	if (tapcfg_start(tapcfg, NULL)) {
-		tapcfg_destroy(tapcfg);
-		return -1;
-	}
-
-	srand(time(NULL));
-	id = rand()%0x1000;
-
-	sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
-	printf("Selected IPv4 address: %s\n", buffer);
-	tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
-
-	sprintf(buffer, "fc00::%x", id&0xffff);
-	printf("Selected IPv6 address: %s\n", buffer);
-	tapcfg_iface_add_ipv6(tapcfg, buffer, 64);
-
-	server = tapserver_init(tapcfg, 1000);
-
-	tapcfg_iface_change_status(tapcfg, 1);
-	tapserver_start(server);
-	while (1) {
-		sleep(10);
-	}
-
-	tapserver_stop(server);
-	tapserver_destroy(server);
-	tapcfg_destroy(tapcfg);
-
-#ifdef _WIN32
-	WSACleanup();
-#endif
-
-	return 0;
 }
 
