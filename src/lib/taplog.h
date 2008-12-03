@@ -16,7 +16,6 @@
 #ifndef TAPLOG_H
 #define TAPLOG_H
 
-void taplog_set_level(int level);
 void taplog_log(int level, const char *fmt, ...);
 void taplog_log_ethernet_info(unsigned char *buffer, int len);
 
