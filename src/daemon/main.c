@@ -22,6 +22,7 @@ static void usage(char *prog)
 int main(int argc, char *argv[]) {
 	tapcfg_t *tapcfg = NULL;
 	tapserver_t *server = NULL;
+	unsigned short port = 0;
 	char buffer[256];
 	int listen = 1;
 	int id;
@@ -62,6 +63,11 @@ int main(int argc, char *argv[]) {
 		printf("Invalid command: \"%s\"\n", argv[1]);
 		usage(argv[0]);
 		return -1;
+	}
+
+	if (!strcmp(argv[1], "server") ||
+	    !strcmp(argv[1], "forwarder")) {
+		port = atoi(argv[2]);
 	}
 
 	if (!strcmp(argv[1], "server") || !strcmp(argv[1], "client")) {
@@ -131,7 +137,7 @@ int main(int argc, char *argv[]) {
 		tapcfg_iface_change_status(tapcfg, 1);
 	}
 
-	tapserver_start(server, listen);
+	tapserver_start(server, port, listen);
 	while (1) {
 		sleep(10);
 	}

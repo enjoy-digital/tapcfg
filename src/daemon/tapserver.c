@@ -311,10 +311,8 @@ exit:
 }
 
 void
-tapserver_start(tapserver_t *server, int listen)
+tapserver_start(tapserver_t *server, unsigned short port, int listen)
 {
-	unsigned short port = 1234;
-
 	server->listening = 0;
 	if (listen) {
 		server->server_fd = create_server(&port, 0, 1);
