@@ -5,6 +5,7 @@ AddOption('--force-mingw',
 
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
+env.Append(CFLAGS = ['-Wall', '-Werror', '-g'])
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])

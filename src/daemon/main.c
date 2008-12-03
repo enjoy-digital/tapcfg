@@ -5,11 +5,17 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "tapserver.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
-#include "tapserver.h"
+#endif
 
 static void usage(char *prog)
 {

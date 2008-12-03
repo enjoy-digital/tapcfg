@@ -31,10 +31,6 @@ appenv = conf.Finish()
 appenv.Append(LIBPATH = ['lib'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
-# Compile the demo test executables
-listener = appenv.Object('demos/listener.c')
-appenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
-appenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)
-appenv.Program('demos/test_forwarder', [listener,'demos/test_forwarder.c'], install=False)
+# Compile the daemon for testing
 appenv.Program('daemon/tapserver', ['daemon/tapserver.c','daemon/main.c'], install=False)
 
