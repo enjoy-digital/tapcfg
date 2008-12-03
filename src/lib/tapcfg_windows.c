@@ -22,6 +22,8 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
+#include "tapcfg_windows_fixup.h"
+
 #define TAP_CONTROL_CODE(request,method)  CTL_CODE(FILE_DEVICE_UNKNOWN, request, method, FILE_ANY_ACCESS)
 #define TAP_IOCTL_GET_MAC                 TAP_CONTROL_CODE(1, METHOD_BUFFERED)
 #define TAP_IOCTL_GET_VERSION             TAP_CONTROL_CODE(2, METHOD_BUFFERED)
@@ -34,16 +36,10 @@
 #define TAP_IOCTL_CONFIG_DHCP_SET_OPT     TAP_CONTROL_CODE(9, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_TUN              TAP_CONTROL_CODE(10, METHOD_BUFFERED)
 
-
-#define TAP_REGISTRY_KEY                  "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
-#define TAP_ADAPTER_KEY	                  "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
 #define TAP_DEVICE_DIR	                  "\\\\.\\Global\\"
 
 #define TAP_WINDOWS_MIN_MAJOR               8
 #define TAP_WINDOWS_MIN_MINOR               1
-
-/* The fixup functions will use the defines, so this has to be here */
-#include "tapcfg_windows_fixup.h"
 
 struct tapcfg_s {
 	int started;
