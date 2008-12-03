@@ -144,8 +144,10 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 int
 tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 {
-	HKEY key, dev_handle;
-	LONG status;
+	char *adapterid;
+	char tapname[1024];
+	HANDLE dev_handle;
+	DWORD len;
 	int i;
 
 	assert(tapcfg);
@@ -154,7 +156,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		ifname = "";
 	}
 
-	tapcfg->ifname = tapcfg_fixup_adapters(ifname);
+	tapcfg->ifname = tapcfg_fixup_adapters(ifname, &adapterid);
 	if (!tapcfg->ifname) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;
@@ -170,65 +172,46 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	taplog_log(TAPLOG_DEBUG, "TAP adapter configured properly\n");
 	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'\n", tapcfg->ifname);
 
-	/* Open registry and look for network adapters */
-	status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, TAP_REGISTRY_KEY, 0, KEY_READ, &key);
-	if (status != ERROR_SUCCESS) {
-		taplog_log(TAPLOG_ERR, "Could not open the networking registry key\n");
-		return -1;
-	}
+	snprintf(tapname, sizeof(tapname), TAP_DEVICE_DIR "%s.tap", adapterid);
+	free(adapterid);
 
-	dev_handle = INVALID_HANDLE_VALUE;
-	for (i=0; dev_handle == INVALID_HANDLE_VALUE; i++) {
-		char adapterid[1024];
-		char tapname[1024];
-		DWORD len;
+	taplog_log(TAPLOG_DEBUG, "Trying %s\n", tapname);
+	dev_handle = CreateFile(tapname,
+				GENERIC_WRITE | GENERIC_READ,
+				0, /* ShareMode, don't let others open the device */
+				0, /* SecurityAttributes */
+				OPEN_EXISTING,
+				FILE_ATTRIBUTE_SYSTEM | FILE_FLAG_OVERLAPPED,
+				0); /* TemplateFile */
 
-		len = sizeof(adapterid);
-		status = RegEnumKeyExA(key, i, adapterid, &len, 0, 0, 0, NULL);
-		if (status != ERROR_SUCCESS)
-			break;
+	if (dev_handle != INVALID_HANDLE_VALUE) {
+		unsigned long info[3];
 
-		snprintf(tapname, sizeof(tapname), TAP_DEVICE_DIR "%s.tap", adapterid);
+		if (!DeviceIoControl(dev_handle,
+				     TAP_IOCTL_GET_VERSION,
+				     &info, /* InBuffer */
+				     sizeof(info),
+				     &info, /* OutBuffer */
+				     sizeof(info),
+				     &len, NULL)) {
 
-		taplog_log(TAPLOG_DEBUG, "Trying %s\n", tapname);
-		dev_handle = CreateFile(tapname,
-		                        GENERIC_WRITE | GENERIC_READ,
-		                        0, /* ShareMode, don't let others open the device */
-		                        0, /* SecurityAttributes */
-		                        OPEN_EXISTING,
-		                        FILE_ATTRIBUTE_SYSTEM | FILE_FLAG_OVERLAPPED,
-		                        0); /* TemplateFile */
+			taplog_log(TAPLOG_ERR,
+				   "Error calling DeviceIoControl: %d",
+				   (int) GetLastError());
+			CloseHandle(dev_handle);
+			dev_handle = INVALID_HANDLE_VALUE;
 
-		if (dev_handle != INVALID_HANDLE_VALUE) {
-			unsigned long info[3];
+			return -1;
+		}
 
-			if (!DeviceIoControl(dev_handle,
-			                     TAP_IOCTL_GET_VERSION,
-			                     &info, /* InBuffer */
-			                     sizeof(info),
-			                     &info, /* OutBuffer */
-			                     sizeof(info),
-			                     &len, NULL)) {
-				taplog_log(TAPLOG_ERR,
-				           "Error calling DeviceIoControl: %d",
-				           (int) GetLastError());
-				CloseHandle(dev_handle);
-				dev_handle = INVALID_HANDLE_VALUE;
-				continue;
-			}
+		taplog_log(TAPLOG_DEBUG,
+			   "TAP Driver Version %d.%d %s\n",
+			   (int) info[0],
+			   (int) info[1],
+			   info[2] ? "(DEBUG)" : "");
 
-			taplog_log(TAPLOG_DEBUG,
-			           "TAP Driver Version %d.%d %s\n",
-			           (int) info[0],
-			           (int) info[1],
-			           info[2] ? "(DEBUG)" : "");
-
-			if (info[0] > TAP_WINDOWS_MIN_MAJOR ||
-			    (info[0] == TAP_WINDOWS_MIN_MAJOR && info[1] >= TAP_WINDOWS_MIN_MINOR)) {
-				/* Found the device handle that we want to use */
-				break;
-			}
-
+		if (info[0] < TAP_WINDOWS_MIN_MAJOR ||
+		    (info[0] == TAP_WINDOWS_MIN_MAJOR && info[1] < TAP_WINDOWS_MIN_MINOR)) {
 			taplog_log(TAPLOG_ERR,
 			           "A TAP driver is required that is at least version %d.%d\n",
 			           TAP_WINDOWS_MIN_MAJOR, TAP_WINDOWS_MIN_MINOR);
@@ -240,7 +223,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 			dev_handle = INVALID_HANDLE_VALUE;
 		}
 	}
-	RegCloseKey(key);
 
 	if (dev_handle == INVALID_HANDLE_VALUE) {
 		taplog_log(TAPLOG_ERR, "No working Tap device found!\n");
