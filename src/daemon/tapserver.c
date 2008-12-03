@@ -164,10 +164,10 @@ reader_thread(void *arg)
 				sizebuf[1] = len & 0xff;
 
 				/* Write received data length */
-				tmp = write(server->clienttab[i], sizebuf, 2);
+				tmp = send(server->clienttab[i], sizebuf, 2, 0);
 				if (tmp > 0) {
 					/* Write received data */
-					tmp = write(server->clienttab[i], buf, len);
+					tmp = send(server->clienttab[i], buf, len, 0);
 				}
 
 				if (tmp <= 0) {
@@ -221,9 +221,17 @@ writer_thread(void *arg)
 		}
 		MUTEX_UNLOCK(server->mutex);
 
+		if (highest_fd == -1) {
+			break;
+		}
+
 		tv.tv_sec = server->waitms / 1000;
-		tv.tv_usec = server->waitms % 1000;
+		tv.tv_usec = (server->waitms % 1000) * 1000;
 		tmp = select(highest_fd+1, &rfds, NULL, NULL, &tv);
+		if (tmp < 0) {
+			printf("Error when selecting for fds\n");
+			break;
+		}
 
 		MUTEX_LOCK(server->mutex);
 		for (i=0; i<server->clients; i++) {
@@ -233,11 +241,11 @@ writer_thread(void *arg)
 			if (!FD_ISSET(server->clienttab[i], &rfds))
 				continue;
 
-			tmp = read(server->clienttab[i], sizebuf, 2);
+			tmp = recv(server->clienttab[i], sizebuf, 2, 0);
 			if (tmp > 0) {
 				len = (sizebuf[0]&0xff) << 8 | sizebuf[1];
 				if (len <= sizeof(buf)) {
-					tmp = read(server->clienttab[i], buf, len);
+					tmp = recv(server->clienttab[i], buf, len, 0);
 				} else {
 					/* XXX: Buffer size error handled as read error */
 					tmp = -1;
@@ -265,9 +273,9 @@ writer_thread(void *arg)
 						continue;
 					}
 
-					tmp = write(server->clienttab[j], sizebuf, 2);
+					tmp = send(server->clienttab[j], sizebuf, 2, 0);
 					if (tmp > 0) {
-						tmp = write(server->clienttab[j], buf, len);
+						tmp = send(server->clienttab[j], buf, len, 0);
 					}
 					if (tmp <= 0) {
 						remove_client(server, j);

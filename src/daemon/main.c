@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	server = tapserver_init(tapcfg, 1000);
+	server = tapserver_init(tapcfg, 500);
 
 	if (!strcmp(argv[1], "client")) {
 		struct addrinfo hints, *result, *saddr;
