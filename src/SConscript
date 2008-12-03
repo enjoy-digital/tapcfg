@@ -36,5 +36,5 @@ listener = appenv.Object('demos/listener.c')
 appenv.Program('demos/test_client', ['demos/test_client.c'], install=False)
 appenv.Program('demos/test_server', [listener,'demos/test_server.c'], install=False)
 appenv.Program('demos/test_forwarder', [listener,'demos/test_forwarder.c'], install=False)
-appenv.Program('daemon/tapserver', ['daemon/tapserver.c'], install=False)
+appenv.Program('daemon/tapserver', ['daemon/tapserver.c','daemon/main.c'], install=False)
 
