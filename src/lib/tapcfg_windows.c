@@ -118,7 +118,7 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 	snprintf(buffer, sizeof(buffer)-1,
 	         "netsh interface ipv6 reset\n");
 
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s\n", buffer);
+	taplog_log(TAPLOG_INFO, "Running netsh command: %s", buffer);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to reset IPv6 address\n");
@@ -131,7 +131,7 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 
 	snprintf(buffer, sizeof(buffer)-1, "arp -d *\n");
 
-	taplog_log(TAPLOG_INFO, "Running command: %s\n", buffer);
+	taplog_log(TAPLOG_INFO, "Running command: %s", buffer);
 	if (system(buffer)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to reset ARP table\n");
