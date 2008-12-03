@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <stdio.h>
+
 #include "tapcfg.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -18,7 +20,7 @@ typedef HANDLE thread_handle_t;
 #define THREAD_RETVAL DWORD WINAPI
 #define THREAD_CREATE(handle, func, arg) \
 	handle = CreateThread(NULL, 0, func, arg, 0, NULL)
-#define THREAD_JOIN(handle) WaitForSingleObject(handle, INFINITE)
+#define THREAD_JOIN(handle) WaitForSingleObject(handle, INFINITE); CloseHandle(handle)
 
 typedef HANDLE mutex_handle_t;
 
@@ -77,6 +79,7 @@ tapserver_init(tapcfg_t *tapcfg, int waitms)
 
 	ret = calloc(1, sizeof(tapserver_t));
 	ret->max_clients = MAX_CLIENTS;
+	ret->tapcfg = tapcfg;
 	ret->waitms = waitms;
 	MUTEX_CREATE(ret->mutex);
 
@@ -120,6 +123,8 @@ reader_thread(void *arg)
 		return 0;
 	}
 
+	printf("Starting reader thread\n");
+
 	do {
 		while (tapcfg_wait_readable(tapcfg, server->waitms)) {
 			int len;
@@ -129,6 +134,7 @@ reader_thread(void *arg)
 				/* XXX: We could quite more nicely */
 				break;
 			}
+			printf("Read %d bytes from the device\n", len);
 
 			MUTEX_LOCK(server->mutex);
 			for (i=0; i<server->clients; i++) { 
@@ -147,12 +153,17 @@ reader_thread(void *arg)
 				if (tmp <= 0) {
 					remove_client(server, i);
 				}
+				printf("Wrote %d bytes to the client\n", len);
 			}
-
-			running = server->running;
 			MUTEX_UNLOCK(server->mutex);
 		}
+
+		MUTEX_LOCK(server->mutex);
+		running = server->running;
+		MUTEX_UNLOCK(server->mutex);
 	} while (running);
+
+	printf("Stopping reader thread\n");
 
 	return 0;
 }
@@ -167,6 +178,8 @@ writer_thread(void *arg)
 	int i, j, tmp;
 
 	assert(server);
+
+	printf("Starting writer thread\n");
 
 	do {
 		fd_set rfds;
@@ -214,6 +227,7 @@ writer_thread(void *arg)
 				remove_client(server, i);
 				continue;
 			}
+			printf("Read %d bytes from the client\n", len);
 
 			if (tapcfg) {
 				tmp = tapcfg_write(tapcfg, buf, len);
@@ -221,6 +235,7 @@ writer_thread(void *arg)
 					server->running = 0;
 					goto exit;
 				}
+				printf("Wrote %d bytes to the device\n", len);
 			} else {
 				for (j=0; j<server->clients; j++) {
 					if (i == j) {
@@ -234,28 +249,31 @@ writer_thread(void *arg)
 					if (tmp <= 0) {
 						remove_client(server, j);
 					}
+					printf("Wrote %d bytes to the client\n", len);
 				}
 			}
+		}
 
-			/* Accept a client and add it to the client table */
-			if (FD_ISSET(server->server_fd, &rfds)) {
-				/* FIXME: This doesn't support IPv6 */
-				struct sockaddr_in caddr;
-				socklen_t caddr_size;
-				int client_fd;
+		/* Accept a client and add it to the client table */
+		if (FD_ISSET(server->server_fd, &rfds)) {
+			/* FIXME: This doesn't support IPv6 */
+			struct sockaddr_in caddr;
+			socklen_t caddr_size;
+			int client_fd;
 
-				caddr_size = sizeof(caddr);
-				client_fd = accept(server->server_fd,
-				                   (struct sockaddr *) &caddr,
-				                   &caddr_size);
-				if (client_fd == -1) {
-					/* XXX: This error should definitely be reported */
-					goto exit;
-				}
-
-				server->clienttab[server->clients] = client_fd;
-				server->clients++;
+			printf("Accepting a new client\n");
+			caddr_size = sizeof(caddr);
+			client_fd = accept(server->server_fd,
+					   (struct sockaddr *) &caddr,
+					   &caddr_size);
+			if (client_fd == -1) {
+				/* XXX: This error should definitely be reported */
+				goto exit;
 			}
+			printf("Accepted a new client\n");
+
+			server->clienttab[server->clients] = client_fd;
+			server->clients++;
 		}
 
 		running = server->running;
@@ -263,6 +281,8 @@ writer_thread(void *arg)
 	} while (running);
 
 exit:
+	printf("Stopping writer thread\n");
+
 	return 0;
 }
 
@@ -272,6 +292,7 @@ tapserver_start(tapserver_t *server)
 	unsigned short port = 1234;
 
 	server->server_fd = create_server(&port, 0, 1);
+	server->running = 1;
 
 	THREAD_CREATE(server->reader, reader_thread, server);
 	THREAD_CREATE(server->writer, writer_thread, server);
@@ -291,6 +312,8 @@ tapserver_stop(tapserver_t *server)
 int main() {
 	tapcfg_t *tapcfg;
 	tapserver_t *server;
+	char buffer[256];
+	int id;
 
 #ifdef _WIN32
 #define sleep(x) Sleep((x)*1000)
@@ -314,10 +337,32 @@ int main() {
 	}
 #endif
 
-	tapcfg = NULL;
+	tapcfg = tapcfg_init();
+	if (!tapcfg)
+		return -1;
+	if (tapcfg_start(tapcfg, NULL)) {
+		tapcfg_destroy(tapcfg);
+		return -1;
+	}
+
+	srand(time(NULL));
+	id = rand()%0x1000;
+
+	sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
+	printf("Selected IPv4 address: %s\n", buffer);
+	tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
+
+	sprintf(buffer, "fc00::%x", id&0xffff);
+	printf("Selected IPv6 address: %s\n", buffer);
+	tapcfg_iface_add_ipv6(tapcfg, buffer, 64);
+
 	server = tapserver_init(tapcfg, 1000);
+
+	tapcfg_iface_change_status(tapcfg, 1);
 	tapserver_start(server);
-	sleep(10);
+	while (1) {
+		sleep(10);
+	}
 	tapserver_stop(server);
 	tapserver_destroy(server);
 
