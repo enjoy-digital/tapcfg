@@ -310,19 +310,24 @@ exit:
 	return 0;
 }
 
-void
+int
 tapserver_start(tapserver_t *server, unsigned short port, int listen)
 {
-	server->listening = 0;
 	if (listen) {
 		server->server_fd = create_server(&port, 0, 1);
-		if (server->server_fd != -1)
-			server->listening = 1;
+		if (server->server_fd == -1)
+			return -1;
+
+		server->listening = 1;
+	} else {
+		server->listening = 0;
 	}
 	server->running = 1;
 
 	THREAD_CREATE(server->reader, reader_thread, server);
 	THREAD_CREATE(server->writer, writer_thread, server);
+
+	return 0;
 }
 
 void

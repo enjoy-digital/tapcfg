@@ -137,7 +137,10 @@ int main(int argc, char *argv[]) {
 		tapcfg_iface_change_status(tapcfg, 1);
 	}
 
-	tapserver_start(server, port, listen);
+	if (tapserver_start(server, port, listen) < 0) {
+		printf("Error starting the tapserver\n");
+		goto exit;
+	}
 	while (1) {
 		sleep(10);
 	}
