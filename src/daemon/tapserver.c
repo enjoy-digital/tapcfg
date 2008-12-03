@@ -24,7 +24,7 @@ typedef HANDLE thread_handle_t;
 
 typedef HANDLE mutex_handle_t;
 
-#define MUTEX_CREATE(handle) handle = CreateMutex(NULL, TRUE, NULL)
+#define MUTEX_CREATE(handle) handle = CreateMutex(NULL, FALSE, NULL)
 #define MUTEX_LOCK(handle) WaitForSingleObject(handle, INFINITE)
 #define MUTEX_UNLOCK(handle) ReleaseMutex(handle)
 #define MUTEX_DESTROY(handle) CloseHandle(handle)
@@ -233,6 +233,7 @@ writer_thread(void *arg)
 				tmp = tapcfg_write(tapcfg, buf, len);
 				if (tmp <= 0) {
 					server->running = 0;
+					MUTEX_UNLOCK(server->mutex);
 					goto exit;
 				}
 				printf("Wrote %d bytes to the device\n", len);
@@ -268,6 +269,7 @@ writer_thread(void *arg)
 					   &caddr_size);
 			if (client_fd == -1) {
 				/* XXX: This error should definitely be reported */
+				MUTEX_UNLOCK(server->mutex);
 				goto exit;
 			}
 			printf("Accepted a new client\n");
@@ -363,8 +365,10 @@ int main() {
 	while (1) {
 		sleep(10);
 	}
+
 	tapserver_stop(server);
 	tapserver_destroy(server);
+	tapcfg_destroy(tapcfg);
 
 #ifdef _WIN32
 	WSACleanup();
