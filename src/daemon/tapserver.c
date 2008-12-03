@@ -60,6 +60,7 @@ struct tapserver_s {
 	int running;
 	mutex_handle_t run_mutex;
 
+	int listening;
 	int max_clients;
 	tapcfg_t *tapcfg;
 	int waitms;
@@ -107,6 +108,8 @@ tapserver_add_client(tapserver_t *server, int fd)
 	server->clienttab[server->clients] = fd;
 	server->clients++;
 	MUTEX_UNLOCK(server->mutex);
+
+	return 0;
 }
 
 static void
@@ -206,7 +209,7 @@ writer_thread(void *arg)
 		FD_ZERO(&rfds);
 
 		MUTEX_LOCK(server->mutex);
-		if (server->clients < server->max_clients) {
+		if (server->listening && server->clients < server->max_clients) {
 			FD_SET(server->server_fd, &rfds);
 			highest_fd = server->server_fd;
 		}
@@ -276,7 +279,7 @@ writer_thread(void *arg)
 		MUTEX_UNLOCK(server->mutex);
 
 		/* Accept a client and add it to the client table */
-		if (FD_ISSET(server->server_fd, &rfds)) {
+		if (server->listening && FD_ISSET(server->server_fd, &rfds)) {
 			/* FIXME: This doesn't support IPv6 */
 			struct sockaddr_in caddr;
 			socklen_t caddr_size;
@@ -308,11 +311,16 @@ exit:
 }
 
 void
-tapserver_start(tapserver_t *server)
+tapserver_start(tapserver_t *server, int listen)
 {
 	unsigned short port = 1234;
 
-	server->server_fd = create_server(&port, 0, 1);
+	server->listening = 0;
+	if (listen) {
+		server->server_fd = create_server(&port, 0, 1);
+		if (server->server_fd != -1)
+			server->listening = 1;
+	}
 	server->running = 1;
 
 	THREAD_CREATE(server->reader, reader_thread, server);
@@ -323,6 +331,10 @@ void
 tapserver_stop(tapserver_t *server)
 {
 	MUTEX_LOCK(server->run_mutex);
+	if (!server->running) {
+		MUTEX_UNLOCK(server->run_mutex);
+		return;
+	}
 	server->running = 0;
 	MUTEX_UNLOCK(server->run_mutex);
 

@@ -1,13 +1,29 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #include "tapserver.h"
 
-int main() {
-	tapcfg_t *tapcfg;
-	tapserver_t *server;
+static void usage(char *prog)
+{
+	printf("Usage of the program:\n");
+	printf("    %s server <port>\n", prog);
+	printf("    %s client [-4|-6] <host> <port>\n", prog);
+	printf("    %s forwarder <port>\n", prog);
+}
+
+int main(int argc, char *argv[]) {
+	tapcfg_t *tapcfg = NULL;
+	tapserver_t *server = NULL;
 	char buffer[256];
+	int listen = 1;
 	int id;
 
 #ifdef _WIN32
@@ -31,37 +47,103 @@ int main() {
 		return -1;
 	}
 #endif
-
-	tapcfg = tapcfg_init();
-	if (!tapcfg)
-		return -1;
-	if (tapcfg_start(tapcfg, NULL)) {
-		tapcfg_destroy(tapcfg);
+	if (argc < 2 ||
+	    (!strcmp(argv[1], "server") && argc < 3) ||
+	    (!strcmp(argv[1], "client") && argc < 5) ||
+	    (!strcmp(argv[1], "forwarder") && argc < 3)) {
+		printf("Too few arguments for the application\n");
+		usage(argv[0]);
 		return -1;
 	}
 
-	srand(time(NULL));
-	id = rand()%0x1000;
+	if (strcmp(argv[1], "server") &&
+	    strcmp(argv[1], "client") &&
+	    strcmp(argv[1], "forwarder")) {
+		printf("Invalid command: \"%s\"\n", argv[1]);
+		usage(argv[0]);
+		return -1;
+	}
 
-	sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
-	printf("Selected IPv4 address: %s\n", buffer);
-	tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
-
-	sprintf(buffer, "fc00::%x", id&0xffff);
-	printf("Selected IPv6 address: %s\n", buffer);
-	tapcfg_iface_add_ipv6(tapcfg, buffer, 64);
+	if (!strcmp(argv[1], "server") || !strcmp(argv[1], "client")) {
+		tapcfg = tapcfg_init();
+		if (!tapcfg || tapcfg_start(tapcfg, NULL) < 0) {
+			printf("Error starting the TAP device, try running as root\n");
+			goto exit;
+		}
+	}
 
 	server = tapserver_init(tapcfg, 1000);
 
-	tapcfg_iface_change_status(tapcfg, 1);
-	tapserver_start(server);
+	if (!strcmp(argv[1], "client")) {
+		struct addrinfo hints, *result, *saddr;
+		int sfd;
+
+		memset(&hints, 0, sizeof(hints));
+		if (!strcmp(argv[2], "-4"))
+			hints.ai_family = AF_INET;
+		else
+			hints.ai_family = AF_INET6;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = 0;
+		hints.ai_protocol = IPPROTO_TCP;
+
+		if (getaddrinfo(argv[3], argv[4], &hints, &result)) {
+			printf("Unable to resolve host name and port: %s %s\n",
+				argv[3], argv[4]);
+			goto exit;
+		}
+
+		for (saddr = result; saddr != NULL; saddr = saddr->ai_next) {
+			sfd = socket(saddr->ai_family, saddr->ai_socktype,
+			             saddr->ai_protocol);
+			if (sfd == -1)
+				continue;
+
+			if (connect(sfd, saddr->ai_addr, saddr->ai_addrlen) != -1)
+				break;
+
+			close(sfd);
+		}
+		freeaddrinfo(result);
+
+		if (saddr == NULL) {
+			printf("Could not connect to host: %s %s\n",
+			       argv[3], argv[4]);
+			goto exit;
+		}
+
+		tapserver_add_client(server, sfd);
+		listen = 0;
+	}
+
+	if (tapcfg) {
+		srand(time(NULL));
+		id = rand()%0x1000;
+
+		sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
+		printf("Selected IPv4 address: %s\n", buffer);
+		tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
+
+		sprintf(buffer, "fc00::%x", id&0xffff);
+		printf("Selected IPv6 address: %s\n", buffer);
+		tapcfg_iface_add_ipv6(tapcfg, buffer, 64);
+
+		tapcfg_iface_change_status(tapcfg, 1);
+	}
+
+	tapserver_start(server, listen);
 	while (1) {
 		sleep(10);
 	}
 
-	tapserver_stop(server);
-	tapserver_destroy(server);
-	tapcfg_destroy(tapcfg);
+exit:
+	if (server) {
+		tapserver_stop(server);
+		tapserver_destroy(server);
+	}
+	if (tapcfg) {
+		tapcfg_destroy(tapcfg);
+	}
 
 #ifdef _WIN32
 	WSACleanup();
