@@ -13,8 +13,13 @@
  *  Lesser General Public License for more details.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#  include <windows.h>
+#endif
 
 #include "tapcfg.h"
 #include "taplog.h"
@@ -31,6 +36,36 @@ void
 taplog_set_callback(taplog_callback_t cb)
 {
 	callback = cb;
+}
+
+char *
+taplog_utf8_to_local(const char *str)
+{
+	char *ret = NULL;
+
+/* FIXME: This is only implemented on Windows for now */
+#if defined(_WIN32) || defined(_WIN64)
+	int wclen, mblen;
+	WCHAR *wcstr;
+	BOOL failed;
+
+	wclen = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wcstr = malloc(sizeof(WCHAR) * wclen);
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, wcstr, wclen);
+
+	mblen = WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, NULL, 0, NULL, &failed);
+	if (failed) {
+		/* Invalid characters in input, conversion failed */
+		free(wcstr);
+		return NULL;
+	}
+
+	ret = malloc(sizeof(CHAR) * mblen);
+	WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, ret, mblen, NULL, NULL);
+	free(wcstr);
+#endif
+
+	return ret;
 }
 
 void
@@ -50,7 +85,14 @@ taplog_log(int level, const char *fmt, ...)
 	if (callback) {
 		callback(buffer);
 	} else {
-		fprintf(stderr, buffer);
+		char *local = taplog_utf8_to_local(buffer);
+
+		if (local) {
+			fprintf(stderr, local);
+			free(local);
+		} else {
+			fprintf(stderr, buffer);
+		}
 	}
 }
 

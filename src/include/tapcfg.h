@@ -29,6 +29,16 @@ void taplog_set_level(int level);
 void taplog_set_callback(taplog_callback_t cb);
 
 /**
+ * Convert an UTF-8 encoded string to the local charset,
+ * return NULL if there are characters in the string that
+ * can't be represented in the local charset. The returned
+ * string has to be freed.
+ * @param str the UTF-8 string to be converted
+ * @return The converted string in local charset or NULL on error.
+ */
+char *taplog_utf8_to_local(const char *str);
+
+/**
  * Typedef to the structure used by the library, should never
  * be accessed directly.
  */

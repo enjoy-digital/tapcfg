@@ -61,33 +61,6 @@ struct tapcfg_s {
 	DWORD inbuflen;
 };
 
-/* The resulting pointer must be freed after use! */
-static char *
-utf8_to_ansi(const char *str)
-{
-	int wclen, mblen;
-	WCHAR *wcstr;
-	BOOL failed;
-	char *ret;
-
-	wclen = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
-	wcstr = malloc(sizeof(WCHAR) * wclen);
-	MultiByteToWideChar(CP_UTF8, 0, str, -1, wcstr, wclen);
-
-	mblen = WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, NULL, 0, NULL, &failed);
-	if (failed) {
-		/* Invalid characters in input, conversion failed */
-		free(wcstr);
-		return NULL;
-	}
-
-	ret = malloc(sizeof(CHAR) * mblen);
-	WideCharToMultiByte(CP_ACP, 0, wcstr, wclen, ret, mblen, NULL, NULL);
-	free(wcstr);
-
-	return ret;
-}
-
 tapcfg_t *
 tapcfg_init()
 {
@@ -188,7 +161,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	}
 
 	/* Create the ANSI native version of the ifname for use in commands */
-	tapcfg->ansi_ifname = utf8_to_ansi(tapcfg->ifname);
+	tapcfg->ansi_ifname = taplog_utf8_to_local(tapcfg->ifname);
 	if (!tapcfg->ansi_ifname) {
 		taplog_log(TAPLOG_ERR, "Interface name doesn't convert to local charset!\n");
 		return -1;
