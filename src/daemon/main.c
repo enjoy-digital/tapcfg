@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
 
 #include "tapserver.h"
 
@@ -16,6 +17,14 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #endif
+
+static int running = 0;
+
+void
+handle_sigint(int sign)
+{
+	running = 0;
+}
 
 static void usage(char *prog)
 {
@@ -84,7 +93,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	server = tapserver_init(tapcfg, 500);
+	server = tapserver_init(tapcfg, 50);
 
 	if (!strcmp(argv[1], "client")) {
 		struct addrinfo hints, *result, *saddr;
@@ -147,8 +156,11 @@ int main(int argc, char *argv[]) {
 		printf("Error starting the tapserver\n");
 		goto exit;
 	}
-	while (1) {
-		sleep(10);
+
+	running = 1;
+	signal(SIGINT, handle_sigint);
+	while (running) {
+		sleep(1);
 	}
 
 exit:
