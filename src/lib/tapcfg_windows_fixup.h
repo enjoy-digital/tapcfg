@@ -20,8 +20,9 @@
  * code of aiccu from http://www.sixxs.net/tools/aiccu/ website
  */
 
-#define TAP_REGISTRY_KEY                  "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
-#define TAP_ADAPTER_KEY                   "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
+
+#define TAP_REGISTRY_KEY    "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
+#define TAP_ADAPTER_KEY     "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
 
 struct tap_reg {
 	char *guid;
