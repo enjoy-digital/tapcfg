@@ -121,7 +121,7 @@ namespace TAP {
 			get { return data; }
 		}
 
-		public FrameType FrameType {
+		public FrameType Type {
 			get { return frameType; }
 		}
 
@@ -134,7 +134,7 @@ namespace TAP {
 		}
 
 		public EtherType EtherType {
-			get { return ((EtherType) etherType); }
+			get { return (EtherType) etherType; }
 		}
 
 		public byte[] Payload {

@@ -18,6 +18,15 @@ public class TAPCfgTest {
 			if (frame == null)
 				break;
 
+			if (frame.EtherType == EtherType.IPv6) {
+				IPv6Packet packet = new IPv6Packet(frame.Payload);
+				if (packet.NextHeader == ProtocolType.ICMPv6) {
+					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
+					Console.WriteLine("Got ICMPv6 packet type {0}", type);
+					Console.WriteLine("Data: {0}", BitConverter.ToString(packet.Payload));
+				}
+			}
+
 			Console.WriteLine("Read Ethernet frame of type {0}",
 			                  frame.EtherType);
 			Console.WriteLine("Source address: {0}",

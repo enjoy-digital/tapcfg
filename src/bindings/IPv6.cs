@@ -130,8 +130,8 @@ namespace TAP {
 			get { return _flow_label; }
 		}
 
-		public byte NextHeader {
-			get { return _next_header; }
+		public ProtocolType NextHeader {
+			get { return (ProtocolType) _next_header; }
 		}
 
 		public byte HopLimit {
