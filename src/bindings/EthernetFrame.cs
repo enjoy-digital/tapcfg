@@ -24,13 +24,13 @@ namespace TAP {
 	}
 
 	public enum EtherType : int {
-		InterNetwork   = 0x0800,
+		IPv4           = 0x0800,
 		ARP            = 0x0806,
 		RARP           = 0x8035,
 		AppleTalk      = 0x809b,
 		AARP           = 0x80f3,
 		IPX            = 0x8137,
-		InterNetworkV6 = 0x86dd,
+		IPv6           = 0x86dd,
 		CobraNet       = 0x8819
 	}
 
@@ -119,10 +119,6 @@ namespace TAP {
 
 		public byte[] Data {
 			get { return data; }
-		}
-
-		public int Length {
-			get { return data.Length; }
 		}
 
 		public FrameType FrameType {
