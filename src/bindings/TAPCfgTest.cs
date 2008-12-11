@@ -23,6 +23,8 @@ public class TAPCfgTest {
 				if (packet.NextHeader == ProtocolType.ICMPv6) {
 					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
 					Console.WriteLine("Got ICMPv6 packet type {0}", type);
+					Console.WriteLine("Src: {0}", packet.Source);
+					Console.WriteLine("Dst: {0}", packet.Destination);
 					Console.WriteLine("Data: {0}", BitConverter.ToString(packet.Payload));
 				}
 			}
