@@ -15,6 +15,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 
 namespace TAP {
 	/* http://www.iana.org/assignments/icmpv6-parameters */
@@ -73,7 +74,6 @@ namespace TAP {
 	};
 
 	public class IPv6Packet {
-		private byte _version;
 		private byte _traffic_class;
 		private int _flow_label;
 		private byte _next_header;
@@ -82,7 +82,6 @@ namespace TAP {
 		private byte[] _src = new byte[16];
 		private byte[] _dst = new byte[16];
 
-		private byte[] _data;
 		private byte[] _payload;
 
 		public IPv6Packet(byte[] data) {
@@ -90,7 +89,7 @@ namespace TAP {
 				throw new Exception("IPv6 packet too small to include a header");
 			}
 
-			_version = (byte) ((data[0] >> 4) & 0x0f);
+			int version = (data[0] >> 4) & 0x0f;
 			_traffic_class = (byte) (((data[0] & 0x0f) << 4) | ((data[1] & 0xf0) >> 4));
 			_flow_label = ((data[1] & 0x0f) << 16) | (data[2] << 8) | data[3];
 			int payload_length = (data[4] << 8) | data[5];
@@ -99,7 +98,7 @@ namespace TAP {
 			Array.Copy(data,  8, _src, 0, 16);
 			Array.Copy(data, 24, _dst, 0, 16);
 
-			if (_version != 6) {
+			if (version != 6) {
 				throw new Exception("IPv6 packet version field not 6");
 			}
 
@@ -109,45 +108,70 @@ namespace TAP {
 
 			_payload = new byte[payload_length];
 			Array.Copy(data, 40, _payload, 0, payload_length);
-
-			if (payload_length + 40 == data.Length) {
-				_data = data;
-			} else {
-				_data = new byte[payload_length + 40];
-				Array.Copy(data, 0, _data, 0, _data.Length);
-			}
 		}
 
 		public byte[] Data {
-			get { return _data; }
+			get {
+				byte[] data = new byte[40 + _payload.Length];
+				data[0] = (byte) ((6 << 4) | ((_traffic_class >> 4) & 0x0f));
+				data[1] = (byte) (((_traffic_class << 4) & 0xf0) |
+				                  ((_flow_label >> 16) & 0x0f));
+				data[2] = (byte) ((_flow_label >> 8) & 0xff);
+				data[3] = (byte) (_flow_label & 0xff);
+				data[4] = (byte) ((_payload.Length >> 8) & 0xff);
+				data[5] = (byte) (_payload.Length & 0xff);
+				data[6] = _next_header;
+				data[7] = _hop_limit;
+				Array.Copy(_src, 0, data, 8, 16);
+				Array.Copy(_dst, 0, data, 24, 16);
+				Array.Copy(_payload, 0, data, 40, _payload.Length);
+				return data;
+			}
 		}
 
 		public byte TrafficClass {
 			get { return _traffic_class; }
+			set { _traffic_class = value; }
 		}
 
 		public int FlowLabel {
 			get { return _flow_label; }
+			set {
+				if (value > 0x0fffff)
+					throw new Exception("Flow label value too big");
+				_flow_label = value;
+			}
 		}
 
 		public ProtocolType NextHeader {
 			get { return (ProtocolType) _next_header; }
+			set { _next_header = (byte) value; }
 		}
 
 		public byte HopLimit {
 			get { return _hop_limit; }
+			set { _hop_limit = value; }
 		}
 
 		public IPAddress Source {
 			get { return new IPAddress(_src); }
+			set {
+				if (value.AddressFamily != AddressFamily.InterNetworkV6)
+					throw new Exception("Source address not an IPv6 address");
+			}
 		}
 
 		public IPAddress Destination {
 			get { return new IPAddress(_dst); }
+			set {
+				if (value.AddressFamily != AddressFamily.InterNetworkV6)
+					throw new Exception("Source address not an IPv6 address");
+			}
 		}
 
 		public byte[] Payload {
 			get { return _payload; }
+			set { _payload = value; }
 		}
 	}
 }
