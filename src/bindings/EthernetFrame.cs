@@ -35,58 +35,61 @@ namespace TAP {
 	}
 
 	public class EthernetFrame {
-		private FrameType frameType;
-		private byte[] data;
-		private byte[] src = new byte[6];
-		private byte[] dst = new byte[6];
-		private int etherType;
-		private byte[] payload;
+		private FrameType _frameType;
+		private byte[] _data;
+		private byte[] _src = new byte[6];
+		private byte[] _dst = new byte[6];
+		private int _etherType;
+		private byte[] _payload;
+
+		private EthernetFrame() {
+		}
 
 		public EthernetFrame(byte[] data) {
 			parseData(data);
 		}
 
 		private void parseData(byte[] data) {
-			this.data = data;
-			Array.Copy(data, 0, dst, 0, 6);
-			Array.Copy(data, 6, src, 0, 6);
-			etherType = (data[12] << 8) | data[13];
+			this._data = data;
+			Array.Copy(data, 0, _dst, 0, 6);
+			Array.Copy(data, 6, _src, 0, 6);
+			_etherType = (data[12] << 8) | data[13];
 			int hdrlen = 14;
 
 			/* IEEE 802.1Q tagged frame */
-			if (etherType == 0x8100) {
+			if (_etherType == 0x8100) {
 //				int PCP = (data[hdrlen] >> 5) & 0x07;
 //				int CFI = (data[hdrlen] >> 4) & 0x01;
 //				int VID = ((data[hdrlen] & 0x0f) << 8) |
 //				          data[hdrlen+1];
 				hdrlen += 2;
 
-				etherType = (data[hdrlen] << 8) | data[hdrlen+1];
+				_etherType = (data[hdrlen] << 8) | data[hdrlen+1];
 				hdrlen += 2;
 			}
 
 			/* This is a common Ethernet II frame */
-			if (etherType >= 0x0800) {
-				frameType = FrameType.Ethernet_II;
+			if (_etherType >= 0x0800) {
+				_frameType = FrameType.Ethernet_II;
 
-				payload = new byte[data.Length - hdrlen];
+				_payload = new byte[data.Length - hdrlen];
 				Array.Copy(data, hdrlen,
-				           payload, 0,
-				           payload.Length);
+				           _payload, 0,
+				           _payload.Length);
 				return;
 			}
 
 			/* In IEEE frames etherType is the length */
-			int payloadlen = etherType;
+			int payloadlen = _etherType;
 
 			if (data[hdrlen] == 0xff && data[hdrlen+1] == 0xff) {
 				/* Raw Ethernet 802.3 (the broken Novell one)
 				 * Always contains a raw IPX frame */
-				frameType = FrameType.Ethernet_RAW;
-				etherType = (int) EtherType.IPX;
+				_frameType = FrameType.Ethernet_RAW;
+				_etherType = (int) EtherType.IPX;
 			} else {
 				/* IEEE 802.2/802.3 Ethernet */
-				frameType = FrameType.Ethernet_IEEE;
+				_frameType = FrameType.Ethernet_IEEE;
 
 				byte DSAP = data[hdrlen++];
 				byte SSAP = data[hdrlen++];
@@ -94,7 +97,7 @@ namespace TAP {
 				payloadlen -= 3;
 
 				if ((DSAP & 0xfe) == 0xaa && (SSAP & 0xfe) == 0xaa) {
-					frameType = FrameType.Ethernet_SNAP;
+					_frameType = FrameType.Ethernet_SNAP;
 					int OUI = (data[hdrlen + 0] << 8) |
 					          (data[hdrlen + 1] << 4) |
 					           data[hdrlen + 2];
@@ -106,39 +109,64 @@ namespace TAP {
 						   non-zero, should mark that */
 					}
 
-					etherType = (data[hdrlen] << 8) | data[hdrlen+1];
+					_etherType = (data[hdrlen] << 8) | data[hdrlen+1];
 					payloadlen -= 2;
 					hdrlen += 2;
 				}
 			}
 
 			/* Copy the final payload data to the payload array */
-			payload = new byte[payloadlen];
-			Array.Copy(data, hdrlen, payload, 0, payload.Length);
+			_payload = new byte[payloadlen];
+			Array.Copy(data, hdrlen, _payload, 0, _payload.Length);
 		}
 
 		public byte[] Data {
-			get { return data; }
+			get { return _data; }
 		}
 
 		public FrameType Type {
-			get { return frameType; }
+			get { return _frameType; }
 		}
 
 		public byte[] SourceAddress {
-			get { return src; }
+			get { return _src; }
 		}
 
 		public byte[] DestinationAddress {
-			get { return dst; }
+			get { return _dst; }
 		}
 
 		public EtherType EtherType {
-			get { return (EtherType) etherType; }
+			get { return (EtherType) _etherType; }
 		}
 
 		public byte[] Payload {
-			get { return payload; }
+			get { return _payload; }
+		}
+
+		public static EthernetFrame CreateFrame(EtherType type,
+		                                        byte[] source,
+		                                        byte[] destination,
+		                                        byte[] payload) {
+			if (source.Length != 6 || destination.Length != 6) {
+				throw new Exception("Invalid address length");
+			}
+
+			EthernetFrame ret = new EthernetFrame();
+			ret._frameType = FrameType.Ethernet_II;
+			ret._src = source;
+			ret._dst = destination;
+			ret._etherType = (int) type;
+			ret._payload = payload;
+
+			ret._data = new byte[18];
+			Array.Copy(ret._dst, 0, ret._data, 0, 6);
+			Array.Copy(ret._src, 0, ret._data, 6, 6);
+			ret._data[16] = (byte) ((ret._etherType >> 8) & 0xff);
+			ret._data[17] = (byte) (ret._etherType & 0xff);
+			Array.Copy(ret._payload, 0, ret._data, 18, ret._payload.Length);
+
+			return ret;
 		}
 	}
 }
