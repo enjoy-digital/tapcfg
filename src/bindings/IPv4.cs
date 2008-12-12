@@ -138,6 +138,7 @@ namespace TAP {
 			set {
 				if (value.AddressFamily != AddressFamily.InterNetwork)
 					throw new Exception("Source address not an IPv4 address");
+				_src = value.GetAddressBytes();
 			}
 		}
 
@@ -146,6 +147,7 @@ namespace TAP {
 			set {
 				if (value.AddressFamily != AddressFamily.InterNetwork)
 					throw new Exception("Source address not an IPv4 address");
+				_dst = value.GetAddressBytes();
 			}
 		}
 

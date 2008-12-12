@@ -158,6 +158,7 @@ namespace TAP {
 			set {
 				if (value.AddressFamily != AddressFamily.InterNetworkV6)
 					throw new Exception("Source address not an IPv6 address");
+				_src = value.GetAddressBytes();
 			}
 		}
 
@@ -166,6 +167,7 @@ namespace TAP {
 			set {
 				if (value.AddressFamily != AddressFamily.InterNetworkV6)
 					throw new Exception("Source address not an IPv6 address");
+				_dst = value.GetAddressBytes();
 			}
 		}
 
