@@ -82,7 +82,7 @@ namespace TAP {
 		private byte[] _src = new byte[16];
 		private byte[] _dst = new byte[16];
 
-		private byte[] _payload = new byte[0];
+		private byte[] _ip_payload = new byte[0];
 
 		public IPv6Packet() {
 			_traffic_class = 0;
@@ -113,25 +113,25 @@ namespace TAP {
 				throw new Exception("Payload length longer than actual data");
 			}
 
-			_payload = new byte[payload_length];
-			Array.Copy(data, 40, _payload, 0, payload_length);
+			_ip_payload = new byte[payload_length];
+			Array.Copy(data, 40, _ip_payload, 0, payload_length);
 		}
 
 		public byte[] Data {
 			get {
-				byte[] data = new byte[40 + _payload.Length];
+				byte[] data = new byte[40 + _ip_payload.Length];
 				data[0] = (byte) ((6 << 4) | ((_traffic_class >> 4) & 0x0f));
 				data[1] = (byte) (((_traffic_class << 4) & 0xf0) |
 				                  ((_flow_label >> 16) & 0x0f));
 				data[2] = (byte) ((_flow_label >> 8) & 0xff);
 				data[3] = (byte) (_flow_label & 0xff);
-				data[4] = (byte) ((_payload.Length >> 8) & 0xff);
-				data[5] = (byte) (_payload.Length & 0xff);
+				data[4] = (byte) ((_ip_payload.Length >> 8) & 0xff);
+				data[5] = (byte) (_ip_payload.Length & 0xff);
 				data[6] = _next_header;
 				data[7] = _hop_limit;
 				Array.Copy(_src, 0, data, 8, 16);
 				Array.Copy(_dst, 0, data, 24, 16);
-				Array.Copy(_payload, 0, data, 40, _payload.Length);
+				Array.Copy(_ip_payload, 0, data, 40, _ip_payload.Length);
 				return data;
 			}
 		}
@@ -179,8 +179,8 @@ namespace TAP {
 		}
 
 		public byte[] Payload {
-			get { return _payload; }
-			set { _payload = value; }
+			get { return _ip_payload; }
+			set { _ip_payload = value; }
 		}
 	}
 }
