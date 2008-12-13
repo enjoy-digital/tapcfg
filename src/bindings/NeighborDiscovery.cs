@@ -111,12 +111,12 @@ namespace TAP {
 		}
 	}
 
-	public class NDRouterAdvPacket {
-		private byte _curhoplimit;
-		private byte _flags_reserved;
-		private short _router_lifetime;
-		private int _reachable;
-		private int _retransmit;
+	public class NDRouterAdvPacket : ICMPv6Packet {
+		protected byte _curhoplimit;
+		protected byte _flags_reserved;
+		protected short _router_lifetime;
+		protected int _reachable;
+		protected int _retransmit;
 
 		private NDPrefixInfo _prefix;
 
@@ -132,29 +132,27 @@ namespace TAP {
 			_prefix = new NDPrefixInfo(addr, 64);
 		}
 
-		public byte[] Data {
+		public override byte[] Data {
 			get {
-				byte[] data = new byte[16 + _prefix.Length];
-				data[0]  = (byte) ICMPv6Type.RouterAdvertisement;
-				data[1]  = 0; /* code */
-				data[2]  = 0; /* checksum-hi */
-				data[3]  = 0; /* checksum.lo */
-				data[4]  = _curhoplimit;
-				data[5]  = _flags_reserved;
-				data[6]  = (byte) ((_router_lifetime >> 8) & 0xff);
-				data[7]  = (byte) (_router_lifetime & 0xff);
-				data[8]  = (byte) ((_reachable >> 24) & 0xff);
-				data[9]  = (byte) ((_reachable >> 16) & 0xff);
-				data[10] = (byte) ((_reachable >>  8) & 0xff);
-				data[11] = (byte) (_reachable & 0xff);
-				data[12] = (byte) ((_retransmit >> 24) & 0xff);
-				data[13] = (byte) ((_retransmit >> 16) & 0xff);
-				data[14] = (byte) ((_retransmit >>  8) & 0xff);
-				data[15] = (byte) (_retransmit & 0xff);
+				_icmp_type = (byte) ICMPv6Type.RouterAdvertisement;
+				_icmp_payload = new byte[12 + _prefix.Length];
+				_icmp_payload[0]  = _curhoplimit;
+				_icmp_payload[1]  = _flags_reserved;
+				_icmp_payload[2]  = (byte) ((_router_lifetime >> 8) & 0xff);
+				_icmp_payload[3]  = (byte) (_router_lifetime & 0xff);
+				_icmp_payload[4]  = (byte) ((_reachable >> 24) & 0xff);
+				_icmp_payload[5]  = (byte) ((_reachable >> 16) & 0xff);
+				_icmp_payload[6] = (byte) ((_reachable >>  8) & 0xff);
+				_icmp_payload[7] = (byte) (_reachable & 0xff);
+				_icmp_payload[8] = (byte) ((_retransmit >> 24) & 0xff);
+				_icmp_payload[9] = (byte) ((_retransmit >> 16) & 0xff);
+				_icmp_payload[10] = (byte) ((_retransmit >>  8) & 0xff);
+				_icmp_payload[11] = (byte) (_retransmit & 0xff);
 
 				byte[] prefix = _prefix.Data;
-				Array.Copy(prefix, 0, data, 16, prefix.Length);
-				return data;
+				Array.Copy(prefix, 0, _icmp_payload, 12, prefix.Length);
+
+				return base.Data;
 			}
 		}
 

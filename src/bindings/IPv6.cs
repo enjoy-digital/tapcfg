@@ -73,16 +73,58 @@ namespace TAP {
 		FMIPv6                        = 154
 	};
 
+	public class ICMPv6Packet : IPv6Packet {
+		protected byte _icmp_type;
+		protected byte _icmp_code;
+		protected byte[] _icmp_payload;
+
+		public override byte[] Data {
+			get {
+				_next_header = (byte) ProtocolType.ICMPv6;
+				_ip_payload = new byte[4 + _icmp_payload.Length];
+				Console.WriteLine("Setting type: {0}", (byte)_icmp_type);
+				_ip_payload[0] = _icmp_type;
+				_ip_payload[1] = _icmp_code;
+				_ip_payload[2] = 0;
+				_ip_payload[3] = 0;
+				Array.Copy(_icmp_payload, 0, _ip_payload, 4,
+				           _icmp_payload.Length);
+
+				/* Save the checksum to the payload */
+				int checksum = calculateChecksum();
+				_ip_payload[2] = (byte) ((checksum >> 8) & 0xff);
+				_ip_payload[3] = (byte) (checksum & 0xff);
+
+				return base.Data;
+			}
+		}
+
+		public ICMPv6Type Type {
+			get { return (ICMPv6Type) _icmp_type; }
+			set { _icmp_type = (byte) value; }
+		}
+
+		public byte Code {
+			get { return _icmp_code; }
+			set { _icmp_code = value; }
+		}
+
+		public override byte[] Payload {
+			get { return _icmp_payload; }
+			set { _icmp_payload = value; }
+		}
+	}
+
 	public class IPv6Packet {
-		private byte _traffic_class;
-		private int _flow_label;
-		private byte _next_header;
-		private byte _hop_limit;
+		protected byte _traffic_class;
+		protected int _flow_label;
+		protected byte _next_header;
+		protected byte _hop_limit;
 
-		private byte[] _src = new byte[16];
-		private byte[] _dst = new byte[16];
+		protected byte[] _src = new byte[16];
+		protected byte[] _dst = new byte[16];
 
-		private byte[] _ip_payload = new byte[0];
+		protected byte[] _ip_payload = new byte[0];
 
 		public IPv6Packet() {
 			_traffic_class = 0;
@@ -117,7 +159,7 @@ namespace TAP {
 			Array.Copy(data, 40, _ip_payload, 0, payload_length);
 		}
 
-		public byte[] Data {
+		public virtual byte[] Data {
 			get {
 				byte[] data = new byte[40 + _ip_payload.Length];
 				data[0] = (byte) ((6 << 4) | ((_traffic_class >> 4) & 0x0f));
@@ -178,9 +220,32 @@ namespace TAP {
 			}
 		}
 
-		public byte[] Payload {
+		public virtual byte[] Payload {
 			get { return _ip_payload; }
 			set { _ip_payload = value; }
+		}
+
+		protected int calculateChecksum() {
+			int checksum = 0;
+
+			for (int i=0; i<_ip_payload.Length; i++) {
+				checksum += _ip_payload[i] << ((i%2 == 0) ? 8 : 0);
+				if (checksum > 0xffff) {
+					checksum = (checksum & 0xffff) + 1;
+				}
+			}
+
+			for (int i=0; i<16; i+=2) {
+				checksum += (_src[i] << 8) | _src[i+1];
+				checksum += (_dst[i] << 8) | _dst[i+1];
+			}
+			checksum += _ip_payload.Length;
+			checksum += _next_header;
+			if (checksum > 0xffff) {
+				checksum = (checksum & 0xffff) + (checksum >> 16);
+			}
+
+			return ~checksum;
 		}
 	}
 }
