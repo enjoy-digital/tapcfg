@@ -128,11 +128,11 @@ namespace TAP {
 			get { return _frameType; }
 		}
 
-		public byte[] SourceAddress {
+		public byte[] Source {
 			get { return _src; }
 		}
 
-		public byte[] DestinationAddress {
+		public byte[] Destination {
 			get { return _dst; }
 		}
 
@@ -159,12 +159,12 @@ namespace TAP {
 			ret._etherType = (int) type;
 			ret._payload = payload;
 
-			ret._data = new byte[18];
+			ret._data = new byte[14 + ret._payload.Length];
 			Array.Copy(ret._dst, 0, ret._data, 0, 6);
 			Array.Copy(ret._src, 0, ret._data, 6, 6);
-			ret._data[16] = (byte) ((ret._etherType >> 8) & 0xff);
-			ret._data[17] = (byte) (ret._etherType & 0xff);
-			Array.Copy(ret._payload, 0, ret._data, 18, ret._payload.Length);
+			ret._data[12] = (byte) ((ret._etherType >> 8) & 0xff);
+			ret._data[13] = (byte) (ret._etherType & 0xff);
+			Array.Copy(ret._payload, 0, ret._data, 14, ret._payload.Length);
 
 			return ret;
 		}

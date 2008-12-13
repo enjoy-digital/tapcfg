@@ -85,6 +85,10 @@ namespace TAP {
 		private byte[] _payload = new byte[0];
 
 		public IPv6Packet() {
+			_traffic_class = 0;
+			_flow_label = 0;
+			_next_header = 0;
+			_hop_limit = 0;
 		}
 
 		public IPv6Packet(byte[] data) {
