@@ -30,24 +30,26 @@ public class TAPCfgTest {
 					Console.WriteLine("ICMPv6 packet type {0}", type);
 					Console.WriteLine("Data: {0}", BitConverter.ToString(packet.Payload));
 
-					NDRouterAdvPacket adv =
-						new NDRouterAdvPacket(IPAddress.Parse("fc00::"));
-					adv.Source = IPAddress.Parse("fe80::211:24ff:fe93:3b66");
-					adv.Destination = packet.Source;
-					adv.HopLimit = 255;
-					byte[] adv_data = adv.Data;
+					if (type == ICMPv6Type.RouterSolicitation) {
+						NDRouterAdvPacket adv =
+							new NDRouterAdvPacket(IPAddress.Parse("fc00::"));
+						adv.Source = IPAddress.Parse("fe80::211:24ff:fe93:3b66");
+						adv.Destination = packet.Source;
+						adv.HopLimit = 255;
+						byte[] adv_data = adv.Data;
 
-					byte[] frame_data = new byte[14 + adv_data.Length];
-					Array.Copy(frame.Source, 0, frame_data, 0, 6);
-					Array.Copy(new byte[] { 0x00, 0x11, 0x24, 0x93, 0x3b, 0x66 },
-					           0, frame_data, 6, 6);
-					frame_data[12] = (byte) ((int) EtherType.IPv6 >> 8);
-					frame_data[13] = (byte) ((int) EtherType.IPv6 & 0xff);
-					Array.Copy(adv_data, 0, frame_data, 14, adv_data.Length);
+						byte[] frame_data = new byte[14 + adv_data.Length];
+						Array.Copy(frame.Source, 0, frame_data, 0, 6);
+						Array.Copy(new byte[] { 0x00, 0x11, 0x24, 0x93, 0x3b, 0x66 },
+							   0, frame_data, 6, 6);
+						frame_data[12] = (byte) ((int) EtherType.IPv6 >> 8);
+						frame_data[13] = (byte) ((int) EtherType.IPv6 & 0xff);
+						Array.Copy(adv_data, 0, frame_data, 14, adv_data.Length);
 
-					EthernetFrame fr = new EthernetFrame(frame_data);
-					Console.WriteLine("Wrote packet {0}", BitConverter.ToString(fr.Data));
-					dev.Write(fr);
+						EthernetFrame fr = new EthernetFrame(frame_data);
+						Console.WriteLine("Wrote packet {0}", BitConverter.ToString(fr.Data));
+						dev.Write(fr);
+					}
 				}
 			} else if (frame.EtherType == EtherType.IPv4) {
 				IPv4Packet packet = new IPv4Packet(frame.Payload);
