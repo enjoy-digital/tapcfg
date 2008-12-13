@@ -82,7 +82,7 @@ namespace TAP {
 		private byte[] _src = new byte[16];
 		private byte[] _dst = new byte[16];
 
-		private byte[] _payload = new byte[0];;
+		private byte[] _payload = new byte[0];
 
 		public IPv6Packet() {
 		}
