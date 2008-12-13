@@ -82,7 +82,6 @@ namespace TAP {
 			get {
 				_next_header = (byte) ProtocolType.ICMPv6;
 				_ip_payload = new byte[4 + _icmp_payload.Length];
-				Console.WriteLine("Setting type: {0}", (byte)_icmp_type);
 				_ip_payload[0] = _icmp_type;
 				_ip_payload[1] = _icmp_code;
 				_ip_payload[2] = 0;
