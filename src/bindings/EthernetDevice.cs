@@ -29,14 +29,14 @@ namespace TAP {
 		/* Default MTU 1500 in all systems */
 		private int _MTU = 1500;
 
-		private IntPtr handle;
-		private bool disposed = false;
+		private IntPtr _handle;
+		private bool _disposed = false;
 
-		private static EthernetLogCallback logger;
+		private static EthernetLogCallback _logger;
 		public static EthernetLogCallback LogCallback {
 			set {
-				logger = value;
-				taplog_set_callback(logger);
+				_logger = value;
+				taplog_set_callback(_logger);
 			}
 		}
 
@@ -45,12 +45,12 @@ namespace TAP {
 		}
 
 		public EthernetDevice() {
-			if (logger == null) {
-				logger = new EthernetLogCallback(defaultCallback);
+			if (_logger == null) {
+				_logger = new EthernetLogCallback(defaultCallback);
 			}
 
-			handle = tapcfg_init();
-			if (handle == IntPtr.Zero) {
+			_handle = tapcfg_init();
+			if (_handle == IntPtr.Zero) {
 				throw new Exception("Error initializing the tapcfg library");
 			}
 		}
@@ -60,14 +60,14 @@ namespace TAP {
 		}
 
 		public void Start(string deviceName) {
-			int ret = tapcfg_start(handle, deviceName);
+			int ret = tapcfg_start(_handle, deviceName);
 			if (ret < 0) {
 				throw new Exception("Error starting the TAP device");
 			}
 		}
 
 		public bool WaitReadable(int msec) {
-			int ret = tapcfg_wait_readable(handle, msec);
+			int ret = tapcfg_wait_readable(_handle, msec);
 			if (ret != 0) {
 				return true;
 			} else {
@@ -79,7 +79,7 @@ namespace TAP {
 			/* Maximum buffer is MTU plus 22 byte maximum header size */
 			byte[] buffer = new byte[_MTU + 22];
 
-			int ret = tapcfg_read(handle, buffer, buffer.Length);
+			int ret = tapcfg_read(_handle, buffer, buffer.Length);
 			if (ret < 0) {
 				throw new IOException("Error reading Ethernet frame");
 			} else if (ret == 0) {
@@ -90,7 +90,7 @@ namespace TAP {
 		}
 
 		public bool WaitWritable(int msec) {
-			int ret = tapcfg_wait_writable(handle, msec);
+			int ret = tapcfg_wait_writable(_handle, msec);
 			if (ret != 0) {
 				return true;
 			} else {
@@ -101,7 +101,7 @@ namespace TAP {
 		public void Write(EthernetFrame frame) {
 			byte[] buffer = frame.Data;
 
-			int ret = tapcfg_write(handle, buffer, buffer.Length);
+			int ret = tapcfg_write(_handle, buffer, buffer.Length);
 			if (ret < 0) {
 				throw new IOException("Error writing Ethernet frame");
 			} else if (ret != buffer.Length) {
@@ -112,7 +112,7 @@ namespace TAP {
 
 		public bool Enabled {
 			get {
-				int ret = tapcfg_iface_get_status(handle);
+				int ret = tapcfg_iface_get_status(_handle);
 				if (ret != 0) {
 					return true;
 				} else {
@@ -123,9 +123,9 @@ namespace TAP {
 				int ret;
 
 				if (value) {
-					ret = tapcfg_iface_change_status(handle, 1);
+					ret = tapcfg_iface_change_status(_handle, 1);
 				} else {
-					ret = tapcfg_iface_change_status(handle, 0);
+					ret = tapcfg_iface_change_status(_handle, 0);
 				}
 
 				if (ret < 0) {
@@ -135,7 +135,7 @@ namespace TAP {
 		}
 
 		public string DeviceName {
-			get { return tapcfg_get_ifname(handle); }
+			get { return tapcfg_get_ifname(_handle); }
 		}
 
 		public int MTU {
@@ -143,7 +143,7 @@ namespace TAP {
 				return _MTU;
 			}
 			set {
-				int ret = tapcfg_iface_set_mtu(handle, value);
+				int ret = tapcfg_iface_set_mtu(_handle, value);
 				if (ret >= 0) {
 					_MTU = value;
 				}
@@ -154,9 +154,9 @@ namespace TAP {
 			int ret;
 
 			if (address.AddressFamily == AddressFamily.InterNetwork) {
-				ret = tapcfg_iface_set_ipv4(handle, address.ToString(), netbits);
+				ret = tapcfg_iface_set_ipv4(_handle, address.ToString(), netbits);
 			} else if (address.AddressFamily == AddressFamily.InterNetworkV6) {
-				ret = tapcfg_iface_add_ipv6(handle, address.ToString(), netbits);
+				ret = tapcfg_iface_add_ipv6(_handle, address.ToString(), netbits);
 			} else {
 				return;
 			}
@@ -172,16 +172,16 @@ namespace TAP {
 		}
 
 		protected virtual void Dispose(bool disposing) {
-			if (!disposed) {
+			if (!_disposed) {
 				if (disposing) {
-					// Managed resources can be disposed here
+					// Managed resources can be _disposed here
 				}
 
-				tapcfg_stop(handle);
-				tapcfg_destroy(handle);
-				handle = IntPtr.Zero;
+				tapcfg_stop(_handle);
+				tapcfg_destroy(_handle);
+				_handle = IntPtr.Zero;
 
-				disposed = true;
+				_disposed = true;
 			}
 		}
 
