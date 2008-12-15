@@ -88,6 +88,8 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		goto err;
 	}
 
+	tapcfg_iface_prepare(tapcfg->ifname);
+
 	/* Mark the current fds and mark thread as running */
 	tapcfg->tap_fd = tap_fd;
 	tapcfg->started = 1;
