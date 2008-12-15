@@ -22,7 +22,7 @@ public class TAPCfgTest {
 			                  frame.EtherType);
 
 			if (frame.EtherType == EtherType.IPv6) {
-				IPv6Packet packet = new IPv6Packet(frame.Payload);
+				IPv6Packet packet = IPv6Packet.Parse(frame.Payload);
 				Console.WriteLine("Source \"{0}\" Destination \"{1}\"",
 				                  packet.Source, packet.Destination);
 				if (packet.NextHeader == ProtocolType.ICMPv6) {
@@ -35,7 +35,7 @@ public class TAPCfgTest {
 					}
 				}
 			} else if (frame.EtherType == EtherType.IPv4) {
-				IPv4Packet packet = new IPv4Packet(frame.Payload);
+				IPv4Packet packet = IPv4Packet.Parse(frame.Payload);
 				Console.WriteLine("Source {0} Destination {1}",
 				                  packet.Source, packet.Destination);
 			}

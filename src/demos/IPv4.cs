@@ -19,36 +19,47 @@ using System.Net.Sockets;
 
 namespace TAP {
 	public class IPv4Packet {
-		private byte _tos;
-		private int _id;
-		private byte _flags;
-		private short _frag_offset;
-		private byte _ttl;
-		private byte _protocol;
+		protected byte _tos;
+		protected int _id;
+		protected byte _flags;
+		protected short _frag_offset;
+		protected byte _ttl;
+		protected byte _protocol;
 
-		private byte[] _src = new byte[4];
-		private byte[] _dst = new byte[4];
-		private byte[] _options;
+		protected byte[] _src = new byte[4];
+		protected byte[] _dst = new byte[4];
+		protected byte[] _options = new byte[0];
 
-		private byte[] _payload;
+		protected byte[] _ip_payload = new byte[0];
 
-		public IPv4Packet(byte[] data) {
+		public IPv4Packet() {
+			_tos = 0;
+			_id = 0; /* Is this correct */
+			_flags = 0;
+			_frag_offset = 0;
+			_ttl = 255; /* Think of some default */
+			_protocol = 0;
+		}
+
+		public static IPv4Packet Parse(byte[] data) {
 			if (data.Length < 20) {
 				throw new Exception("IPv4 packet too small to include a header");
 			}
 
+			IPv4Packet packet = new IPv4Packet();
+
 			int version = (data[0] >> 4) & 0x0f;
 			byte header_length = (byte) (data[0] & 0x0f);
-			_tos = data[1];
+			packet._tos = data[1];
 			int total_length = (data[2] << 8) | data[3];
-			_id = (data[4] << 8) | data[5];
-			_flags = (byte) ((data[6] >> 5) & 0x07);
-			_frag_offset = (short) (((data[6] & 0x1f) << 8) | data[7]);
-			_ttl = data[8];
-			_protocol = data[9];
+			packet._id = (data[4] << 8) | data[5];
+			packet._flags = (byte) ((data[6] >> 5) & 0x07);
+			packet._frag_offset = (short) (((data[6] & 0x1f) << 8) | data[7]);
+			packet._ttl = data[8];
+			packet._protocol = data[9];
 			int checksum = (data[10] << 8) | data[11];
-			Array.Copy(data, 12, _src, 0, 4);
-			Array.Copy(data, 16, _dst, 0, 4);
+			Array.Copy(data, 12, packet._src, 0, 4);
+			Array.Copy(data, 16, packet._dst, 0, 4);
 
 			if (version != 4) {
 				throw new Exception("IPv4 packet version field not 4");
@@ -62,20 +73,23 @@ namespace TAP {
 				throw new Exception("Invalid header length: " + header_length);
 			}
 
-			if (checksum != this.calculateChecksum(data)) {
+			if (checksum != calculateChecksum(data)) {
 				throw new Exception("Checksum didn't match, corrupted packet");
 			}
 
-			_options = new byte[(header_length - 5) * 4];
-			Array.Copy(data, 20, _options, 0, _options.Length);
+			packet._options = new byte[(header_length - 5) * 4];
+			Array.Copy(data, 20, packet._options, 0, packet._options.Length);
 
-			_payload = new byte[total_length - 20 - _options.Length];
-			Array.Copy(data, 20 + _options.Length, _payload, 0, _payload.Length);
+			packet._ip_payload = new byte[total_length - 20 - packet._options.Length];
+			Array.Copy(data, 20 + packet._options.Length,
+			           packet._ip_payload, 0, packet._ip_payload.Length);
+
+			return packet;
 		}
 
 		public byte[] Data {
 			get {
-				int total_length = 20 + _options.Length + _payload.Length;
+				int total_length = 20 + _options.Length + _ip_payload.Length;
 				byte[] data = new byte[total_length];
 				data[0] = (byte) ((4 << 4) | (5 + _options.Length/4));
 				data[1] = _tos;
@@ -91,7 +105,7 @@ namespace TAP {
 				Array.Copy(_src, 0, data, 12, 4);
 				Array.Copy(_dst, 0, data, 16, 4);
 				Array.Copy(_options, 0, data, 20, _options.Length);
-				Array.Copy(_payload, 0, data, 20 + _options.Length, _payload.Length);
+				Array.Copy(_ip_payload, 0, data, 20 + _options.Length, _ip_payload.Length);
 
 				int checksum = this.calculateChecksum(data);
 				data[10] = (byte) ((checksum >> 8) & 0xff);
@@ -161,11 +175,11 @@ namespace TAP {
 		}
 
 		public byte[] Payload {
-			get { return _payload; }
-			set { _payload = value; }
+			get { return _ip_payload; }
+			set { _ip_payload = value; }
 		}
 
-		private int calculateChecksum(byte[] header) {
+		private static int calculateChecksum(byte[] header) {
 			int ret = 0;
 			int words = (header[0] & 0x0f) * 2;
 

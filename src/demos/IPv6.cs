@@ -132,19 +132,23 @@ namespace TAP {
 			_hop_limit = 0;
 		}
 
-		public IPv6Packet(byte[] data) {
+		public static IPv6Packet Parse(byte[] data) {
 			if (data.Length < 40) {
 				throw new Exception("IPv6 packet too small to include a header");
 			}
 
+			IPv6Packet packet = new IPv6Packet();
+
 			int version = (data[0] >> 4) & 0x0f;
-			_traffic_class = (byte) (((data[0] & 0x0f) << 4) | ((data[1] & 0xf0) >> 4));
-			_flow_label = ((data[1] & 0x0f) << 16) | (data[2] << 8) | data[3];
+			packet._traffic_class = (byte) (((data[0] & 0x0f) << 4) |
+			                                ((data[1] & 0xf0) >> 4));
+			packet._flow_label = ((data[1] & 0x0f) << 16) |
+			                      (data[2] << 8) | data[3];
 			int payload_length = (data[4] << 8) | data[5];
-			_next_header = data[6];
-			_hop_limit = data[7];
-			Array.Copy(data,  8, _src, 0, 16);
-			Array.Copy(data, 24, _dst, 0, 16);
+			packet._next_header = data[6];
+			packet._hop_limit = data[7];
+			Array.Copy(data,  8, packet._src, 0, 16);
+			Array.Copy(data, 24, packet._dst, 0, 16);
 
 			if (version != 6) {
 				throw new Exception("IPv6 packet version field not 6");
@@ -154,8 +158,10 @@ namespace TAP {
 				throw new Exception("Payload length longer than actual data");
 			}
 
-			_ip_payload = new byte[payload_length];
-			Array.Copy(data, 40, _ip_payload, 0, payload_length);
+			packet._ip_payload = new byte[payload_length];
+			Array.Copy(data, 40, packet._ip_payload, 0, payload_length);
+
+			return packet;
 		}
 
 		public virtual byte[] Data {
