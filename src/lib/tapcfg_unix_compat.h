@@ -99,7 +99,8 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 	return tap_fd;
 }
 
-/* This is to accept router advertisements on KAME stack */
+/* This is to accept router advertisements on KAME stack, these
+ * functions are copied from usr.sbin/rtsold/if.c of OpenBSD */
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 #include <sys/sysctl.h>
 
@@ -138,6 +139,7 @@ setinet6sysctl(int code, int newval)
 #ifdef __APPLE__
 #include <netinet/in_var.h>
 
+/* This function is based on ip6tool.c of Darwin sources */
 static int
 tapcfg_attach_ipv6(const char *ifname)
 {
