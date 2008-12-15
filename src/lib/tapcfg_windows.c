@@ -106,22 +106,6 @@ tapcfg_iface_reset(tapcfg_t *tapcfg)
 	/* Make sure the string always ends in null byte */
 	buffer[sizeof(buffer)-1] = '\0';
 
-#ifndef DISABLE_IPV6
-	taplog_log(TAPLOG_INFO,
-	           "Resetting the IPv6 subsystem: \"%s\"\n",
-	           tapcfg->ifname);
-
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ipv6 reset\n");
-
-	taplog_log(TAPLOG_INFO, "Running netsh command: %s", buffer);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to reset IPv6 address\n");
-		ret = -1;
-	}
-#endif
-
 	taplog_log(TAPLOG_INFO,
 	           "Flushing the system ARP table\n");
 
@@ -534,64 +518,3 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 
 	return 0;
 }
-
-#ifndef DISABLE_IPV6
-int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
-{
-	char buffer[1024];
-
-	assert(tapcfg);
-
-	if (!tapcfg->started) {
-		return 0;
-	}
-
-	if (netbits == 0 || netbits > 128) {
-		return -1;
-	}
-
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
-	/* Check that the given IPv6 address is valid */
-	if (!tapcfg_address_is_valid(AF_INET6, addrstr)) {
-		return -1;
-	}
-
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
-	         tapcfg->ansi_ifname, addrstr);
-
-	taplog_log(TAPLOG_INFO, "Running netsh command: "
-	         "netsh interface ipv6 add address \"%s\" %s unicast\n",
-	         tapcfg->ifname, addrstr);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv6 address\n");
-		return -1;
-	}
-
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ipv6 add route %s/%d \"%s\"\n",
-	         addrstr, netbits, tapcfg->ansi_ifname);
-
-	taplog_log(TAPLOG_INFO, "Running netsh command: "
-	         "netsh interface ipv6 add route %s/%d \"%s\"\n",
-	         addrstr, netbits, tapcfg->ifname);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv6 route\n");
-		return -1;
-	}
-
-	return 0;
-}
-#else
-int
-tapcfg_iface_add_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
-{
-	/* Always return an error */
-	return -1;
-}
-#endif /* DISABLE_IPV6 */

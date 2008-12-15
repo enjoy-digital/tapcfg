@@ -157,12 +157,7 @@ int main(int argc, char *argv[]) {
 
 		sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
 		tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
-
-		sprintf(buffer, "fc00::%x", id&0xffff);
-		tapcfg_iface_add_ipv6(tapcfg, buffer, 64);
-
-		printf("Selected IPv4 address: 10.10.%d.%d\n", (id>>8)&0xff, id&0xff);
-		printf("Selected IPv6 address: fc00::%x\n", id&0xffff);
+		printf("Selected IPv4 address: %s\n", buffer);
 
 		tapcfg_iface_change_status(tapcfg, 1);
 	}

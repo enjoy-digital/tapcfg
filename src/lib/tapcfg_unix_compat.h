@@ -171,12 +171,12 @@ tapcfg_iface_prepare(const char *ifname)
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
 		taplog_log(TAPLOG_INFO,
-		           "Setting sysctl net.inet6.ip6.forwarding to 0\n");
+		           "Setting sysctl net.inet6.ip6.forwarding: 1 -> 0\n");
 		setinet6sysctl(IPV6CTL_FORWARDING, 0);
 	}
 	if (getinet6sysctl(IPV6CTL_ACCEPT_RTADV) == 0) {
 		taplog_log(TAPLOG_INFO,
-		           "Setting sysctl net.inet6.ip6.accept_rtadv to 1\n");
+		           "Setting sysctl net.inet6.ip6.accept_rtadv: 0 -> 1\n");
 		setinet6sysctl(IPV6CTL_ACCEPT_RTADV, 1);
 	}
 #endif
