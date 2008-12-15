@@ -27,6 +27,11 @@ namespace TAP {
 			_mac = createMAC();
 			_prefix = createPrefix(_mac);
 
+			/* Choose a random subnet from the prefix */
+			int subnet = (new Random()).Next(0, 0xffff);
+			_prefix[6] = (byte) ((subnet >> 8) & 0xff);
+			_prefix[7] = (byte) (subnet & 0xff);
+
 			/* Create IPv6 link local address from MAC */
 			byte[] data = new byte[16];
 			data[0] = 0xfe;
@@ -43,6 +48,7 @@ namespace TAP {
 			} else {
 				adv.Destination = IPAddress.Parse("ff02::1");
 			}
+			/* This has to be 255 to make sure it is not forwarded */
 			adv.HopLimit = 255;
 			byte[] adv_data = adv.Data;
 
