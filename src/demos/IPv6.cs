@@ -129,7 +129,7 @@ namespace TAP {
 			_traffic_class = 0;
 			_flow_label = 0;
 			_next_header = 0;
-			_hop_limit = 0;
+			_hop_limit = 128;
 		}
 
 		public static IPv6Packet Parse(byte[] data) {

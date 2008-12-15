@@ -155,8 +155,6 @@ namespace TAP {
 
 			if (address.AddressFamily == AddressFamily.InterNetwork) {
 				ret = tapcfg_iface_set_ipv4(_handle, address.ToString(), netbits);
-			} else if (address.AddressFamily == AddressFamily.InterNetworkV6) {
-				ret = tapcfg_iface_add_ipv6(_handle, address.ToString(), netbits);
 			} else {
 				return;
 			}
@@ -224,7 +222,5 @@ namespace TAP {
 		private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_iface_add_ipv6(IntPtr tapcfg, string addr, byte netbits);
 	}
 }

@@ -34,10 +34,10 @@ namespace TAP {
 
 		public IPv4Packet() {
 			_tos = 0;
-			_id = 0; /* Is this correct */
+			_id = 0;
 			_flags = 0;
 			_frag_offset = 0;
-			_ttl = 255; /* Think of some default */
+			_ttl = 128;
 			_protocol = 0;
 		}
 

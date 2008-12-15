@@ -10,7 +10,6 @@ public class TAPCfgTest {
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
 		dev.MTU = 1280;
 		dev.SetAddress(IPAddress.Parse("192.168.10.1"), 16);
-//		dev.SetAddress(IPAddress.Parse("fc00::1"), 64);
 		dev.Enabled = true;
 
 		while (true) {
@@ -52,7 +51,6 @@ public class TAPCfgTest {
 			new NDRouterAdvPacket(IPAddress.Parse("fc00::"));
 		adv.Source = IPAddress.Parse("fe80::211:24ff:fe93:3b66");
 		adv.Destination = IPAddress.Parse("ff02::1");
-		adv.HopLimit = 255;
 		byte[] adv_data = adv.Data;
 
 		byte[] frame_data = new byte[14 + adv_data.Length];
