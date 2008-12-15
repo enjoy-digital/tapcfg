@@ -21,7 +21,7 @@ libenv.SharedLibrary('../build/tapcfg', shlibobj, install=False)
 
 # Compile the .Net bindings
 asm = env.CLILibrary('../build/TAP', ['bindings/EthernetDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
-prog = env.CLIProgram('../build/TAPCfgTest', ['demos/TAPCfgTest.cs','demos/IPv4.cs','demos/IPv6.cs','demos/ProtocolType.cs','demos/NeighborDiscovery.cs'], CILLIBS=asm)
+prog = env.CLIProgram('../build/TAPCfgTest', ['demos/TAPCfgTest.cs','demos/IPv4.cs','demos/IPv6.cs','demos/ProtocolType.cs','demos/NeighborDiscovery.cs','demos/VirtualRouter.cs'], CILLIBS=asm)
 
 # Set up the environment for compiling the demo tests
 appenv = env.Clone()
