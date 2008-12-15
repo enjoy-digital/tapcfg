@@ -43,6 +43,7 @@ namespace TAP {
 			} else {
 				adv.Destination = IPAddress.Parse("ff02::1");
 			}
+			adv.HopLimit = 255;
 			byte[] adv_data = adv.Data;
 
 			byte[] frame_data = new byte[14 + adv_data.Length];
