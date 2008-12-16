@@ -52,10 +52,19 @@ namespace TAP {
 		}
 
 		public void HandleFrame(EthernetFrame frame) {
+			byte[] payload = frame.Payload;
+			byte next_header = payload[6];
+			if (next_header == (byte) ProtocolType.ICMPv6) {
+				ICMPv6Type icmp_type = (ICMPv6Type) payload[40];
+				if (icmp_type == ICMPv6Type.RouterSolicitation) {
+					IPv6Packet packet = IPv6Packet.Parse(payload);
+					sendRouterAdv(packet.Source);
+				}
+			}
 		}
 
 		public void Advertise() {
-			SendRouterAdv(null);
+			sendRouterAdv(null);
 			_timer = new Timer();
 			_timer.Elapsed += new ElapsedEventHandler(timerEvent);
 			_timer.Interval = 30000;
@@ -63,10 +72,10 @@ namespace TAP {
 		}
 
 		private void timerEvent(object source, ElapsedEventArgs e) {
-			SendRouterAdv(null);
+			sendRouterAdv(null);
 		}
 
-		public void SendRouterAdv(IPAddress dest) {
+		private void sendRouterAdv(IPAddress dest) {
 			NDRouterAdvPacket adv = new NDRouterAdvPacket(new IPAddress(_prefix));
 			adv.Source = _linklocal;
 			if (dest != null) {

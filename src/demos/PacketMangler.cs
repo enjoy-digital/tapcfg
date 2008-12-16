@@ -69,10 +69,12 @@ namespace TAP {
 			} else if (frame.EtherType == EtherType.IPv6) {
 				/* IPv6 specific packet handling */
 				IPv6Packet packet = IPv6Packet.Parse(frame.Payload);
-				if (packet.NextHeader == ProtocolType.ICMPv6) {
-					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
-					if (type == ICMPv6Type.RouterSolicitation) {
-						_router.SendRouterAdv(packet.Source);
+
+				/* All routers packet will be sent to all routers */
+				if (packet.Destination.ToString() == "ff02::2") {
+					foreach (INetworkHost host in _hosts) {
+						if (host.IsRouter() && host != source)
+							host.HandleFrame(frame);
 					}
 				}
 			}
