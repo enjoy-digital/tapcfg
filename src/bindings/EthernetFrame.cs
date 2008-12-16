@@ -42,12 +42,8 @@ namespace TAP {
 		private int _etherType;
 		private byte[] _payload;
 
-		private static byte[] _broadcast =
+		public static readonly byte[] Broadcast =
 			new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
-		public static byte[] Broadcast {
-			get { return _broadcast; }
-		}
 
 		private EthernetFrame() {
 		}
