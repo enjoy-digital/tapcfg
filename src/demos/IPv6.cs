@@ -80,7 +80,7 @@ namespace TAP {
 
 		public override byte[] Data {
 			get {
-				_next_header = (byte) ProtocolType.ICMPv6;
+				_next_header = (byte) ProtocolType.IPv6_ICMP;
 				_ip_payload = new byte[4 + _icmp_payload.Length];
 				_ip_payload[0] = _icmp_type;
 				_ip_payload[1] = _icmp_code;
