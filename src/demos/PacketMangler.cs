@@ -43,11 +43,15 @@ namespace TAP {
 		}
 
 		public void MangleFrame(INetworkHost source, EthernetFrame frame) {
+			string source_string = BitConverter.ToString(frame.Source);
+
 			printInfo(frame);
 
 			/* If the host is not in our RARP table, add it */
-			if (_rarptable[frame.Source] == null) {
-				_rarptable.Add(frame.Source, source);
+			if (_rarptable[source_string] == null) {
+				_rarptable.Add(source_string, source);
+				Console.WriteLine("Added host to the RARP table: {0}",
+				                  source_string);
 			}
 
 			if (frame.EtherType == EtherType.IPv4) {
@@ -55,10 +59,11 @@ namespace TAP {
 				byte[] payload = frame.Payload;
 				byte[] ipv4_source = new byte[4];
 				Array.Copy(payload, 12, ipv4_source, 0, 4);
+				string ipv4_string = BitConverter.ToString(ipv4_source);
 
 				/* Add host to the ARP table if not there */
-				if (_arptable[ipv4_source] == null) {
-					_arptable.Add(ipv4_source, frame.Source);
+				if (_arptable[ipv4_string] == null) {
+					_arptable.Add(ipv4_string, frame.Source);
 				}
 			} else if (frame.EtherType == EtherType.IPv6) {
 				/* IPv6 specific packet handling */
