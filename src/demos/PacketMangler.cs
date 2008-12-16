@@ -69,7 +69,7 @@ namespace TAP {
 			} else if (frame.EtherType == EtherType.IPv6) {
 				/* IPv6 specific packet handling */
 				IPv6Packet packet = IPv6Packet.Parse(frame.Payload);
-				if (packet.NextHeader == ProtocolType.IPv6_ICMP) {
+				if (packet.NextHeader == ProtocolType.ICMPv6) {
 					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
 					if (type == ICMPv6Type.RouterSolicitation) {
 						_router.SendRouterAdv(packet.Source);
@@ -97,7 +97,7 @@ namespace TAP {
 				Console.WriteLine("Source \"{0}\" Destination \"{1}\"",
 				                  packet.Source, packet.Destination);
 				Console.WriteLine("Next header: {0}", packet.NextHeader);
-				if (packet.NextHeader == ProtocolType.IPv6_ICMP) {
+				if (packet.NextHeader == ProtocolType.ICMPv6) {
 					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
 					Console.WriteLine("ICMPv6 packet type {0}", type);
 					Console.WriteLine("Data: {0}", BitConverter.ToString(packet.Payload));

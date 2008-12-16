@@ -73,13 +73,13 @@ namespace TAP {
 
 		ESP             = 50,
 		AH              = 51,
-		I_NLSP          = 52,
+		INLSP           = 52,
 		SWIPE           = 53,
 		NARP            = 54,
 		MOBILE          = 55,
 		TLSP            = 56,
 		SKIP            = 57,
-		IPv6_ICMP       = 58,
+		ICMPv6          = 58,
 		IPv6_NoNxt      = 59,
 
 		IPv6_Opts       = 60,
