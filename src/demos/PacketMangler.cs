@@ -76,6 +76,7 @@ namespace TAP {
 						if (host.IsRouter() && host != source)
 							host.HandleFrame(frame);
 					}
+					return;
 				}
 			}
 
