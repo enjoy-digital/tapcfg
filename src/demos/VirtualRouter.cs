@@ -76,7 +76,8 @@ namespace TAP {
 		}
 
 		private void sendRouterAdv(IPAddress dest) {
-			NDRouterAdvPacket adv = new NDRouterAdvPacket(new IPAddress(_prefix));
+			NDRouterAdvPacket adv = new NDRouterAdvPacket();
+			adv.AddPrefix(new IPAddress(_prefix), 64);
 			adv.Source = _linklocal;
 			if (dest != null) {
 				adv.Destination = dest;

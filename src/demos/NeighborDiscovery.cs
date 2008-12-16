@@ -16,6 +16,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections;
 
 namespace TAP {
 	public class NDPrefixInfo {
@@ -59,7 +60,7 @@ namespace TAP {
 			}
 		}
 
-		public int Length {
+		public static int Length {
 			get { return 32; }
 		}
 
@@ -118,9 +119,9 @@ namespace TAP {
 		protected int _reachable;
 		protected int _retransmit;
 
-		private NDPrefixInfo _prefix;
+		private ArrayList _prefixes = new ArrayList();
 
-		public NDRouterAdvPacket(IPAddress addr) {
+		public NDRouterAdvPacket() {
 			_curhoplimit = 64;
 			this.AdvManagedFlag = false;
 			this.AdvOtherConfigFlag = false;
@@ -128,14 +129,14 @@ namespace TAP {
 			_router_lifetime = 0;
 			_reachable = 0;
 			_retransmit = 0;
-
-			_prefix = new NDPrefixInfo(addr, 64);
 		}
 
 		public override byte[] Data {
 			get {
 				_icmp_type = (byte) ICMPv6Type.RouterAdvertisement;
-				_icmp_payload = new byte[12 + _prefix.Length];
+
+				int prefixes_length = _prefixes.Count * NDPrefixInfo.Length;;
+				_icmp_payload = new byte[12 + prefixes_length];
 				_icmp_payload[0]  = _curhoplimit;
 				_icmp_payload[1]  = _flags_reserved;
 				_icmp_payload[2]  = (byte) ((_router_lifetime >> 8) & 0xff);
@@ -149,8 +150,14 @@ namespace TAP {
 				_icmp_payload[10] = (byte) ((_retransmit >>  8) & 0xff);
 				_icmp_payload[11] = (byte) (_retransmit & 0xff);
 
-				byte[] prefix = _prefix.Data;
-				Array.Copy(prefix, 0, _icmp_payload, 12, prefix.Length);
+				int offset = 12;
+				foreach (NDPrefixInfo prefix in _prefixes) {
+					byte[] prefix_data = prefix.Data;
+					Array.Copy(prefix_data, 0,
+					           _icmp_payload, offset,
+					           prefix_data.Length);
+					offset += prefix_data.Length;
+				}
 
 				return base.Data;
 			}
@@ -189,6 +196,11 @@ namespace TAP {
 		public int AdvRetransTime {
 			get { return _retransmit; }
 			set { _retransmit = value; }
+		}
+
+		public void AddPrefix(IPAddress address, byte prefixlen) {
+			NDPrefixInfo prefix = new NDPrefixInfo(address, prefixlen);
+			_prefixes.Add(prefix);
 		}
 
 		private void setFlag(byte mask, bool value) {
