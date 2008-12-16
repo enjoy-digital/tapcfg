@@ -16,11 +16,16 @@
 namespace TAP {
 	/* http://www.iana.org/assignments/protocol-numbers/ */
 	public enum ProtocolType : byte {
-		HOPOPT  = 1,
-		ICMP    = 2,
-		IGMP    = 3,
-		GGP     = 4,
-		IP      = 5,
+		HOPOPT  = 0,
+		ICMP    = 1,
+		IGMP    = 2,
+		GGP     = 3,
+		IP      = 4,
+		ST      = 5,
+		TCP     = 6,
+		CBT     = 7,
+		EGP     = 8,
+		IGP     = 9,
 		IPv6    = 41,
 		ICMPv6  = 58
 	}
