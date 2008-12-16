@@ -19,7 +19,7 @@ using System.Collections;
 
 namespace TAP {
 	public class PacketMangler {
-		ArrayList _remotehosts = new ArrayList();
+		ArrayList _hosts = new ArrayList();
 		Hashtable _rarptable = new Hashtable();
 		Hashtable _arptable = new Hashtable();
 
@@ -28,19 +28,21 @@ namespace TAP {
 
 		public PacketMangler(EthernetDevice dev) {
 			_localhost = new LocalHost(dev, this);
-			_router = new VirtualRouter();
+			_router = new VirtualRouter(this);
+
+			this.AddHost(_localhost);
+			this.AddHost(_router);
 		}
 
 		public void Start() {
 			_localhost.Start();
 		}
 
-		public void AddRemoteHost(INetworkHost host) {
-			_remotehosts.Add(host);
+		public void AddHost(INetworkHost host) {
+			_hosts.Add(host);
 		}
 
 		public void MangleFrame(INetworkHost source, EthernetFrame frame) {
-
 			printInfo(frame);
 
 			/* If the host is not in our RARP table, add it */
@@ -64,20 +66,18 @@ namespace TAP {
 				if (packet.NextHeader == ProtocolType.ICMPv6) {
 					ICMPv6Type type = (ICMPv6Type) packet.Payload[0];
 					if (type == ICMPv6Type.RouterSolicitation) {
-						EthernetFrame fr = _router.CreateRouterAdv(packet.Source);
-						Console.WriteLine("Wrote packet {0}", BitConverter.ToString(fr.Data));
-						source.HandleFrame(fr);
+						_router.SendRouterAdv(packet.Source);
 					}
 				}
-				
 			}
 
 			INetworkHost dest = (INetworkHost) _rarptable[frame.Destination];
 			if (dest != null) {
 				dest.HandleFrame(frame);
 			} else {
-				foreach (INetworkHost host in _remotehosts) {
-					host.HandleFrame(frame);
+				foreach (INetworkHost host in _hosts) {
+					if (host != source)
+						host.HandleFrame(frame);
 				}
 			}
 		}

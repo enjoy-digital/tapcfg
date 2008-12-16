@@ -56,6 +56,8 @@ namespace TAP {
 		}
 
 		public void HandleFrame(EthernetFrame frame) {
+			Console.WriteLine("Writing packet {0}",
+			                  BitConverter.ToString(frame.Data));
 			lock (_mutex) {
 				_dev.Write(frame);
 			}

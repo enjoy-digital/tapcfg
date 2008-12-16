@@ -18,12 +18,15 @@ namespace TAP {
 	using System.Net;
 	using System.Security.Cryptography;
 
-	public class VirtualRouter {
+	public class VirtualRouter : INetworkHost {
 		private byte[] _mac;
 		private byte[] _prefix;
 		private IPAddress _linklocal;
 
-		public VirtualRouter() {
+		private PacketMangler _mangler;
+
+		public VirtualRouter(PacketMangler mangler) {
+			/* Create MAC and ULA addresses */
 			_mac = createMAC();
 			_prefix = createPrefix(_mac);
 
@@ -38,9 +41,14 @@ namespace TAP {
 			data[1] = 0x80;
 			Array.Copy(getEUI64(_mac), 0, data, 8, 8);
 			_linklocal = new IPAddress(data);
+
+			_mangler = mangler;
 		}
 
-		public EthernetFrame CreateRouterAdv(IPAddress dest) {
+		public void HandleFrame(EthernetFrame frame) {
+		}
+
+		public void SendRouterAdv(IPAddress dest) {
 			NDRouterAdvPacket adv = new NDRouterAdvPacket(new IPAddress(_prefix));
 			adv.Source = _linklocal;
 			if (dest != null) {
@@ -59,7 +67,7 @@ namespace TAP {
 			frame_data[13] = (byte) ((int) EtherType.IPv6 & 0xff);
 			Array.Copy(adv_data, 0, frame_data, 14, adv_data.Length);
 
-			return new EthernetFrame(frame_data);
+			_mangler.MangleFrame(this, new EthernetFrame(frame_data));
 		}
 
 		private byte[] createMAC() {
