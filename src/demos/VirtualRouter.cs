@@ -55,6 +55,7 @@ namespace TAP {
 		}
 
 		public void Advertise() {
+			SendRouterAdv(null);
 			_timer = new Timer();
 			_timer.Elapsed += new ElapsedEventHandler(timerEvent);
 			_timer.Interval = 30000;
