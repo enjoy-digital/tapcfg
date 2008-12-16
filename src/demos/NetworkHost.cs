@@ -18,6 +18,7 @@ using System.Threading;
 
 namespace TAP {
 	public interface INetworkHost {
+		bool IsRouter();
 		void HandleFrame(EthernetFrame frame);
 	}
 
@@ -33,6 +34,18 @@ namespace TAP {
 			_dev = dev;
 			_running = false;
 			_mangler = mangler;
+		}
+
+		public bool IsRouter() {
+			return false;
+		}
+
+		public void HandleFrame(EthernetFrame frame) {
+			Console.WriteLine("Writing packet {0}",
+			                  BitConverter.ToString(frame.Data));
+			lock (_mutex) {
+				_dev.Write(frame);
+			}
 		}
 
 		public void Start() {
@@ -52,14 +65,6 @@ namespace TAP {
 					EthernetFrame frame = _dev.Read();
 					_mangler.MangleFrame(this, frame);
 				}
-			}
-		}
-
-		public void HandleFrame(EthernetFrame frame) {
-			Console.WriteLine("Writing packet {0}",
-			                  BitConverter.ToString(frame.Data));
-			lock (_mutex) {
-				_dev.Write(frame);
 			}
 		}
 	}

@@ -22,7 +22,6 @@ namespace TAP {
 		private byte[] _mac;
 		private byte[] _prefix;
 		private IPAddress _linklocal;
-
 		private PacketMangler _mangler;
 
 		public VirtualRouter(PacketMangler mangler) {
@@ -43,6 +42,10 @@ namespace TAP {
 			_linklocal = new IPAddress(data);
 
 			_mangler = mangler;
+		}
+
+		public bool IsRouter() {
+			return true;
 		}
 
 		public void HandleFrame(EthernetFrame frame) {
