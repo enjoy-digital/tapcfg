@@ -16,9 +16,12 @@
 namespace TAP {
 	using System;
 	using System.Net;
+	using System.Timers;
 	using System.Security.Cryptography;
 
 	public class VirtualRouter : INetworkHost {
+		private Timer _timer;
+
 		private byte[] _mac;
 		private byte[] _prefix;
 		private IPAddress _linklocal;
@@ -49,6 +52,17 @@ namespace TAP {
 		}
 
 		public void HandleFrame(EthernetFrame frame) {
+		}
+
+		public void Advertise() {
+			_timer = new Timer();
+			_timer.Elapsed += new ElapsedEventHandler(timerEvent);
+			_timer.Interval = 30000;
+			_timer.Start();
+		}
+
+		private void timerEvent(object source, ElapsedEventArgs e) {
+			SendRouterAdv(null);
 		}
 
 		public void SendRouterAdv(IPAddress dest) {

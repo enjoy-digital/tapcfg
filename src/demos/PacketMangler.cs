@@ -36,6 +36,7 @@ namespace TAP {
 
 		public void Start() {
 			_localhost.Start();
+			_router.Advertise();
 		}
 
 		public void AddHost(INetworkHost host) {
