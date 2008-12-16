@@ -88,8 +88,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		goto err;
 	}
 
-	tapcfg_iface_prepare(tapcfg->ifname);
-
 	/* Mark the current fds and mark thread as running */
 	tapcfg->tap_fd = tap_fd;
 	tapcfg->started = 1;
@@ -277,6 +275,10 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		sprintf(buffer, "ifconfig %s up", tapcfg->ifname);
 	} else {
 		sprintf(buffer, "ifconfig %s down", tapcfg->ifname);
+	}
+
+	if (enabled) {
+		tapcfg_iface_prepare(tapcfg->ifname);
 	}
 
 	if (system(buffer) == -1) {
