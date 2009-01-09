@@ -146,30 +146,5 @@ namespace TAP {
 		public byte[] Payload {
 			get { return _payload; }
 		}
-
-		public static EthernetFrame CreateFrame(EtherType type,
-		                                        byte[] source,
-		                                        byte[] destination,
-		                                        byte[] payload) {
-			if (source.Length != 6 || destination.Length != 6) {
-				throw new Exception("Invalid address length");
-			}
-
-			EthernetFrame ret = new EthernetFrame();
-			ret._frameType = FrameType.Ethernet_II;
-			ret._src = source;
-			ret._dst = destination;
-			ret._etherType = (int) type;
-			ret._payload = payload;
-
-			ret._data = new byte[14 + ret._payload.Length];
-			Array.Copy(ret._dst, 0, ret._data, 0, 6);
-			Array.Copy(ret._src, 0, ret._data, 6, 6);
-			ret._data[12] = (byte) ((ret._etherType >> 8) & 0xff);
-			ret._data[13] = (byte) (ret._etherType & 0xff);
-			Array.Copy(ret._payload, 0, ret._data, 14, ret._payload.Length);
-
-			return ret;
-		}
 	}
 }
