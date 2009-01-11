@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 #include "tapserver.h"
+#include "serversock.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -63,11 +64,10 @@ typedef pthread_mutex_t mutex_handle_t;
 #define MUTEX_DESTROY(handle) pthread_mutex_destroy(&(handle))
 #endif
 
-#include "create_server.h"
-
 #define MAX_CLIENTS 5
 
 struct tapserver_s {
+	serversock_t *serversock;
 	int server_fd;
 	unsigned short server_port;
 
@@ -302,16 +302,10 @@ writer_thread(void *arg)
 
 		/* Accept a client and add it to the client table */
 		if (server->listening && FD_ISSET(server->server_fd, &rfds)) {
-			/* FIXME: This doesn't support IPv6 */
-			struct sockaddr_in caddr;
-			socklen_t caddr_size;
 			int client_fd;
 
 			printf("Accepting a new client\n");
-			caddr_size = sizeof(caddr);
-			client_fd = accept(server->server_fd,
-					   (struct sockaddr *) &caddr,
-					   &caddr_size);
+			client_fd = serversock_accept(server->serversock);
 			if (client_fd == -1) {
 				/* XXX: This error should definitely be reported */
 				goto exit;
@@ -336,10 +330,11 @@ int
 tapserver_start(tapserver_t *server, unsigned short port, int listen)
 {
 	if (listen) {
-		server->server_fd = create_server(&port, 0, 1);
-		if (server->server_fd == -1)
+		server->serversock = serversock_tcp(&port, 0, 1);
+		if (!server->serversock)
 			return -1;
 
+		server->server_fd = serversock_get_fd(server->serversock);;
 		server->listening = 1;
 	} else {
 		server->listening = 0;
@@ -365,5 +360,7 @@ tapserver_stop(tapserver_t *server)
 
 	THREAD_JOIN(server->reader);
 	THREAD_JOIN(server->writer);
+
+	serversock_destroy(server->serversock);
 }
 

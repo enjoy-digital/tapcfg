@@ -13,6 +13,21 @@
  *  Lesser General Public License for more details.
  */
 
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+#include <unistd.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+# include <winsock2.h>
+# include <ws2tcpip.h>
+#else
+# include <netinet/in.h>
+#endif
+
+
+#include "serversock.h"
+
 #ifndef DISABLE_IPV6
 #if defined(_WIN32) || defined(_WIN64)
 static const struct in6_addr ip6_any = {{ IN6ADDR_ANY_INIT }};
@@ -23,10 +38,14 @@ static const struct in6_addr ip6_loopback = {{ IN6ADDR_LOOPBACK_INIT }};
 #endif
 #endif
 
+struct serversock_s {
+	int fd;
+};
 
-static int
-create_server(unsigned short *local_port, int use_ipv6, int public)
+serversock_t *
+serversock_tcp(unsigned short *local_port, int use_ipv6, int public)
 {
+	serversock_t *server;
 	int server_fd = -1;
 	int socket_domain;
 	int ret;
@@ -94,12 +113,50 @@ create_server(unsigned short *local_port, int use_ipv6, int public)
 		goto err;
 	}
 
-	return server_fd;
+	server = malloc(sizeof(serversock_t));
+	server->fd = server_fd;
+
+	return server;
 
 err:
 	if (server_fd != -1)
 		close(server_fd);
 
-	return -1;
+	return NULL;
 }
 
+int
+serversock_get_fd(serversock_t *server)
+{
+	assert(server);
+
+	return server->fd;
+}
+
+int
+serversock_accept(serversock_t *server)
+{
+#ifndef DISABLE_IPV6
+	struct sockaddr_in6 caddr;
+#else
+	struct sockaddr_in caddr;
+#endif
+	socklen_t caddr_size;
+	int client_fd;
+
+	caddr_size = sizeof(caddr);
+	client_fd = accept(server->fd,
+	                   (struct sockaddr *) &caddr,
+	                   &caddr_size);
+
+	return client_fd;
+}
+
+void
+serversock_destroy(serversock_t *server) {
+	if (server) {
+		if (server->fd != -1)
+			close(server->fd);
+		free(server);
+	}
+}
