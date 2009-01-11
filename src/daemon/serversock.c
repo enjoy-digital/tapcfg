@@ -39,6 +39,7 @@ static const struct in6_addr ip6_loopback = {{ IN6ADDR_LOOPBACK_INIT }};
 #endif
 
 struct serversock_s {
+	sa_family_t family;
 	int fd;
 };
 
@@ -114,6 +115,7 @@ serversock_tcp(unsigned short *local_port, int use_ipv6, int public)
 	}
 
 	server = malloc(sizeof(serversock_t));
+	server->family = socket_domain;
 	server->fd = server_fd;
 
 	return server;
