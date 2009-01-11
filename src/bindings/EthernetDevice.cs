@@ -68,11 +68,7 @@ namespace TAP {
 
 		public bool WaitReadable(int msec) {
 			int ret = tapcfg_wait_readable(_handle, msec);
-			if (ret != 0) {
-				return true;
-			} else {
-				return false;
-			}
+			return (ret != 0);
 		}
 
 		public EthernetFrame Read() {
@@ -91,11 +87,7 @@ namespace TAP {
 
 		public bool WaitWritable(int msec) {
 			int ret = tapcfg_wait_writable(_handle, msec);
-			if (ret != 0) {
-				return true;
-			} else {
-				return false;
-			}
+			return (ret != 0);
 		}
 
 		public void Write(EthernetFrame frame) {
@@ -113,11 +105,7 @@ namespace TAP {
 		public bool Enabled {
 			get {
 				int ret = tapcfg_iface_get_status(_handle);
-				if (ret != 0) {
-					return true;
-				} else {
-					return false;
-				}
+				return (ret != 0);
 			}
 			set {
 				int ret;
@@ -172,7 +160,7 @@ namespace TAP {
 		protected virtual void Dispose(bool disposing) {
 			if (!_disposed) {
 				if (disposing) {
-					// Managed resources can be _disposed here
+					// Managed resources can be disposed here
 				}
 
 				tapcfg_stop(_handle);
