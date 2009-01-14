@@ -7,7 +7,6 @@ libenv = env.Clone()
 libenv.Append(CPPPATH = ['lib'])
 
 # Prepare the libobj and shlibobj object files
-libsrc = ['lib/tapcfg.c','lib/taplog.c']
 libobj = libenv.Object(['lib/tapcfg.c','lib/taplog.c'])
 if libenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']:
 	shlibobj = libobj
@@ -32,5 +31,7 @@ appenv.Append(LIBPATH = ['lib'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
 # Compile the daemon for testing
-appenv.Program('../build/tapserver', ['daemon/tapserver.c','daemon/serversock.c','daemon/serverdemo.c'], install=False)
+daemonobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
+appenv.Program('../build/serverdemo', [daemonobj,'daemon/serverdemo.c'], install=False)
+appenv.Program('../build/tapcfgd', [daemonobj,'daemon/daemon.c','daemon/main.c'], install=False)
 
