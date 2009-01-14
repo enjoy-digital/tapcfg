@@ -75,14 +75,18 @@ tapserver_init(tapcfg_t *tapcfg, int waitms)
 void
 tapserver_destroy(tapserver_t *server)
 {
-	MUTEX_DESTROY(server->mutex);
-	MUTEX_DESTROY(server->run_mutex);
+	if (server) {
+		MUTEX_DESTROY(server->mutex);
+		MUTEX_DESTROY(server->run_mutex);
+	}
 	free(server);
 }
 
 int
 tapserver_add_client(tapserver_t *server, int fd)
 {
+	assert(server);
+
 	MUTEX_LOCK(server->mutex);
 	if (server->clients >= server->max_clients) {
 		MUTEX_UNLOCK(server->mutex);
@@ -298,6 +302,8 @@ exit:
 int
 tapserver_start(tapserver_t *server, unsigned short port, int listen)
 {
+	assert(server);
+
 	if (listen) {
 		server->serversock = serversock_tcp(&port, 0, 1);
 		if (!server->serversock)
@@ -319,6 +325,8 @@ tapserver_start(tapserver_t *server, unsigned short port, int listen)
 void
 tapserver_stop(tapserver_t *server)
 {
+	assert(server);
+
 	MUTEX_LOCK(server->run_mutex);
 	if (!server->running) {
 		MUTEX_UNLOCK(server->run_mutex);
@@ -337,6 +345,8 @@ int
 tapserver_client_count(tapserver_t *server)
 {
 	int ret;
+
+	assert(server);
 
 	MUTEX_LOCK(server->mutex);
 	ret = server->clients;
