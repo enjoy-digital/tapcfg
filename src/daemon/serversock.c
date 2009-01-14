@@ -135,8 +135,8 @@ serversock_get_fd(serversock_t *server)
 	return server->fd;
 }
 
-int
-serversock_accept(serversock_t *server)
+static int
+serversock_accept_inet(serversock_t *server)
 {
 #ifndef DISABLE_IPV6
 	struct sockaddr_in6 caddr;
@@ -152,6 +152,24 @@ serversock_accept(serversock_t *server)
 	                   &caddr_size);
 
 	return client_fd;
+}
+
+int
+serversock_accept(serversock_t *server)
+{
+	int ret;
+
+	switch (server->family) {
+	case AF_INET:
+#ifndef DISABLE_IPV6
+	case AF_INET6:
+#endif
+		ret = serversock_accept_inet(server);
+	default:
+		ret = -1;
+	}
+
+	return ret;
 }
 
 void
