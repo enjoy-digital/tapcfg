@@ -32,5 +32,5 @@ appenv.Append(LIBPATH = ['lib'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
 # Compile the daemon for testing
-appenv.Program('../build/tapserver', ['daemon/tapserver.c','daemon/serversock.c','daemon/main.c'], install=False)
+appenv.Program('../build/tapserver', ['daemon/tapserver.c','daemon/serversock.c','daemon/serverdemo.c'], install=False)
 
