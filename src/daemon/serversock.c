@@ -165,6 +165,7 @@ serversock_accept(serversock_t *server)
 	case AF_INET6:
 #endif
 		ret = serversock_accept_inet(server);
+		break;
 	default:
 		ret = -1;
 	}

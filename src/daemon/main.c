@@ -20,7 +20,7 @@
 #include <time.h>
 #include <signal.h>
 
-#include "tapserver.h"
+#include "daemon.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -41,6 +41,8 @@ handle_sigint(int sign)
 }
 
 int main(int argc, char *argv[]) {
+	daemon_t *daemon;
+
 #ifdef _WIN32
 #define sleep(x) Sleep((x)*1000)
 
@@ -63,11 +65,17 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 
+	daemon = daemon_init();
+	daemon_start(daemon);
+
 	running = 1;
 	signal(SIGINT, handle_sigint);
 	while (running) {
 		sleep(1);
 	}
+
+	daemon_stop(daemon);
+	daemon_destroy(daemon);
 
 #ifdef _WIN32
 	WSACleanup();

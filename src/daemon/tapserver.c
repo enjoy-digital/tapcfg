@@ -309,7 +309,7 @@ tapserver_start(tapserver_t *server, unsigned short port, int listen)
 		if (!server->serversock)
 			return -1;
 
-		server->server_fd = serversock_get_fd(server->serversock);;
+		server->server_fd = serversock_get_fd(server->serversock);
 		server->listening = 1;
 	} else {
 		server->listening = 0;
