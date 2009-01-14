@@ -364,3 +364,14 @@ tapserver_stop(tapserver_t *server)
 	serversock_destroy(server->serversock);
 }
 
+int
+tapserver_client_count(tapserver_t *server)
+{
+	int ret;
+
+	MUTEX_LOCK(server->mutex);
+	ret = server->clients;
+	MUTEX_UNLOCK(server->mutex);
+
+	return ret;
+}
