@@ -25,7 +25,6 @@
 # include <netinet/in.h>
 #endif
 
-
 #include "serversock.h"
 
 #ifndef DISABLE_IPV6
@@ -39,7 +38,7 @@ static const struct in6_addr ip6_loopback = {{ IN6ADDR_LOOPBACK_INIT }};
 #endif
 
 struct serversock_s {
-	sa_family_t family;
+	int family;
 	int fd;
 };
 

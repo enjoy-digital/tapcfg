@@ -17,6 +17,7 @@
 #define THREADS_H
 
 #if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
 
 typedef HANDLE thread_handle_t;
 

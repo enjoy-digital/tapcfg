@@ -131,5 +131,7 @@ daemon_stop(daemon_t *daemon)
 	MUTEX_UNLOCK(daemon->run_mutex);
 
 	THREAD_JOIN(daemon->thread);
+
+	serversock_destroy(daemon->serversock);
 }
 
