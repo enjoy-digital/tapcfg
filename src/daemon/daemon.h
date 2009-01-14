@@ -16,4 +16,12 @@
 #ifndef DAEMON_H
 #define DAEMON_H
 
+typedef struct daemon_s daemon_t;
+
+daemon_t *daemon_init();
+void daemon_destroy(daemon_t *daemon);
+
+int daemon_start(daemon_t *daemon);
+void daemon_stop(daemon_t *daemon);
+
 #endif

@@ -13,3 +13,40 @@
  *  Lesser General Public License for more details.
  */
 
+#include <stdlib.h>
+
+#include "daemon.h"
+#include "threads.h"
+
+struct daemon_s {
+};
+
+daemon_t *
+daemon_init()
+{
+	daemon_t *daemon;
+
+	daemon = malloc(sizeof(daemon_t));
+	if (!daemon) {
+		return NULL;
+	}
+
+	return daemon;
+}
+
+void
+daemon_destroy(daemon_t *daemon)
+{
+	free(daemon);
+}
+
+int
+daemon_start(daemon_t *daemon)
+{
+	return 0;
+}
+
+void
+daemon_stop(daemon_t *daemon)
+{
+}
