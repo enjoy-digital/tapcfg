@@ -58,6 +58,18 @@ client_destroy(client_t *client)
 static THREAD_RETVAL
 client_thread(void *arg)
 {
+	client_t *client = arg;
+	int running;
+
+	assert(client);
+
+	do {
+
+		MUTEX_LOCK(client->run_mutex);
+		running = client->running;
+		MUTEX_UNLOCK(client->run_mutex);
+	} while (running);
+
 	return 0;
 }
 
