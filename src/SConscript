@@ -31,7 +31,7 @@ appenv.Append(LIBPATH = ['lib'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
 # Compile the daemon for testing
-daemonobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
-appenv.Program('../build/tapcfgdemo', [daemonobj,'daemon/tapcfgdemo.c'], install=False)
-appenv.Program('../build/tapcfgd', [daemonobj,'daemon/daemon.c','daemon/main.c'], install=False)
+tapserverobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
+appenv.Program('../build/tapdemo', [tapserverobj,'daemon/tapdemo.c'], install=False)
+appenv.Program('../build/tapcfgd', [tapserverobj,'daemon/daemon.c','daemon/main.c'], install=False)
 
