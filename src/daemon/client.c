@@ -13,4 +13,60 @@
  *  Lesser General Public License for more details.
  */
 
+#include <stdlib.h>
+#include <assert.h>
+
+#include "client.h"
+#include "daemon.h"
+#include "threads.h"
+
+struct client_s {
+	daemon_t *daemon;
+	int fd;
+
+	int running;
+	mutex_handle_t run_mutex;
+
+	thread_handle_t thread;
+};
+
+client_t *
+client_init(daemon_t *daemon, int fd)
+{
+	client_t *client;
+
+	assert(daemon);
+
+	client = malloc(sizeof(client_t));
+	if (!client) {
+		return NULL;
+	}
+
+	client->daemon = daemon;
+	client->fd = fd;
+	MUTEX_CREATE(client->run_mutex);
+
+	return client;
+}
+
+void
+client_destroy(client_t *client)
+{
+	free(client);
+}
+
+static THREAD_RETVAL
+client_thread(void *arg)
+{
+	return 0;
+}
+
+void
+client_start(client_t *client)
+{
+	assert(client);
+
+	client->running = 1;
+	THREAD_CREATE(client->thread, client_thread, client);
+}
 

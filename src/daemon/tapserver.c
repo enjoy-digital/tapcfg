@@ -60,16 +60,19 @@ struct tapserver_s {
 tapserver_t *
 tapserver_init(tapcfg_t *tapcfg, int waitms)
 {
-	tapserver_t *ret;
+	tapserver_t *server;
 
-	ret = calloc(1, sizeof(tapserver_t));
-	ret->max_clients = MAX_CLIENTS;
-	ret->tapcfg = tapcfg;
-	ret->waitms = waitms;
-	MUTEX_CREATE(ret->run_mutex);
-	MUTEX_CREATE(ret->mutex);
+	server = calloc(1, sizeof(tapserver_t));
+	if (!server) {
+		return NULL;
+	}
+	server->max_clients = MAX_CLIENTS;
+	server->tapcfg = tapcfg;
+	server->waitms = waitms;
+	MUTEX_CREATE(server->run_mutex);
+	MUTEX_CREATE(server->mutex);
 
-	return ret;
+	return server;
 }
 
 void

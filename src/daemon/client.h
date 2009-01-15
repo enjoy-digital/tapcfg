@@ -16,4 +16,11 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include "daemon.h"
+
+typedef struct client_s client_t;
+
+client_t *client_init(daemon_t *daemon, int fd);
+void client_destroy(client_t *client);
+
 #endif

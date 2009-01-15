@@ -21,6 +21,7 @@
 #include "daemon.h"
 #include "serversock.h"
 #include "threads.h"
+#include "client.h"
 
 struct daemon_s {
 	serversock_t *serversock;
@@ -30,7 +31,6 @@ struct daemon_s {
 	mutex_handle_t run_mutex;
 
 	mutex_handle_t mutex;
-
 	thread_handle_t thread;
 };
 
@@ -39,10 +39,12 @@ daemon_init()
 {
 	daemon_t *daemon;
 
-	daemon = malloc(sizeof(daemon_t));
+	daemon = calloc(1, sizeof(daemon_t));
 	if (!daemon) {
 		return NULL;
 	}
+	MUTEX_CREATE(daemon->run_mutex);
+	MUTEX_CREATE(daemon->mutex);
 
 	return daemon;
 }
