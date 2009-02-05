@@ -88,10 +88,10 @@ taplog_log(int level, const char *fmt, ...)
 		char *local = taplog_utf8_to_local(buffer);
 
 		if (local) {
-			fprintf(stderr, local);
+			fprintf(stderr, "%s", local);
 			free(local);
 		} else {
-			fprintf(stderr, buffer);
+			fprintf(stderr, "%s", buffer);
 		}
 	}
 }
