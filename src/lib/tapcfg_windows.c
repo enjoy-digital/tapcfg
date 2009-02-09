@@ -48,6 +48,7 @@ struct tapcfg_s {
 	HANDLE dev_handle;
 	char *ifname;
 	char *ansi_ifname;
+	unsigned char hwaddr[6];
 
 	int reading;
 	OVERLAPPED overlapped_in;
@@ -176,7 +177,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 				     &len, NULL)) {
 
 			taplog_log(TAPLOG_ERR,
-				   "Error calling DeviceIoControl: %d",
+				   "Error calling DeviceIoControl: %d\n",
 				   (int) GetLastError());
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
@@ -202,6 +203,33 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
 		}
+	}
+
+	if (dev_handle != INVALID_HANDLE_VALUE) {
+		unsigned char hwaddr[6];
+
+		if (!DeviceIoControl(dev_handle,
+				     TAP_IOCTL_GET_MAC,
+				     &hwaddr, /* InBuffer */
+				     sizeof(hwaddr),
+				     &hwaddr, /* OutBuffer */
+				     sizeof(hwaddr),
+				     &len, NULL)) {
+
+			taplog_log(TAPLOG_ERR,
+				   "Error calling DeviceIoControl: %d\n",
+				   (int) GetLastError());
+			CloseHandle(dev_handle);
+			dev_handle = INVALID_HANDLE_VALUE;
+
+			return -1;
+		}
+
+		taplog_log(TAPLOG_DEBUG,
+			   "TAP interface MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
+		           hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+
+		memcpy(tapcfg->hwaddr, hwaddr, 6);
 	}
 
 	if (dev_handle == INVALID_HANDLE_VALUE) {
