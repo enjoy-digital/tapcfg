@@ -117,6 +117,36 @@ remove_client(tapserver_t *server, int idx)
 	server->clients--;
 }
 
+static int
+send_data(int s, void *buf, int len)
+{
+	int sent = 0;
+
+	while (len > sent) {
+		int ret = send(s, buf+sent, len-sent, 0);
+		if (ret == -1)
+			return -1;
+		sent += ret;
+	}
+
+	return sent;
+}
+
+static int
+recv_data(int s, void *buf, int len)
+{
+	int recvd = 0;
+
+	while (len > recvd) {
+		int ret = recv(s, buf+recvd, len-recvd, 0);
+		if (ret == -1)
+			return -1;
+		recvd += ret;
+	}
+
+	return recvd;
+}
+
 static THREAD_RETVAL
 reader_thread(void *arg)
 {
@@ -154,10 +184,10 @@ reader_thread(void *arg)
 				sizebuf[1] = len & 0xff;
 
 				/* Write received data length */
-				tmp = send(server->clienttab[i], sizebuf, 2, 0);
+				tmp = send_data(server->clienttab[i], sizebuf, 2);
 				if (tmp > 0) {
 					/* Write received data */
-					tmp = send(server->clienttab[i], buf, len, 0);
+					tmp = send_data(server->clienttab[i], buf, len);
 				}
 
 				if (tmp <= 0) {
@@ -231,11 +261,11 @@ writer_thread(void *arg)
 			if (!FD_ISSET(server->clienttab[i], &rfds))
 				continue;
 
-			tmp = recv(server->clienttab[i], sizebuf, 2, 0);
+			tmp = recv_data(server->clienttab[i], sizebuf, 2);
 			if (tmp > 0) {
 				len = (sizebuf[0]&0xff) << 8 | sizebuf[1];
 				if (len <= sizeof(buf)) {
-					tmp = recv(server->clienttab[i], buf, len, 0);
+					tmp = recv_data(server->clienttab[i], buf, len);
 				} else {
 					/* XXX: Buffer size error handled as read error */
 					tmp = -1;
@@ -263,9 +293,9 @@ writer_thread(void *arg)
 						continue;
 					}
 
-					tmp = send(server->clienttab[j], sizebuf, 2, 0);
+					tmp = send_data(server->clienttab[j], sizebuf, 2);
 					if (tmp > 0) {
-						tmp = send(server->clienttab[j], buf, len, 0);
+						tmp = send_data(server->clienttab[j], buf, len);
 					}
 					if (tmp <= 0) {
 						remove_client(server, j);
