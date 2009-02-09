@@ -40,6 +40,7 @@ struct tapcfg_s {
 
 	int tap_fd;
 	char ifname[MAX_IFNAME+1];
+	unsigned char hwaddr[IFHWADDRLEN];
 
 	char buffer[TAPCFG_BUFSIZE];
 	int buflen;
@@ -238,7 +239,7 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	return ret;
 }
 
-const char *
+char *
 tapcfg_get_ifname(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
@@ -248,6 +249,31 @@ tapcfg_get_ifname(tapcfg_t *tapcfg)
 	}
 
 	return strdup(tapcfg->ifname);
+}
+
+char *
+tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
+{
+	char *ret;
+	int hwaddrlen;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return NULL;
+	}
+
+	hwaddrlen = sizeof(tapcfg->hwaddr);
+	ret = malloc(hwaddrlen);
+	if (!ret)
+		return NULL;
+
+	memcpy(ret, tapcfg->hwaddr, hwaddrlen);
+	if (length) {
+		*length = hwaddrlen;
+	}
+
+	return ret;
 }
 
 int

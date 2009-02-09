@@ -152,6 +152,22 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (tapcfg) {
+		char *hwaddr;
+		int hwaddrlen;
+
+		hwaddr = tapcfg_iface_get_hwaddr(tapcfg, &hwaddrlen);
+		if (hwaddr != NULL) {
+			int i;
+
+			printf("Got hardware address: ");
+			for (i=0; i<hwaddrlen; i++) {
+				printf("%.2x%s",
+				       (unsigned char) hwaddr[i],
+				       (i == hwaddrlen-1) ? "\n" : ":");
+			}
+			free(hwaddr);
+		}
+
 		srand(time(NULL));
 		id = rand()%0x1000;
 

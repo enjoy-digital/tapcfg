@@ -41,6 +41,8 @@
 #define TAP_WINDOWS_MIN_MAJOR               8
 #define TAP_WINDOWS_MIN_MINOR               1
 
+#define HWADDRLEN 6
+
 struct tapcfg_s {
 	int started;
 	int enabled;
@@ -48,7 +50,7 @@ struct tapcfg_s {
 	HANDLE dev_handle;
 	char *ifname;
 	char *ansi_ifname;
-	unsigned char hwaddr[6];
+	unsigned char hwaddr[HWADDRLEN];
 
 	int reading;
 	OVERLAPPED overlapped_in;
@@ -206,7 +208,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	}
 
 	if (dev_handle != INVALID_HANDLE_VALUE) {
-		unsigned char hwaddr[6];
+		unsigned char hwaddr[HWADDRLEN];
 
 		if (!DeviceIoControl(dev_handle,
 				     TAP_IOCTL_GET_MAC,
@@ -229,7 +231,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 			   "TAP interface MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
 		           hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
 
-		memcpy(tapcfg->hwaddr, hwaddr, 6);
+		memcpy(tapcfg->hwaddr, hwaddr, sizeof(hwaddr));
 	}
 
 	if (dev_handle == INVALID_HANDLE_VALUE) {
@@ -429,7 +431,7 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	return len;
 }
 
-const char *
+char *
 tapcfg_get_ifname(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
@@ -439,6 +441,31 @@ tapcfg_get_ifname(tapcfg_t *tapcfg)
 	}
 
 	return strdup(tapcfg->ifname);
+}
+
+char *
+tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
+{
+	char *ret;
+	int hwaddrlen;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return NULL;
+	}
+
+	hwaddrlen = sizeof(tapcfg->hwaddr);
+	ret = malloc(hwaddrlen);
+	if (!ret)
+		return NULL;
+
+	memcpy(ret, tapcfg->hwaddr, hwaddrlen);
+	if (length) {
+		*length = hwaddrlen;
+	}
+
+	return ret;
 }
 
 int

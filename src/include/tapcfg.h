@@ -142,7 +142,7 @@ int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
 
 
 /**
- * Get the current name of the interface. This can be falled
+ * Get the current name of the interface. This can be called
  * after tapcfg_start to see if the suggested interface name
  * was available for use.
  * @param tapcfg is a pointer to an inited structure
@@ -150,7 +150,20 @@ int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
  *         name in UTF-8 encoding, should be freed by the caller
  *         application after use! NULL if the device is not started.
  */
-const char *tapcfg_get_ifname(tapcfg_t *tapcfg);
+char *tapcfg_get_ifname(tapcfg_t *tapcfg);
+
+/**
+ * Get the current hardware MAC address of the interface. This
+ * can be called after tapcfg_start for use in packet construction.
+ * @param tapcfg is a pointer to an inited structure
+ * @param length is a pointer to an integer that stores the address,
+ *        array length, can be NULL in which case it is ignored
+ * @return Pointer to a character array containing the interface
+ *         hardware address in binary format, should be freed by
+ *         the caller application after use! NULL if the device
+ *         is not started.
+ */
+char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
 
 
 /**

@@ -60,6 +60,18 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 	/* Set the device name to be the one we got from OS */
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", ifr.ifr_name);
 	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
+
+	/* Get the hardware address of the TAP interface */
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+	ret = ioctl(tap_fd, SIOCGIFHWADDR, &ifr);
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error getting the hardware address: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+	memcpy(tapcfg->hwaddr, ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
 #else /* BSD */
 	char buf[128];
 	int i;
@@ -94,6 +106,8 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 	/* Set the device name to be the one we found finally */
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf+5);
 	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
+
+	/* FIXME: Get MAC address on BSD, slightly tricky */
 #endif
 
 	return tap_fd;
