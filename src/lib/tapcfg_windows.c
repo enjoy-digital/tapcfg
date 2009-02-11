@@ -443,29 +443,18 @@ tapcfg_get_ifname(tapcfg_t *tapcfg)
 	return strdup(tapcfg->ifname);
 }
 
-char *
+const char *
 tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
 {
-	char *ret;
-	int hwaddrlen;
-
 	assert(tapcfg);
 
 	if (!tapcfg->started) {
 		return NULL;
 	}
 
-	hwaddrlen = sizeof(tapcfg->hwaddr);
-	ret = malloc(hwaddrlen);
-	if (!ret)
-		return NULL;
-
-	memcpy(ret, tapcfg->hwaddr, hwaddrlen);
-	if (length) {
-		*length = hwaddrlen;
-	}
-
-	return ret;
+	if (length)
+		*length = sizeof(tapcfg->hwaddr);
+	return (const char *) tapcfg->hwaddr;
 }
 
 int

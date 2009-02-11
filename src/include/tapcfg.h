@@ -159,11 +159,11 @@ char *tapcfg_get_ifname(tapcfg_t *tapcfg);
  * @param length is a pointer to an integer that stores the address,
  *        array length, can be NULL in which case it is ignored
  * @return Pointer to a character array containing the interface
- *         hardware address in binary format, should be freed by
- *         the caller application after use! NULL if the device
+ *         hardware address in binary format, should NOT be freed
+ *         by the caller application after use! NULL if the device
  *         is not started.
  */
-char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
+const char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
 
 
 /**

@@ -126,6 +126,26 @@ namespace TAP {
 			get { return tapcfg_get_ifname(_handle); }
 		}
 
+		public byte[] HWAddress {
+			get {
+				/* Allocate unmanaged memory to store the returned array length */
+				IntPtr lenptr = Marshal.AllocHGlobal(10);
+
+				/* Call the function, length of the data array is stored in lenptr */
+				IntPtr data = tapcfg_iface_get_hwaddr(_handle, lenptr);
+
+				/* Read the array length into a managed value */
+				int datalen = Marshal.ReadInt32(lenptr, 0);
+				Marshal.FreeHGlobal(lenptr);
+
+				/* Copy the data into a managed array */
+				byte[] ret = new byte[datalen];
+				Marshal.Copy(data, ret, 0, datalen);
+
+				return ret;
+			}
+		}
+
 		public int MTU {
 			get {
 				return _MTU;
@@ -201,6 +221,9 @@ namespace TAP {
 		[return : MarshalAs(UnmanagedType.CustomMarshaler,
 		                    MarshalTypeRef = typeof(UTF8Marshaler))]
 		private static extern string tapcfg_get_ifname(IntPtr tapcfg);
+
+		[DllImport("tapcfg")]
+		private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
 
 		[DllImport("tapcfg")]
 		private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
