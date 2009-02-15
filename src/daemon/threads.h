@@ -19,6 +19,8 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 
+#define sleepms(x) Sleep(x)
+
 typedef HANDLE thread_handle_t;
 
 #define THREAD_RETVAL DWORD WINAPI
@@ -36,6 +38,9 @@ typedef HANDLE mutex_handle_t;
 #else /* Use pthread library */
 
 #include <pthread.h>
+#include <unistd.h>
+
+#define sleepms(x) usleep((x)*1000)
 
 typedef pthread_t thread_handle_t;
 
