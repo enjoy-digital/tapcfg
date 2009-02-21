@@ -13,6 +13,7 @@
  *  Lesser General Public License for more details.
  */
 
+#include <net/if_dl.h>
 #include <ifaddrs.h>
 
 static int
@@ -55,22 +56,22 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
 
 	/* Get MAC address on BSD, slightly trickier than Linux */
-	if (getifaddrs(&ifap) == 0) {
+	if (getifaddrs(&ifa) == 0) {
 		struct ifaddrs *curr;
 
 		for (curr = ifa; curr; curr = curr->ifa_next) {
 			if (!strcmp(curr->ifa_name, tapcfg->ifname) &&
 			    curr->ifa_addr->sa_family == AF_LINK) {
-				struct sockaddr_dl* sdp =
-					(struct sockaddr_dl*) curr->ifa_addr;
+				struct sockaddr_dl *sdp =
+					(struct sockaddr_dl *) curr->ifa_addr;
 
-				memcpy(node,
+				memcpy(tapcfg->hwaddr,
 				       sdp->sdl_data + sdp->sdl_nlen,
 				       HWADDRLEN);
 			}
 		}
 
-		freeifaddrs(ifap);
+		freeifaddrs(ifa);
 	}
 
 	return tap_fd;
