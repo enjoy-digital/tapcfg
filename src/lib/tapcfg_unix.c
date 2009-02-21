@@ -48,7 +48,11 @@ struct tapcfg_s {
 };
 
 /* This will use the tapcfg_s struct so we need it here */
-#include "tapcfg_unix_compat.h"
+#ifdef __linux__
+#  include "tapcfg_unix_linux.h"
+#else
+#  include "tapcfg_unix_bsd.h"
+#endif
 
 tapcfg_t *
 tapcfg_init()
