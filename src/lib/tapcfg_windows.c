@@ -41,7 +41,8 @@
 #define TAP_WINDOWS_MIN_MAJOR               8
 #define TAP_WINDOWS_MIN_MINOR               1
 
-#define HWADDRLEN 6
+typedef unsigned char MACADDR [6];
+typedef unsigned long IPADDR;
 
 struct tapcfg_s {
 	int started;
@@ -49,8 +50,7 @@ struct tapcfg_s {
 
 	HANDLE dev_handle;
 	char *ifname;
-	char *ansi_ifname;
-	unsigned char hwaddr[HWADDRLEN];
+	MACADDR hwaddr;
 
 	int reading;
 	OVERLAPPED overlapped_in;
@@ -86,7 +86,6 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 		tapcfg_stop(tapcfg);
 
 		free(tapcfg->ifname);
-		free(tapcfg->ansi_ifname);
 
 		CloseHandle(tapcfg->overlapped_in.hEvent);
 		CloseHandle(tapcfg->overlapped_out.hEvent);
@@ -142,13 +141,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	tapcfg->ifname = tapcfg_fixup_adapters(ifname, &adapterid);
 	if (!tapcfg->ifname) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
-		return -1;
-	}
-
-	/* Create the ANSI native version of the ifname for use in commands */
-	tapcfg->ansi_ifname = taplog_utf8_to_local(tapcfg->ifname);
-	if (!tapcfg->ansi_ifname) {
-		taplog_log(TAPLOG_ERR, "Interface name doesn't convert to local charset!\n");
 		return -1;
 	}
 
@@ -208,7 +200,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	}
 
 	if (dev_handle != INVALID_HANDLE_VALUE) {
-		unsigned char hwaddr[HWADDRLEN];
+		MACADDR hwaddr;
 
 		if (!DeviceIoControl(dev_handle,
 				     TAP_IOCTL_GET_MAC,
@@ -514,8 +506,9 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
-	char buffer[1024];
-	unsigned int mask;
+	IPADDR buffer[4];
+	IPADDR mask;
+	DWORD len;
 
 	assert(tapcfg);
 
@@ -527,9 +520,6 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 		return -1;
 	}
 
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
 	/* Calculate the netmask from the network bit length */
 	for (mask=0; netbits; netbits--)
 		mask = (mask >> 1)|(1 << 31);
@@ -539,24 +529,20 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 		return -1;
 	}
 
-	snprintf(buffer, sizeof(buffer)-1,
-	         "netsh interface ip set address \"%s\" static %s %u.%u.%u.%u\n",
-	         tapcfg->ansi_ifname, addrstr,
-	         (mask >> 24) & 0xff,
-	         (mask >> 16) & 0xff,
-	         (mask >> 8)  & 0xff,
-	         mask & 0xff);
+	buffer[0] = inet_addr(addrstr);
+	buffer[1] = mask;
+	buffer[2] = buffer[0]+1;
+	buffer[3] = 3600;
 
-	taplog_log(TAPLOG_INFO, "Running netsh command: "
-	           "netsh interface ip set address \"%s\" static %s %u.%u.%u.%u\n",
-	           tapcfg->ifname, addrstr,
-	           (mask >> 24) & 0xff,
-	           (mask >> 16) & 0xff,
-	           (mask >> 8)  & 0xff,
-	           mask & 0xff);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv4 address\n");
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for MASQ\n");
+	if (!DeviceIoControl(tapcfg->dev_handle,
+	                     TAP_IOCTL_CONFIG_DHCP_MASQ,
+	                     &buffer, /* InBuffer */
+	                     sizeof(buffer),
+	                     &buffer, /* OutBuffer */
+	                     sizeof(buffer),
+	                     &len, NULL)) {
+		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed\n");
 		return -1;
 	}
 
