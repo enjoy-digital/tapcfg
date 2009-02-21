@@ -93,36 +93,6 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 	free(tapcfg);
 }
 
-static int
-tapcfg_iface_reset(tapcfg_t *tapcfg)
-{
-	char buffer[1024];
-	int ret = 0;
-
-	assert(tapcfg);
-
-	if (!tapcfg->started) {
-		return 0;
-	}
-
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
-	taplog_log(TAPLOG_INFO,
-	           "Flushing the system ARP table\n");
-
-	snprintf(buffer, sizeof(buffer)-1, "arp -d *\n");
-
-	taplog_log(TAPLOG_INFO, "Running command: %s", buffer);
-	if (system(buffer)) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to reset ARP table\n");
-		ret = -1;
-	}
-
-	return ret;
-}
-
 int
 tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 {
@@ -234,9 +204,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 	tapcfg->dev_handle = dev_handle;
 	tapcfg->started = 1;
 	tapcfg->enabled = 0;
-
-	/* Reset all the IPv6 addresses when initializing the device */
-	tapcfg_iface_reset(tapcfg);
 
 	return 0;
 }
@@ -561,8 +528,8 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	}
 
 	buffer[0] = inet_addr(addrstr);
-	buffer[1] = mask;
-	buffer[2] = buffer[0]+1;
+	buffer[1] = htonl(mask);
+	buffer[3] = htonl(htonl(buffer[0] | ~buffer[1])-1);
 	buffer[3] = 3600;
 
 	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for MASQ\n");
