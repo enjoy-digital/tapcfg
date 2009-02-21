@@ -33,11 +33,7 @@
 #include "taplog.h"
 
 #define MAX_IFNAME (IFNAMSIZ-1)
-#ifdef __linux__
-#define MAX_HWADDR IFHWADDRLEN
-#else
-#define MAX_HWADDR 6
-#endif
+#define HWADDRLEN 6
 
 struct tapcfg_s {
 	int started;
@@ -45,7 +41,7 @@ struct tapcfg_s {
 
 	int tap_fd;
 	char ifname[MAX_IFNAME+1];
-	unsigned char hwaddr[MAX_HWADDR];
+	unsigned char hwaddr[HWADDRLEN];
 
 	char buffer[TAPCFG_BUFSIZE];
 	int buflen;

@@ -15,6 +15,8 @@
 
 #ifdef __linux__
 #  include <linux/if_tun.h>
+#else /* BSD */
+#  include <ifaddrs.h>
 #endif
 
 static int
@@ -71,10 +73,11 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 		           strerror(errno));
 		return -1;
 	}
-	memcpy(tapcfg->hwaddr, ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
+	memcpy(tapcfg->hwaddr, ifr.ifr_hwaddr.sa_data, HWADDRLEN);
 #else /* BSD */
 	char buf[128];
 	int i;
+	struct ifaddrs *ifa;
 
 	buf[sizeof(buf)-1] = '\0';
 
@@ -107,7 +110,24 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf+5);
 	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
 
-	/* FIXME: Get MAC address on BSD, slightly tricky */
+	/* Get MAC address on BSD, slightly trickier than Linux */
+	if (getifaddrs(&ifap) == 0) {
+		struct ifaddrs *curr;
+
+		for (curr = ifa; curr; curr = curr->ifa_next) {
+			if (!strcmp(curr->ifa_name, tapcfg->ifname) &&
+			    curr->ifa_addr->sa_family == AF_LINK) {
+				struct sockaddr_dl* sdp =
+					(struct sockaddr_dl*) curr->ifa_addr;
+
+				memcpy(node,
+				       sdp->sdl_data + sdp->sdl_nlen,
+				       HWADDRLEN);
+			}
+		}
+
+		freeifaddrs(ifap);
+	}
 #endif
 
 	return tap_fd;
