@@ -314,9 +314,45 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
+tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
+{
+	struct ifreq ifr;
+	int s, ret;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error opening socket in get MTU: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+	ret = ioctl(s, SIOCGIFMTU, &ifr);
+	close(s);
+
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error getting the MTU of device: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	return ifr.ifr_mtu;
+}
+
+int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
-	char buffer[1024];
+	struct ifreq ifr;
+	int s, ret;
 
 	assert(tapcfg);
 
@@ -330,27 +366,28 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 		return -1;
 	}
 
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
-#ifdef __linux__
-	snprintf(buffer, sizeof(buffer)-1,
-	         "ip link set mtu %u dev %s",
-	         mtu, tapcfg->ifname);
-#else /* BSD */
-	snprintf(buffer, sizeof(buffer)-1,
-	         "ifconfig %s mtu %u",
-	         tapcfg->ifname, mtu);
-#endif
-
-	if (system(buffer)) {
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error setting the MTU for device: %s\n",
+		           "Error opening socket in get MTU: %s\n",
 		           strerror(errno));
 		return -1;
 	}
 
-	return 0;
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+	ifr.ifr_mtu = mtu;
+	ret = ioctl(s, SIOCSIFMTU, &ifr);
+	close(s);
+
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error setting the MTU of device: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	return mtu;
 }
 
 int

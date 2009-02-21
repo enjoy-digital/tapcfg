@@ -488,6 +488,37 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 }
 
 int
+tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
+{
+	ULONG mtu;
+	DWORD len;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	if (mtu < 68 || mtu > (TAPCFG_BUFSIZE - 22)) {
+		return -1;
+	}
+
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for getting MTU\n");
+	if (!DeviceIoControl(tapcfg->dev_handle,
+	                     TAP_IOCTL_GET_MTU,
+	                     &mtu, /* InBuffer */
+	                     sizeof(mtu),
+	                     &mtu, /* OutBuffer */
+	                     sizeof(mtu),
+	                     &len, NULL)) {
+		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed\n");
+		return -1;
+	}
+
+	return mtu;
+}
+
+int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
 	assert(tapcfg);

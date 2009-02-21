@@ -172,6 +172,14 @@ int main(int argc, char *argv[]) {
 		tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
 		printf("Selected IPv4 address: %s\n", buffer);
 
+		i = tapcfg_iface_get_mtu(tapcfg);
+		printf("Old MTU is %d\n", i);
+		if (tapcfg_iface_set_mtu(tapcfg, 1280) == -1) {
+			printf("Error setting the new MTU\n");
+		}
+		i = tapcfg_iface_get_mtu(tapcfg);
+		printf("New MTU is %d\n", i);
+
 		tapcfg_iface_change_status(tapcfg, 1);
 	}
 
