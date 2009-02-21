@@ -1,0 +1,24 @@
+
+Notes about using the library on different systems:
+---------------------------------------------------
+
+Linux:
+
+Should work when ran as root without problems.
+
+Windows:
+
+Requires TAP-Win32 driver installed, can be downloaded for example from
+http://www.sixxs.net/tools/aiccu/ location. The version tap901 is tested and
+recommended.
+
+Mac OS X:
+
+Requires TunTap driver for the Mac OS X system. Can be downloaded from
+http://tuntaposx.sourceforge.net/ location.
+
+FreeBSD:
+
+Requires that the TAP driver is loaded to the system. This can usually be done
+by running the command "kldload if_tap" as root.
+

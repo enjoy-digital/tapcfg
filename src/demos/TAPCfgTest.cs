@@ -9,7 +9,7 @@ public class TAPCfgTest {
 		EthernetDevice dev = new EthernetDevice();
 		dev.Start("Device name");
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
-		Console.WriteLine("Got device hwaddr: {0}", BitConverter.ToString(dev.HWAddress));
+//		Console.WriteLine("Got device hwaddr: {0}", BitConverter.ToString(dev.HWAddress));
 		dev.MTU = 1280;
 //		dev.SetAddress(IPAddress.Parse("192.168.10.1"), 16);
 		dev.Enabled = true;
