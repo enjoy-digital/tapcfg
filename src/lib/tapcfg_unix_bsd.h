@@ -166,3 +166,11 @@ tapcfg_iface_prepare(const char *ifname)
 #endif
 }
 
+static int
+tapcfg_ifaddr_ioctl(int ctrl_fd,
+                    const char *ifname,
+                    unsigned int addr,
+                    unsigned int mask)
+{
+	return -1;
+}

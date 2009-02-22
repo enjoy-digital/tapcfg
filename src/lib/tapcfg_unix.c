@@ -400,9 +400,7 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
-	struct ifreq ifr;
-	unsigned int mask = 0;
-	struct sockaddr_in *sin;
+	unsigned int addr, mask;
 	int i;
 
 	assert(tapcfg);
@@ -419,38 +417,16 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
 		return -1;
 	}
+	addr = inet_addr(addrstr);
 
 	/* Calculate the netmask from the network bit length */
 	for (i=netbits; i; i--)
 		mask = (mask >> 1)|(1 << 31);
 
-	memset(&ifr,  0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-
-	sin = (struct sockaddr_in *) &ifr.ifr_addr;
-	sin->sin_family = AF_INET;
-	inet_aton(addrstr, &sin->sin_addr);
-
-	if (ioctl(tapcfg->ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv4 address: %s\n",
-		           strerror(errno));
-		return -1;
-	}
-
-	memset(&ifr,  0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-
-	sin = (struct sockaddr_in *) &ifr.ifr_netmask;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = htonl(mask);
-
-	if (ioctl(tapcfg->ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv4 netmask: %s\n",
-		           strerror(errno));
-		return -1;
-	}
+	tapcfg_ifaddr_ioctl(tapcfg->ctrl_fd,
+	                    tapcfg->ifname,
+	                    addr,
+	                    ntohl(mask));
 
 	return 0;
 }

@@ -79,3 +79,43 @@ tapcfg_iface_prepare(const char *ifname)
 	/* No preparation needed on Linux */
 }
 
+static int
+tapcfg_ifaddr_ioctl(int ctrl_fd,
+                    const char *ifname,
+                    unsigned int addr,
+                    unsigned int mask)
+{
+	struct ifreq ifr;
+	struct sockaddr_in *sin;
+
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, ifname);
+
+	sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = addr;
+
+	if (ioctl(ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to configure IPv4 address: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, ifname);
+
+	sin = (struct sockaddr_in *) &ifr.ifr_netmask;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = htonl(mask);
+
+	if (ioctl(ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to configure IPv4 netmask: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
