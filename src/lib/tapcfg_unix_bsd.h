@@ -14,6 +14,7 @@
  */
 
 #include <net/if_dl.h>
+#include <netinet/in.h>
 #include <ifaddrs.h>
 
 static int
@@ -180,28 +181,30 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
                     unsigned int mask)
 {
 	struct ifreq ridreq;
-	struct aliasreq addreq;
+	struct ifaliasreq addreq;
 	struct sockaddr_in *sin;
 	int ret;
 
 	memset(&ridreq, 0, sizeof(struct ifreq));
 	strcpy(ridreq.ifr_name, ifname);
 	ret = ioctl(ctrl_fd, SIOCDIFADDR, &ridreq);
-	if (ret == -1) {
+	if (ret == -1 && errno != EADDRNOTAVAIL) {
 		taplog_log(TAPLOG_ERR,
 			   "Error calling SIOCDIFADDR: %s\n",
-		           strerror(errno));
+			   strerror(errno));
 		return -1;
 	}
 
-	memset(&addreq, 0, sizeof(struct aliasreq));
+	memset(&addreq, 0, sizeof(struct ifaliasreq));
 	strcpy(addreq.ifra_name, ifname);
-	sin = (struct sockaddr_in *) addreq.ifra_addr;
+	sin = (struct sockaddr_in *) &addreq.ifra_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
-	sin = (struct sockaddr_in *) addreq.ifra_mask;
+	sin->sin_len = sizeof(struct sockaddr_in);
+	sin = (struct sockaddr_in *) &addreq.ifra_mask;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = mask;
+	sin->sin_len = sizeof(struct sockaddr_in);
 	ret = ioctl(ctrl_fd, SIOCAIFADDR, &addreq);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
