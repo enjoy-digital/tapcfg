@@ -26,6 +26,8 @@ namespace TAP {
 		string msg);
 
 	public class EthernetDevice : IDisposable {
+		private NativeLib _tapcfg;
+
 		/* Default MTU 1500 in all systems */
 		private int _MTU = 1500;
 
@@ -36,7 +38,7 @@ namespace TAP {
 		public static EthernetLogCallback LogCallback {
 			set {
 				_logger = value;
-				taplog_set_callback(_logger);
+				NativeLib.GetInstance().set_callback(_logger);
 			}
 		}
 
@@ -49,7 +51,8 @@ namespace TAP {
 				_logger = new EthernetLogCallback(defaultCallback);
 			}
 
-			_handle = tapcfg_init();
+			_tapcfg = NativeLib.GetInstance();
+			_handle = _tapcfg.init();
 			if (_handle == IntPtr.Zero) {
 				throw new Exception("Error initializing the tapcfg library");
 			}
@@ -60,14 +63,14 @@ namespace TAP {
 		}
 
 		public void Start(string deviceName) {
-			int ret = tapcfg_start(_handle, deviceName);
+			int ret = _tapcfg.start(_handle, deviceName);
 			if (ret < 0) {
 				throw new Exception("Error starting the TAP device");
 			}
 		}
 
 		public bool WaitReadable(int msec) {
-			int ret = tapcfg_wait_readable(_handle, msec);
+			int ret = _tapcfg.wait_readable(_handle, msec);
 			return (ret != 0);
 		}
 
@@ -75,7 +78,7 @@ namespace TAP {
 			/* Maximum buffer is MTU plus 22 byte maximum header size */
 			byte[] buffer = new byte[_MTU + 22];
 
-			int ret = tapcfg_read(_handle, buffer, buffer.Length);
+			int ret = _tapcfg.read(_handle, buffer, buffer.Length);
 			if (ret < 0) {
 				throw new IOException("Error reading Ethernet frame");
 			} else if (ret == 0) {
@@ -86,14 +89,14 @@ namespace TAP {
 		}
 
 		public bool WaitWritable(int msec) {
-			int ret = tapcfg_wait_writable(_handle, msec);
+			int ret = _tapcfg.wait_writable(_handle, msec);
 			return (ret != 0);
 		}
 
 		public void Write(EthernetFrame frame) {
 			byte[] buffer = frame.Data;
 
-			int ret = tapcfg_write(_handle, buffer, buffer.Length);
+			int ret = _tapcfg.write(_handle, buffer, buffer.Length);
 			if (ret < 0) {
 				throw new IOException("Error writing Ethernet frame");
 			} else if (ret != buffer.Length) {
@@ -104,16 +107,16 @@ namespace TAP {
 
 		public bool Enabled {
 			get {
-				int ret = tapcfg_iface_get_status(_handle);
+				int ret = _tapcfg.iface_get_status(_handle);
 				return (ret != 0);
 			}
 			set {
 				int ret;
 
 				if (value) {
-					ret = tapcfg_iface_change_status(_handle, 1);
+					ret = _tapcfg.iface_change_status(_handle, 1);
 				} else {
-					ret = tapcfg_iface_change_status(_handle, 0);
+					ret = _tapcfg.iface_change_status(_handle, 0);
 				}
 
 				if (ret < 0) {
@@ -123,7 +126,7 @@ namespace TAP {
 		}
 
 		public string DeviceName {
-			get { return tapcfg_get_ifname(_handle); }
+			get { return _tapcfg.get_ifname(_handle); }
 		}
 
 		public byte[] HWAddress {
@@ -132,7 +135,7 @@ namespace TAP {
 				IntPtr lenptr = Marshal.AllocHGlobal(10);
 
 				/* Call the function, length of the data array is stored in lenptr */
-				IntPtr data = tapcfg_iface_get_hwaddr(_handle, lenptr);
+				IntPtr data = _tapcfg.iface_get_hwaddr(_handle, lenptr);
 
 				/* Read the array length into a managed value */
 				int datalen = Marshal.ReadInt32(lenptr, 0);
@@ -151,7 +154,7 @@ namespace TAP {
 				return _MTU;
 			}
 			set {
-				int ret = tapcfg_iface_set_mtu(_handle, value);
+				int ret = _tapcfg.iface_set_mtu(_handle, value);
 				if (ret >= 0) {
 					_MTU = value;
 				}
@@ -162,7 +165,7 @@ namespace TAP {
 			int ret;
 
 			if (address.AddressFamily == AddressFamily.InterNetwork) {
-				ret = tapcfg_iface_set_ipv4(_handle, address.ToString(), netbits);
+				ret = _tapcfg.iface_set_ipv4(_handle, address.ToString(), netbits);
 			} else {
 				return;
 			}
@@ -183,55 +186,12 @@ namespace TAP {
 					// Managed resources can be disposed here
 				}
 
-				tapcfg_stop(_handle);
-				tapcfg_destroy(_handle);
+				_tapcfg.stop(_handle);
+				_tapcfg.destroy(_handle);
 				_handle = IntPtr.Zero;
 
 				_disposed = true;
 			}
 		}
-
-		[DllImport("tapcfg")]
-		private static extern void taplog_set_callback(EthernetLogCallback cb);
-
-		[DllImport("tapcfg")]
-		private static extern IntPtr tapcfg_init();
-		[DllImport("tapcfg")]
-		private static extern void tapcfg_destroy(IntPtr tapcfg);
-
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_start(IntPtr tapcfg,
-			[MarshalAs(UnmanagedType.CustomMarshaler,
-			           MarshalTypeRef = typeof(UTF8Marshaler))]
-			string ifname);
-		[DllImport("tapcfg")]
-		private static extern void tapcfg_stop(IntPtr tapcfg);
-
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_wait_readable(IntPtr tapcfg, int msec);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_wait_writable(IntPtr tapcfg, int msec);
-
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
-
-		[DllImport("tapcfg")]
-		[return : MarshalAs(UnmanagedType.CustomMarshaler,
-		                    MarshalTypeRef = typeof(UTF8Marshaler))]
-		private static extern string tapcfg_get_ifname(IntPtr tapcfg);
-
-		[DllImport("tapcfg")]
-		private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
-
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
-		[DllImport("tapcfg")]
-		private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 	}
 }
