@@ -175,6 +175,22 @@ tapcfg_iface_prepare(const char *ifname)
 }
 
 static int
+tapcfg_hwaddr_ioctl(int ctrl_fd,
+                    const char *ifname,
+                    const char *hwaddr)
+{
+	struct ifreq ifr;
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, ifname);
+	ifr.ifr_addr.sa_len = ETHER_ADDR_LEN;
+	ifr.ifr_addr.sa_family = AF_LINK;
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, HWADDRLEN);
+
+	return ioctl(ctrl_fd, SIOCSIFLLADDR, &ifr);
+}
+
+static int
 tapcfg_ifaddr_ioctl(int ctrl_fd,
                     const char *ifname,
                     unsigned int addr,

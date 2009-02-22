@@ -14,6 +14,7 @@
  */
 
 #include <linux/if_tun.h>
+#include <net/if_arp.h>
 
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
@@ -77,6 +78,21 @@ static void
 tapcfg_iface_prepare(const char *ifname)
 {
 	/* No preparation needed on Linux */
+}
+
+static int
+tapcfg_hwaddr_ioctl(int ctrl_fd,
+                    const char *ifname,
+                    const char *hwaddr)
+{
+	struct ifreq ifr;
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, ifname);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, HWADDRLEN);
+
+	return ioctl(ctrl_fd, SIOCSIFHWADDR, &ifr);
 }
 
 static int

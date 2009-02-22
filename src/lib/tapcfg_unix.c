@@ -290,7 +290,6 @@ tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
 int
 tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 {
-	struct ifreq ifr;
 	int ret;
 
 	assert(tapcfg);
@@ -303,15 +302,7 @@ tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, HWADDRLEN);
-#ifdef __linux__
-	ret = ioctl(tapcfg->tap_fd, SIOCSIFHWADDR, &ifr);
-#else
-	ret = ioctl(tapcfg->tap_fd, SIOCSIFLLADDR, &ifr);
-#endif
+	ret = tapcfg_hwaddr_ioctl(tapcfg->ctrl_fd, tapcfg->ifname, hwaddr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to set new hardware address: %s\n",
