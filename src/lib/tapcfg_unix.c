@@ -420,7 +420,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	addr = inet_addr(addrstr);
 
 	/* Calculate the netmask from the network bit length */
-	for (i=netbits; i; i--)
+	for (i=netbits,mask=0; i; i--)
 		mask = (mask >> 1)|(1 << 31);
 
 	tapcfg_ifaddr_ioctl(tapcfg->ctrl_fd,
