@@ -7,7 +7,7 @@ using System.Threading;
 public class TAPCfgTest {
 	private static void Main(string[] args) {
 		EthernetDevice dev = new EthernetDevice();
-		dev.Start("Device name");
+		dev.Start("Device name", true);
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
 //		Console.WriteLine("Got device hwaddr: {0}", BitConverter.ToString(dev.HWAddress));
 		dev.MTU = 1280;

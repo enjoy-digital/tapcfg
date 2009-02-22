@@ -22,8 +22,6 @@ namespace TAP {
 		public abstract int iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 
 		public static NativeLib GetInstance() {
-			Console.WriteLine("Int pointer size is {0}", IntPtr.Size);
-
 			if (IntPtr.Size == 8)
 				return new NativeLib64();
 			else

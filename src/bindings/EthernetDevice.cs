@@ -45,7 +45,7 @@ namespace TAP {
 
 		public EthernetDevice() {
 			if (_logger == null) {
-				_logger = new EthernetLogCallback(defaultCallback);
+				EthernetDevice.LogCallback = new EthernetLogCallback(defaultCallback);
 			}
 
 			_tapcfg = NativeLib.GetInstance();
