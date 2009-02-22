@@ -12,11 +12,8 @@ public class TAPCfgTest {
 		Console.WriteLine("Got device hwaddr: {0}", BitConverter.ToString(dev.HWAddress));
 		dev.HWAddress = new byte[] { 0x00, 0x01, 0x23, 0x45, 0x67, 0x89 };
 		dev.MTU = 1280;
-//		dev.SetAddress(IPAddress.Parse("192.168.10.1"), 16);
+		dev.SetAddress(IPAddress.Parse("192.168.10.1"), 16);
 		dev.Enabled = true;
-
-		PacketMangler mangler = new PacketMangler(dev);
-		mangler.Start();
 
 		while (true) {
 			Thread.Sleep(1000);
