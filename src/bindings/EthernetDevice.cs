@@ -28,9 +28,6 @@ namespace TAP {
 	public class EthernetDevice : IDisposable {
 		private NativeLib _tapcfg;
 
-		/* Default MTU 1500 in all systems */
-		private int _MTU = 1500;
-
 		private IntPtr _handle;
 		private bool _disposed = false;
 
@@ -59,11 +56,11 @@ namespace TAP {
 		}
 
 		public void Start() {
-			Start(null);
+			Start(null, true);
 		}
 
-		public void Start(string deviceName) {
-			int ret = _tapcfg.start(_handle, deviceName);
+		public void Start(string deviceName, bool fallback) {
+			int ret = _tapcfg.start(_handle, deviceName, fallback);
 			if (ret < 0) {
 				throw new Exception("Error starting the TAP device");
 			}
@@ -76,7 +73,7 @@ namespace TAP {
 
 		public EthernetFrame Read() {
 			/* Maximum buffer is MTU plus 22 byte maximum header size */
-			byte[] buffer = new byte[_MTU + 22];
+			byte[] buffer = new byte[1500 + 22];
 
 			int ret = _tapcfg.read(_handle, buffer, buffer.Length);
 			if (ret < 0) {
@@ -151,13 +148,15 @@ namespace TAP {
 
 		public int MTU {
 			get {
-				return _MTU;
+				int ret = _tapcfg.iface_get_mtu(_handle);
+				if (ret < 0) {
+					throw new Exception("Error getting TAP interface MTU");
+				}
+				return ret;
 			}
 			set {
-				int ret = _tapcfg.iface_set_mtu(_handle, value);
-				if (ret >= 0) {
-					_MTU = value;
-				}
+				_tapcfg.iface_set_mtu(_handle, value);
+				/* XXX: Is it ok to ignore MTU setting failure */
 			}
 		}
 
