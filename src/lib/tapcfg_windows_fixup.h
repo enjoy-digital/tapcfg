@@ -257,7 +257,7 @@ free_panel_reg(struct panel_reg *panel_reg)
 }
 
 static char *
-tapcfg_fixup_adapters(const char *ifname, char **guid)
+tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 {
 	struct tap_reg *tap_reg = get_tap_reg(), *tr;
 	struct panel_reg *panel_reg = get_panel_reg(), *pr;
@@ -323,7 +323,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid)
 		if (guid) {
 			*guid = strdup(adapter->guid);
 		}
-	} else if (found == 0 && valid == 1 && adapter) {
+	} else if (found == 0 && valid == 1 && adapter && fallback) {
 		taplog_log(TAPLOG_INFO,
 		           "Using adapter '%s' instead of '%s' because it was the only one found\n",
 		           adapter->name, ifname);

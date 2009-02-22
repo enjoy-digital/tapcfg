@@ -94,7 +94,7 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
+tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	char *adapterid;
 	char tapname[1024];
@@ -108,7 +108,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		ifname = "";
 	}
 
-	tapcfg->ifname = tapcfg_fixup_adapters(ifname, &adapterid);
+	tapcfg->ifname = tapcfg_fixup_adapters(ifname, &adapterid, fallback);
 	if (!tapcfg->ifname) {
 		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
 		return -1;

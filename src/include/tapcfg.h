@@ -72,9 +72,12 @@ void tapcfg_destroy(tapcfg_t *tapcfg);
  * @param ifname is a pointer to the suggested name for 
  *        the device in question in UTF-8 encoding, can be
  *        null for system default
+ * @param fallback is a flag, if it is set and the defined
+ *        interface name is not available, other available
+ *        TAP interfaces are searched and used accordingly
  * @return Negative value on error, non-negative on success.
  */
-int tapcfg_start(tapcfg_t *tapcfg, const char *ifname);
+int tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback);
 
 /**
  * Stops the network interface and frees all resources

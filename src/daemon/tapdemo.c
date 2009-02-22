@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
 	if (!strcmp(argv[1], "server") || !strcmp(argv[1], "client")) {
 		tapcfg = tapcfg_init();
-		if (!tapcfg || tapcfg_start(tapcfg, NULL) < 0) {
+		if (!tapcfg || tapcfg_start(tapcfg, NULL, 1) < 0) {
 			printf("Error starting the TAP device, try running as root\n");
 			goto exit;
 		}

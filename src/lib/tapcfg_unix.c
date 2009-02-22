@@ -81,7 +81,7 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
+tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd;
 	int ctrl_fd;
@@ -93,7 +93,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		return 0;
 	}
 
-	tap_fd = tapcfg_start_dev(tapcfg, ifname);
+	tap_fd = tapcfg_start_dev(tapcfg, ifname, fallback);
 	if (tap_fd < 0) {
 		goto err;
 	}

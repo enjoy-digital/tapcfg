@@ -17,7 +17,7 @@
 #include <ifaddrs.h>
 
 static int
-tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
+tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
 	char buf[128];
@@ -31,7 +31,14 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname)
 		snprintf(buf, sizeof(buf)-1, "/dev/%s", ifname);
 		tap_fd = open(buf, O_RDWR);
 	}
-	if (tap_fd < 0) {
+	if (tap_fd < 0 && !fallback) {
+		taplog_log(TAPLOG_ERR,
+			   "Couldn't open the tap device \"%s\"\n", ifname);
+		taplog_log(TAPLOG_INFO,
+			   "Check that you are running the program with "
+			   "root privileges and have TUN/TAP driver installed\n");
+		return -1;
+	} else {
 		/* Try all possible devices, because configured name failed */
 		for (i=0; i<16; i++) {
 			snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
