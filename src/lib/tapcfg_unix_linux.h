@@ -107,7 +107,7 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 
 	sin = (struct sockaddr_in *) &ifr.ifr_netmask;
 	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = htonl(mask);
+	sin->sin_addr.s_addr = mask;
 
 	if (ioctl(ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,

@@ -179,5 +179,36 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
                     unsigned int addr,
                     unsigned int mask)
 {
-	return -1;
+	struct ifreq ridreq;
+	struct aliasreq addreq;
+	struct sockaddr_in *sin;
+	int ret;
+
+	memset(&ridreq, 0, sizeof(struct ifreq));
+	strcpy(ridreq.ifr_name, ifname);
+	ret = ioctl(ctrl_fd, SIOCDIFADDR, &ridreq);
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+			   "Error calling SIOCDIFADDR: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&addreq, 0, sizeof(struct aliasreq));
+	strcpy(addreq.ifra_name, ifname);
+	sin = (struct sockaddr_in *) addreq.ifra_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = addr;
+	sin = (struct sockaddr_in *) addreq.ifra_mask;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = mask;
+	ret = ioctl(ctrl_fd, SIOCAIFADDR, &addreq);
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+			   "Error calling SIOCAIFADDR: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	return 0;
 }
