@@ -541,7 +541,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 
 	buffer[0] = inet_addr(addrstr);
 	buffer[1] = htonl(mask);
-	buffer[3] = htonl(htonl(buffer[0] | ~buffer[1])-1);
+	buffer[2] = htonl(htonl(buffer[0] | ~buffer[1])-1);
 	buffer[3] = 3600;
 
 	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for MASQ\n");
