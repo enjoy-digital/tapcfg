@@ -154,8 +154,9 @@ int main(int argc, char *argv[]) {
 
 	if (tapcfg) {
 		const char *hwaddr;
+		char *ifname;
 		int hwaddrlen;
-		int i;
+		int i, ret;
 
 		hwaddr = tapcfg_iface_get_hwaddr(tapcfg, &hwaddrlen);
 		printf("Got hardware address: ");
@@ -165,22 +166,33 @@ int main(int argc, char *argv[]) {
 			       (i == hwaddrlen-1) ? "\n" : ":");
 		}
 
+		ifname = tapcfg_get_ifname(tapcfg);
+		printf("Got ifname: %s\n", ifname);
+		free(ifname);
+
 		srand(time(NULL));
 		id = rand()%0x1000;
 
 		sprintf(buffer, "10.10.%d.%d", (id>>8)&0xff, id&0xff);
-		tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
-		printf("Selected IPv4 address: %s\n", buffer);
+		ret = tapcfg_iface_set_ipv4(tapcfg, buffer, 16);
+		if (ret == -1) {
+			printf("Error setting IPv4 address\n");
+		} else {
+			printf("Selected IPv4 address: %s\n", buffer);
+		}
 
-		i = tapcfg_iface_get_mtu(tapcfg);
-		printf("Old MTU is %d\n", i);
+		ret = tapcfg_iface_get_mtu(tapcfg);
+		printf("Old MTU is %d\n", ret);
 		if (tapcfg_iface_set_mtu(tapcfg, 1280) == -1) {
 			printf("Error setting the new MTU\n");
 		}
-		i = tapcfg_iface_get_mtu(tapcfg);
-		printf("New MTU is %d\n", i);
+		ret = tapcfg_iface_get_mtu(tapcfg);
+		printf("New MTU is %d\n", ret);
 
-		tapcfg_iface_change_status(tapcfg, 1);
+		ret = tapcfg_iface_change_status(tapcfg, 1);
+		if (ret == -1) {
+			printf("Error changing interface status\n");
+		}
 	}
 
 	if (tapserver_start(server, port, listen) < 0) {

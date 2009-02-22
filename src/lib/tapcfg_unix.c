@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
+#include <arpa/inet.h>
+
 /* This is for IFNAMSIZ and ifreq for linux */
 #include <net/if.h>
 
@@ -40,6 +42,7 @@ struct tapcfg_s {
 	int enabled;
 
 	int tap_fd;
+	int ctrl_fd;
 	char ifname[MAX_IFNAME+1];
 	unsigned char hwaddr[HWADDRLEN];
 
@@ -81,6 +84,7 @@ int
 tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 {
 	int tap_fd;
+	int ctrl_fd;
 
 	assert(tapcfg);
 
@@ -94,8 +98,18 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname)
 		goto err;
 	}
 
+	ctrl_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (ctrl_fd == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error opening control socket for ioctls: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+
 	/* Mark the current fds and mark thread as running */
 	tapcfg->tap_fd = tap_fd;
+	tapcfg->ctrl_fd = ctrl_fd;
 	tapcfg->started = 1;
 	tapcfg->enabled = 0;
 
@@ -120,6 +134,8 @@ tapcfg_stop(tapcfg_t *tapcfg)
 		if (tapcfg->tap_fd != -1) {
 			close(tapcfg->tap_fd);
 			tapcfg->tap_fd = -1;
+			close(tapcfg->ctrl_fd);
+			tapcfg->ctrl_fd = -1;
 		}
 		tapcfg->started = 0;
 		tapcfg->enabled = 0;
@@ -281,7 +297,7 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 int
 tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 {
-	char buffer[MAX_IFNAME + 15];
+	struct ifreq ifr;
 
 	assert(tapcfg);
 
@@ -291,19 +307,28 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		return 0;
 	}
 
-	if (enabled) {
-		sprintf(buffer, "ifconfig %s up", tapcfg->ifname);
-	} else {
-		sprintf(buffer, "ifconfig %s down", tapcfg->ifname);
-	}
-
-	if (enabled) {
-		tapcfg_iface_prepare(tapcfg->ifname);
-	}
-
-	if (system(buffer) == -1) {
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to enable/disable interface %s: %s\n",
+		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
+		           tapcfg->ifname,
+		           strerror(errno));
+		return -1;
+	}
+
+	if (enabled) {
+		ifr.ifr_flags |= IFF_UP;
+		ifr.ifr_flags |= IFF_RUNNING;
+		tapcfg_iface_prepare(tapcfg->ifname);
+	} else {
+		ifr.ifr_flags &= ~IFF_UP;
+		ifr.ifr_flags &= ~IFF_RUNNING;
+	}
+
+	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error calling SIOCSIFFLAGS for interface %s: %s\n",
 		           tapcfg->ifname,
 		           strerror(errno));
 		return -1;
@@ -317,7 +342,7 @@ int
 tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 {
 	struct ifreq ifr;
-	int s, ret;
+	int ret;
 
 	assert(tapcfg);
 
@@ -325,19 +350,10 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	s = socket(AF_INET, SOCK_DGRAM, 0);
-	if (s == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error opening socket in get MTU: %s\n",
-		           strerror(errno));
-		return -1;
-	}
-
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	ret = ioctl(s, SIOCGIFMTU, &ifr);
-	close(s);
 
+	ret = ioctl(tapcfg->ctrl_fd, SIOCGIFMTU, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error getting the MTU of device: %s\n",
@@ -352,7 +368,7 @@ int
 tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 {
 	struct ifreq ifr;
-	int s, ret;
+	int ret;
 
 	assert(tapcfg);
 
@@ -366,20 +382,11 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 		return -1;
 	}
 
-	s = socket(AF_INET, SOCK_DGRAM, 0);
-	if (s == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error opening socket in get MTU: %s\n",
-		           strerror(errno));
-		return -1;
-	}
-
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 	ifr.ifr_mtu = mtu;
-	ret = ioctl(s, SIOCSIFMTU, &ifr);
-	close(s);
 
+	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFMTU, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error setting the MTU of device: %s\n",
@@ -393,8 +400,9 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
-	char buffer[1024];
+	struct ifreq ifr;
 	unsigned int mask = 0;
+	struct sockaddr_in *sin;
 	int i;
 
 	assert(tapcfg);
@@ -407,9 +415,6 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 		return -1;
 	}
 
-	/* Make sure the string always ends in null byte */
-	buffer[sizeof(buffer)-1] = '\0';
-
 	/* Check that the given IPv4 address is valid */
 	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
 		return -1;
@@ -419,24 +424,30 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	for (i=netbits; i; i--)
 		mask = (mask >> 1)|(1 << 31);
 
-#ifdef __linux__
-	snprintf(buffer, sizeof(buffer)-1,
-	         "ifconfig %s %s netmask %u.%u.%u.%u",
-	         tapcfg->ifname,
-	         addrstr,
-	         (mask >> 24) & 0xff,
-	         (mask >> 16) & 0xff,
-	         (mask >>  8) & 0xff,
-	         mask & 0xff);
-#else /* BSD */
-	snprintf(buffer, sizeof(buffer)-1,
-	         "ifconfig %s inet %s/%u",
-	         tapcfg->ifname, addrstr, netbits);
-#endif
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
 
-	if (system(buffer)) {
+	sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	sin->sin_family = AF_INET;
+	inet_aton(addrstr, &sin->sin_addr);
+
+	if (ioctl(tapcfg->ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error trying to configure IPv4 address: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+
+	sin = (struct sockaddr_in *) &ifr.ifr_netmask;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = htonl(mask);
+
+	if (ioctl(tapcfg->ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to configure IPv4 netmask: %s\n",
 		           strerror(errno));
 		return -1;
 	}
