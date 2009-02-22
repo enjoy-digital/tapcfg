@@ -190,8 +190,8 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 	ret = ioctl(ctrl_fd, SIOCDIFADDR, &ridreq);
 	if (ret == -1 && errno != EADDRNOTAVAIL) {
 		taplog_log(TAPLOG_ERR,
-			   "Error calling SIOCDIFADDR: %s\n",
-			   strerror(errno));
+		          "Error calling SIOCDIFADDR: %s\n",
+		           strerror(errno));
 		return -1;
 	}
 
@@ -208,7 +208,7 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 	ret = ioctl(ctrl_fd, SIOCAIFADDR, &addreq);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-			   "Error calling SIOCAIFADDR: %s\n",
+		           "Error calling SIOCAIFADDR: %s\n",
 		           strerror(errno));
 		return -1;
 	}
