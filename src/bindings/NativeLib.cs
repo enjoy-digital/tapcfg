@@ -15,6 +15,7 @@ namespace TAP {
 		public abstract int write(IntPtr tapcfg, byte[] buf, int count);
 		public abstract string get_ifname(IntPtr tapcfg);
 		public abstract IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
+		public abstract int iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 		public abstract int iface_get_status(IntPtr tapcfg);
 		public abstract int iface_change_status(IntPtr tapcfg, int enabled);
 		public abstract int iface_get_mtu(IntPtr tapcfg);
@@ -73,6 +74,10 @@ namespace TAP {
 				return tapcfg_iface_get_hwaddr(tapcfg, length);
 			}
 
+			public override int iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length) {
+				return tapcfg_iface_set_hwaddr(tapcfg, hwaddr, length);
+			}
+
 			public override int iface_get_status(IntPtr tapcfg) {
 				return tapcfg_iface_get_status(tapcfg);
 			}
@@ -126,6 +131,8 @@ namespace TAP {
 
 			[DllImport("tapcfg")]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
+			[DllImport("tapcfg")]
+			private static extern int tapcfg_iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 
 			[DllImport("tapcfg")]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
@@ -184,6 +191,10 @@ namespace TAP {
 				return tapcfg_iface_get_hwaddr(tapcfg, length);
 			}
 
+			public override int iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length) {
+				return tapcfg_iface_set_hwaddr(tapcfg, hwaddr, length);
+			}
+
 			public override int iface_get_status(IntPtr tapcfg) {
 				return tapcfg_iface_get_status(tapcfg);
 			}
@@ -237,6 +248,8 @@ namespace TAP {
 
 			[DllImport("tapcfg64")]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
+			[DllImport("tapcfg64")]
+			private static extern int tapcfg_iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 
 			[DllImport("tapcfg64")]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);

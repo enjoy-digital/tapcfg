@@ -144,6 +144,10 @@ namespace TAP {
 
 				return ret;
 			}
+			set {
+				_tapcfg.iface_set_hwaddr(_handle, value, value.Length);
+				/* XXX: Is it ok to ignore HWAddress setting failure */
+			}
 		}
 
 		public int MTU {
