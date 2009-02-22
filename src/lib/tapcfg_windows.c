@@ -466,10 +466,6 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	if (mtu < 68 || mtu > (TAPCFG_BUFSIZE - 22)) {
-		return -1;
-	}
-
 	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for getting MTU\n");
 	if (!DeviceIoControl(tapcfg->dev_handle,
 	                     TAP_IOCTL_GET_MTU,
