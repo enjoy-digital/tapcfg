@@ -417,6 +417,22 @@ tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
 }
 
 int
+tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
+{
+	assert(tapcfg);
+
+	if (!tapcfg->started || tapcfg->enabled) {
+		return -1;
+	}
+
+	if (length != sizeof(tapcfg->hwaddr)) {
+		return -1;
+	}
+
+	return -1;
+}
+
+int
 tapcfg_iface_get_status(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);

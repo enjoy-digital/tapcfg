@@ -30,6 +30,7 @@
 
 /* This is for IFNAMSIZ and ifreq for linux */
 #include <net/if.h>
+#include <net/if_arp.h>
 
 #include "tapcfg.h"
 #include "taplog.h"
@@ -284,6 +285,43 @@ tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length)
 	if (length)
 		*length = sizeof(tapcfg->hwaddr);
 	return (const char *) tapcfg->hwaddr;
+}
+
+int
+tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
+{
+	struct ifreq ifr;
+	int ret;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started || tapcfg->enabled) {
+		return -1;
+	}
+
+	if (length != sizeof(tapcfg->hwaddr)) {
+		return -1;
+	}
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, HWADDRLEN);
+#ifdef __linux__
+	ret = ioctl(tapcfg->tap_fd, SIOCSIFHWADDR, &ifr);
+#else
+	ret = ioctl(tapcfg->tap_fd, SIOCSIFLLADDR, &ifr);
+#endif
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to set new hardware address: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memcpy(tapcfg->hwaddr, hwaddr, HWADDRLEN);
+
+	return 0;
 }
 
 int

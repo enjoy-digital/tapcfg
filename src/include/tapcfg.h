@@ -168,6 +168,19 @@ char *tapcfg_get_ifname(tapcfg_t *tapcfg);
  */
 const char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
 
+/**
+ * Set the current hardware MAC address of the interface. This
+ * can be called after tapcfg_start to change the source MAC of
+ * outgoing packets. This function will fail on some systems like
+ * Windows 2000 or Windows XP and that is ok. The system APIs on
+ * those platforms don't support dynamic MAC address, however it
+ * can be changed manually from Windows TAP driver settings.
+ * @param tapcfg is a pointer to an inited structure
+ * @param hwaddr is a pointer to an array containing the address
+ * @param length is the length of the array, should be always 6 for now
+ * @return Negative value if an error happened, non-negative otherwise.
+ */
+int tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length);
 
 /**
  * Get the status of the interface. In Unix systems this means
