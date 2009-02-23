@@ -23,10 +23,9 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
 	char buf[128];
-	struct ifreq ifr;
 	struct lifreq lifr;
 	struct strioctl strioc;
-	int ret, ppa;
+	int ppa;
 
 	buf[sizeof(buf)-1] = '\0';
 
