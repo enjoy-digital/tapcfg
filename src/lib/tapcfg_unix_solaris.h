@@ -14,6 +14,10 @@
  */
 
 #include <sys/stropts.h>
+#include "if_tun.h"
+
+#define TUNNEWPPA       (('T'<<16) | 0x0001)
+#define TUNSETPPA       (('T'<<16) | 0x0002)
 
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
@@ -22,7 +26,8 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	char buf[128];
 	struct ifreq ifr;
 	struct lifreq lifr;
-	int i, ret;
+	struct strioctl strioc;
+	int ret, ppa;
 
 	buf[sizeof(buf)-1] = '\0';
 
@@ -36,21 +41,37 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		return -1;
 	}
 
+	strioc.ic_cmd = TUNNEWPPA;
+	strioc.ic_timout = 0;
+	strioc.ic_len = sizeof(ppa);
+	strioc.ic_dp = (char *) &ppa;
+	if ((ppa = ioctl(tap_fd, I_STR, &strioc)) == -1) {
+		taplog_log(TAPLOG_ERR, "Couldn't assign new interface\n");
+	}
+
 	if (ioctl(tap_fd, I_PUSH, "ip") == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't push IP module\n");
 		close(tap_fd);
 		return -1;
 	}
 
+
+	snprintf(buf, 128, "tap%d", ppa);
+	printf("Device name %s\n", buf);
+
 	memset(&lifr, 0, sizeof(struct lifreq));
-	strcpy(lifr.lifr_name, "tap0");
-	if (ioctl(if_fd, SIOCSLIFNAME, &ifr) == -1) {
+	if (ioctl(tap_fd, SIOCGLIFFLAGS, &lifr) == -1) {
+		taplog_log(TAPLOG_ERR, "Can't get flags\n");
+	}
+
+	strcpy(lifr.lifr_name, buf);
+	lifr.lifr_ppa = ppa;
+	if (ioctl(tap_fd, SIOCSLIFNAME, &lifr) == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
-		close(tap_fd);
-		return -1;
 	}
 
 	/* Set the device name to be the one we found finally */
+	strcpy(lifr.lifr_name, buf);
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", lifr.lifr_name);
 	strncpy(tapcfg->ifname, lifr.lifr_name, sizeof(tapcfg->ifname)-1);
 
