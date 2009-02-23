@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "daemon.h"
 #include "serversock.h"

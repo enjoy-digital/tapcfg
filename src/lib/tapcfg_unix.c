@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <sys/sockio.h>
 
 #include <arpa/inet.h>
 
@@ -52,8 +53,10 @@ struct tapcfg_s {
 };
 
 /* This will use the tapcfg_s struct so we need it here */
-#ifdef __linux__
+#if defined(__linux__)
 #  include "tapcfg_unix_linux.h"
+#elif defined(__sun__)
+#  include "tapcfg_unix_solaris.h"
 #else
 #  include "tapcfg_unix_bsd.h"
 #endif
@@ -390,7 +393,11 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 		return -1;
 	}
 
+#ifdef __sun__
+	return ifr.ifr_metric;
+#else
 	return ifr.ifr_mtu;
+#endif
 }
 
 int
@@ -413,7 +420,11 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
+#ifdef __sun__
+	ifr.ifr_metric = mtu;
+#else
 	ifr.ifr_mtu = mtu;
+#endif
 
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFMTU, &ifr);
 	if (ret == -1) {
