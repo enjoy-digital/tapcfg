@@ -13,55 +13,46 @@
  *  Lesser General Public License for more details.
  */
 
+#include <sys/stropts.h>
+
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
 	char buf[128];
 	struct ifreq ifr;
+	struct lifreq lifr;
 	int i, ret;
 
 	buf[sizeof(buf)-1] = '\0';
 
-	/* If we have a configured interface name, try that first */
-	if (ifname && strlen(ifname) <= MAX_IFNAME && !strrchr(ifname, ' ')) {
-		snprintf(buf, sizeof(buf)-1, "/dev/%s", ifname);
-		tap_fd = open(buf, O_RDWR);
-	}
-	if (tap_fd < 0 && !fallback) {
+	tap_fd = open("/dev/tap", O_RDWR, 0);
+	if (tap_fd < 0) {
 		taplog_log(TAPLOG_ERR,
-			   "Couldn't open the tap device \"%s\"\n", ifname);
+			   "Couldn't open the tap device\n");
 		taplog_log(TAPLOG_INFO,
 			   "Check that you are running the program with "
 			   "root privileges and have TUN/TAP driver installed\n");
 		return -1;
-	} else {
-		/* Try all possible devices, because configured name failed */
-		for (i=-1; i<16; i++) {
-			if (i < 0) {
-				snprintf(buf, sizeof(buf)-1, "/dev/tap");
-			} else {
-				snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
-			}
-			tap_fd = open(buf, O_RDWR);
-			if (tap_fd >= 0) {
-				/* Found one! Could save this for later... */
-				break;
-			}
-		}
-		if (i == 16) {
-			taplog_log(TAPLOG_ERR,
-				   "Couldn't find a suitable tap device\n");
-			taplog_log(TAPLOG_INFO,
-				   "Check that you are running the program with "
-				   "root privileges and have TUN/TAP driver installed\n");
-			return -1;
-		}
+	}
+
+	if (ioctl(tap_fd, I_PUSH, "ip") == -1) {
+		taplog_log(TAPLOG_ERR, "Couldn't push IP module\n");
+		close(tap_fd);
+		return -1;
+	}
+
+	memset(&lifr, 0, sizeof(struct lifreq));
+	strcpy(lifr.lifr_name, "tap0");
+	if (ioctl(if_fd, SIOCSLIFNAME, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
+		close(tap_fd);
+		return -1;
 	}
 
 	/* Set the device name to be the one we found finally */
-	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf+5);
-	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
+	taplog_log(TAPLOG_DEBUG, "Device name %s\n", lifr.lifr_name);
+	strncpy(tapcfg->ifname, lifr.lifr_name, sizeof(tapcfg->ifname)-1);
 
 	/* Get MAC address on Solaris */
 	memset(&ifr, 0, sizeof(struct ifreq));
