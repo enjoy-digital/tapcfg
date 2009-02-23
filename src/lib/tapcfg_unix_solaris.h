@@ -14,7 +14,6 @@
  */
 
 #include <sys/stropts.h>
-#include "if_tun.h"
 
 #define TUNNEWPPA       (('T'<<16) | 0x0001)
 #define TUNSETPPA       (('T'<<16) | 0x0002)
@@ -41,50 +40,46 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		return -1;
 	}
 
+	ppa = 0;
 	strioc.ic_cmd = TUNNEWPPA;
 	strioc.ic_timout = 0;
 	strioc.ic_len = sizeof(ppa);
 	strioc.ic_dp = (char *) &ppa;
 	if ((ppa = ioctl(tap_fd, I_STR, &strioc)) == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't assign new interface\n");
-	}
-
-	if (ioctl(tap_fd, I_PUSH, "ip") == -1) {
-		taplog_log(TAPLOG_ERR, "Couldn't push IP module\n");
 		close(tap_fd);
 		return -1;
 	}
 
-
 	snprintf(buf, 128, "tap%d", ppa);
 	printf("Device name %s\n", buf);
+
+	if (ioctl(tap_fd, I_PUSH, "ip") == -1) {
+		taplog_log(TAPLOG_ERR, "Error pushing the IP module\n");
+		close(tap_fd);
+		return -1;
+	}
 
 	memset(&lifr, 0, sizeof(struct lifreq));
 	if (ioctl(tap_fd, SIOCGLIFFLAGS, &lifr) == -1) {
 		taplog_log(TAPLOG_ERR, "Can't get flags\n");
+		close(tap_fd);
+		return -1;
 	}
 
 	strcpy(lifr.lifr_name, buf);
 	lifr.lifr_ppa = ppa;
 	if (ioctl(tap_fd, SIOCSLIFNAME, &lifr) == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
+		close(tap_fd);
+		return -1;
 	}
 
 	/* Set the device name to be the one we found finally */
-	strcpy(lifr.lifr_name, buf);
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", lifr.lifr_name);
 	strncpy(tapcfg->ifname, lifr.lifr_name, sizeof(tapcfg->ifname)-1);
 
-	/* Get MAC address on Solaris */
-	memset(&ifr, 0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-	ret = ioctl(tap_fd, SIOCGENADDR, &ifr);
-	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error getting the MAC address of TAP device '%s': %s\n",
-		           tapcfg->ifname, strerror(errno));
-	}
-	memcpy(tapcfg->hwaddr, ifr.ifr_enaddr, HWADDRLEN);
+	/* XXX: Get MAC address on Solaris, need to use DLIP... */
 
 	return tap_fd;
 }
