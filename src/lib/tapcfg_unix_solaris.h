@@ -22,12 +22,28 @@ static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
-	char buf[128];
 	struct lifreq lifr;
 	struct strioctl strioc;
-	int ppa;
+	int ppa, newppa;
 
-	buf[sizeof(buf)-1] = '\0';
+	if (strncmp(ifname, "tap", 3)) {
+		if (!fallback) {
+			taplog_log(TAPLOG_DEBUG,
+				   "Device name '%s' doesn't start with 'tap'\n,
+				   ifname);
+			return -1;
+		}
+		ppa = 0;
+	} else {
+		char *endptr;
+
+		ppa = strtol(ifname+3, &endptr, 10);
+		if (*endptr != '\0') {
+			if (!fallback)
+				return -1;
+			ppa = 0;
+		}
+	}
 
 	tap_fd = open("/dev/tap", O_RDWR, 0);
 	if (tap_fd < 0) {
@@ -39,19 +55,41 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		return -1;
 	}
 
-	ppa = 0;
 	strioc.ic_cmd = TUNNEWPPA;
 	strioc.ic_timout = 0;
 	strioc.ic_len = sizeof(ppa);
 	strioc.ic_dp = (char *) &ppa;
-	if ((ppa = ioctl(tap_fd, I_STR, &strioc)) == -1) {
-		taplog_log(TAPLOG_ERR, "Couldn't assign new interface\n");
+	newppa = ioctl(tap_fd, I_STR, &strioc);
+	if (newppa == -1 && !fallback) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't assign new interface: tap%d\n",
+		           ppa);
 		close(tap_fd);
 		return -1;
+	} else if (newppa == -1) {
+		for (ppa=0; ppa<16, ppa++) {
+			strioc.ic_cmd = TUNNEWPPA;
+			strioc.ic_timout = 0;
+			strioc.ic_len = sizeof(ppa);
+			strioc.ic_dp = (char *) &ppa;
+			newppa = ioctl(tap_fd, I_STR, &strioc);
+			if (newppa >= 0) {
+				/* Found one! */
+				break;
+			}
+		}
+		if (ppa == 16) {
+			taplog_log(TAPLOG_ERR,
+			           "Couldn't find suitable tap device to assign\n");
+			return -1;
+		}
 	}
 
-	snprintf(buf, 128, "tap%d", ppa);
-	printf("Device name %s\n", buf);
+	/* Set the device name to be the one we found finally */
+	snprintf(tapcfg->ifname,
+	         sizeof(tapcfg->ifname)-1,
+	         "tap%d", newppa);
+	taplog_log(TAPLOG_DEBUG, "Device name %s\n", tapcfg->ifname);
 
 	if (ioctl(tap_fd, I_PUSH, "ip") == -1) {
 		taplog_log(TAPLOG_ERR, "Error pushing the IP module\n");
@@ -61,22 +99,18 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	memset(&lifr, 0, sizeof(struct lifreq));
 	if (ioctl(tap_fd, SIOCGLIFFLAGS, &lifr) == -1) {
-		taplog_log(TAPLOG_ERR, "Can't get flags\n");
+		taplog_log(TAPLOG_ERR, "Can't get interface flags\n");
 		close(tap_fd);
 		return -1;
 	}
 
-	strcpy(lifr.lifr_name, buf);
+	strcpy(lifr.lifr_name, tapcfg->ifname);
 	lifr.lifr_ppa = ppa;
 	if (ioctl(tap_fd, SIOCSLIFNAME, &lifr) == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
 		close(tap_fd);
 		return -1;
 	}
-
-	/* Set the device name to be the one we found finally */
-	taplog_log(TAPLOG_DEBUG, "Device name %s\n", lifr.lifr_name);
-	strncpy(tapcfg->ifname, lifr.lifr_name, sizeof(tapcfg->ifname)-1);
 
 	/* XXX: Get MAC address on Solaris, need to use DLIP... */
 

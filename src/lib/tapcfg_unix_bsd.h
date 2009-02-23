@@ -39,13 +39,13 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 			   "Check that you are running the program with "
 			   "root privileges and have TUN/TAP driver installed\n");
 		return -1;
-	} else {
+	} else if (tap_fd < 0) {
 		/* Try all possible devices, because configured name failed */
 		for (i=0; i<16; i++) {
 			snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
 			tap_fd = open(buf, O_RDWR);
 			if (tap_fd >= 0) {
-				/* Found one! Could save this for later... */
+				/* Found one! */
 				break;
 			}
 		}
