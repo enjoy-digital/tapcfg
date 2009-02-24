@@ -1,0 +1,5 @@
+
+- Move solaris plumbing to own function and when checking for available device, try complete plumbing
+- Add unattach to dlpi in solaris and unattach the STREAM correctly on exit
+- Port to work on NetBSD, at least address setting should be SIOCSIFPHYADDR
+
