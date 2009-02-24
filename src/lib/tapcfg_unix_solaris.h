@@ -68,11 +68,19 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		close(tap_fd);
 		return -1;
 	} else if (newppa == -1) {
-		for (ppa=0; ppa<16, ppa++) {
+		int i;
+
+		taplog_log(TAPLOG_INFO,
+		           "Opening device '%s' failed, trying to find another one\n",
+		           ifname);
+		for (i=0; i<16, i++) {
+			if (i == ppa)
+				continue;
+
 			strioc.ic_cmd = TUNNEWPPA;
 			strioc.ic_timout = 0;
-			strioc.ic_len = sizeof(ppa);
-			strioc.ic_dp = (char *) &ppa;
+			strioc.ic_len = sizeof(i);
+			strioc.ic_dp = (char *) &i;
 			newppa = ioctl(tap_fd, I_STR, &strioc);
 			if (newppa >= 0) {
 				/* Found one! */

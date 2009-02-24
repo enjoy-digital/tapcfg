@@ -43,6 +43,9 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	ret = ioctl(tap_fd, TUNSETIFF, &ifr);
 
 	if (ret == -1 && errno == EINVAL && fallback) {
+		taplog_log(TAPLOG_INFO,
+		           "Opening device '%s' failed, trying to find another one\n",
+		           ifname);
 		/* Try again without device name */
 		memset(&ifr, 0, sizeof(ifr));
 		ifr.ifr_flags = IFF_TAP | IFF_NO_PI;

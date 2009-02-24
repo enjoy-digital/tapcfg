@@ -40,6 +40,10 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 			   "root privileges and have TUN/TAP driver installed\n");
 		return -1;
 	} else if (tap_fd < 0) {
+		taplog_log(TAPLOG_INFO,
+		           "Opening device '%s' failed, trying to find another one\n",
+		           ifname);
+
 		/* Try all possible devices, because configured name failed */
 		for (i=0; i<16; i++) {
 			snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
