@@ -188,20 +188,19 @@ tapcfg_iface_prepare(const char *ifname, int enabled)
 }
 
 static int
-tapcfg_hwaddr_ioctl(int ctrl_fd,
-                    const char *ifname,
+tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
                     const char *hwaddr)
 {
 	struct ifreq ifr;
 	int ret;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, ifname);
+	strcpy(ifr.ifr_name, tapcfg->ifname);
 	ifr.ifr_addr.sa_len = HWADDRLEN;
 	ifr.ifr_addr.sa_family = AF_LINK;
 	memcpy(ifr.ifr_addr.sa_data, hwaddr, HWADDRLEN);
 
-	ret = ioctl(ctrl_fd, SIOCSIFLLADDR, &ifr);
+	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFLLADDR, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
 			   "Error trying to set new hardware address: %s\n",

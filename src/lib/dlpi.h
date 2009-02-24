@@ -1,7 +1,7 @@
 
-#include <sys/dlpi.h>
-#include <sys/stropts.h>
 #include <string.h>
+#include <stropts.h>
+#include <sys/dlpi.h>
 
 static int
 dlpi_send_msg(int fd,
@@ -111,4 +111,38 @@ dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
 
 	return 0;
 }
+
+static int
+dlpi_set_physaddr(int fd, const char *hwaddr, int length)
+{
+	unsigned char buffer[DLPIBUFSIZE];
+	dl_set_phys_addr_req_t *p_set_phys_addr_req;
+	dl_ok_ack_t *p_ok_ack;
+	int offset, ret;
+
+	p_set_phys_addr_req = (dl_set_phys_addr_req_t *) buffer;
+	memset(p_set_phys_addr_req, 0, sizeof(dl_set_phys_addr_req_t));
+	p_set_phys_addr_req->dl_primitive = DL_SET_PHYS_ADDR_REQ;
+	p_set_phys_addr_req->dl_addr_length = length;
+
+	offset = sizeof(dl_set_phys_addr_req_t);
+	memcpy(buffer + offset, hwaddr, length);
+	p_set_phys_addr_req->dl_addr_offset = offset;
+	
+	ret = dlpi_send_msg(fd, p_set_phys_addr_req,
+	                    sizeof(dl_set_phys_addr_req_t) + length,
+	                    NULL, 0, 0);
+	if (ret) {
+		return -1;
+	}
+
+	dlpi_get_msg(fd, buffer, sizeof(buffer), NULL, NULL, 0);
+	p_ok_ack = (dl_ok_ack_t *) buffer;
+	if (p_ok_ack->dl_primitive != DL_OK_ACK) {
+		return -1;
+	}
+
+	return 0;
+}
+
 

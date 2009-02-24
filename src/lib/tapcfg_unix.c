@@ -317,7 +317,7 @@ tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 		return -1;
 	}
 
-	ret = tapcfg_hwaddr_ioctl(tapcfg->ctrl_fd, tapcfg->ifname, hwaddr);
+	ret = tapcfg_hwaddr_ioctl(tapcfg, hwaddr);
 	if (ret == -1)
 		return -1;
 

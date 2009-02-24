@@ -13,8 +13,8 @@
  *  Lesser General Public License for more details.
  */
 
+#include <stropts.h>
 #include <sys/sockio.h>
-#include <sys/stropts.h>
 
 #include "dlpi.h"
 
@@ -403,11 +403,20 @@ tapcfg_iface_prepare(const char *ifname, int enabled)
 }
 
 static int
-tapcfg_hwaddr_ioctl(int ctrl_fd,
-                    const char *ifname,
+tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
                     const char *hwaddr)
 {
-	return -1;
+	int ret;
+
+	ret = dlpi_set_physaddr(tapcfg->tap_fd, hwaddr, HWADDRLEN);
+	if (ret < 0) {
+		taplog_log(TAPLOG_ERR,
+			   "Error trying to set new hardware address: %s\n",
+			   strerror(errno));
+		return -1;
+	}
+
+	return 0;
 }
 
 static int
