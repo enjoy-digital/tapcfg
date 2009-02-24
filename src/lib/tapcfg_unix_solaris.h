@@ -16,6 +16,8 @@
 #include <sys/sockio.h>
 #include <sys/stropts.h>
 
+#include "dlpi.h"
+
 #define TUNNEWPPA       (('T'<<16) | 0x0001)
 #define TUNSETPPA       (('T'<<16) | 0x0002)
 
@@ -268,7 +270,18 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 
 
-	/* XXX: Get MAC address on Solaris, need to use DLIP... */
+	/* SIOCGENADDR doesn't work on Solaris, so we need to attach DLPI interface
+	 * and use it to query the hardware address instead, also works for setting */
+	if (dlpi_attach(tap_fd, newppa)) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't attach PPA to the DLPI interface: %s\n",
+		           strerror(errno));
+	}
+	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr))) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't query physical address from the DLPI interface: %s\n",
+		           strerror(errno));
+	}
 
 	tapcfg->ip_fd = ip_fd;
 	tapcfg->ip6_fd = ip6_fd;
