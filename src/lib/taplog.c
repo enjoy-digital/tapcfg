@@ -24,7 +24,7 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
-static int taplog_level = TAPLOG_INFO;
+static int taplog_level = TAPLOG_DEBUG;
 static taplog_callback_t callback = NULL;
 
 void

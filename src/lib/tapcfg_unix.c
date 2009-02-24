@@ -143,6 +143,7 @@ tapcfg_stop(tapcfg_t *tapcfg)
 	assert(tapcfg);
 
 	if (tapcfg->started) {
+		tapcfg_stop_dev(tapcfg);
 		if (tapcfg->tap_fd != -1) {
 			close(tapcfg->tap_fd);
 			tapcfg->tap_fd = -1;
