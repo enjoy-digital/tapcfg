@@ -329,11 +329,10 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 int
 tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 {
+	struct ifreq ifr;
 #ifdef __sun__
-	struct lifreq ifr;
 	int flags = IFF_UP;
 #else
-	struct ifreq ifr;
 	int flags = IFF_UP | IFF_RUNNING;
 #endif
 
@@ -347,19 +346,15 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	if (ioctl(tapcfg->ctrl_fd,
-#ifdef __sun__
-	          SIOCGLIFFLAGS,
-#else
-	          SIOCGIFFLAGS,
-#endif
-	          &ifr) == -1) {
+	printf("Calling first ioctl\n");
+	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
 		           tapcfg->ifname,
 		           strerror(errno));
 		return -1;
 	}
+	printf("Called first ioctl\n");
 
 	if (enabled) {
 		ifr.ifr_flags |= flags;
@@ -367,14 +362,9 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	} else {
 		ifr.ifr_flags &= ~flags;
 	}
+	printf("Prepared device\n");
 
-	if (ioctl(tapcfg->ctrl_fd,
-#ifdef __sun__
-	          SIOCSLIFFLAGS,
-#else
-	          SIOCSIFFLAGS,
-#endif
-	          &ifr) == -1) {
+	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error calling SIOCSIFFLAGS for interface %s: %s\n",
 		           tapcfg->ifname,

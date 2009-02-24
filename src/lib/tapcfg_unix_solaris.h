@@ -30,7 +30,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	if (strncmp(ifname, "tap", 3)) {
 		if (!fallback) {
 			taplog_log(TAPLOG_DEBUG,
-				   "Device name '%s' doesn't start with 'tap'\n,
+				   "Device name '%s' doesn't start with 'tap'\n",
 				   ifname);
 			return -1;
 		}
@@ -73,7 +73,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		taplog_log(TAPLOG_INFO,
 		           "Opening device '%s' failed, trying to find another one\n",
 		           ifname);
-		for (i=0; i<16, i++) {
+		for (i=0; i<16; i++) {
 			if (i == ppa)
 				continue;
 
@@ -117,6 +117,12 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	lifr.lifr_ppa = ppa;
 	if (ioctl(tap_fd, SIOCSLIFNAME, &lifr) == -1) {
 		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
+		close(tap_fd);
+		return -1;
+	}
+
+	if (ioctl(tap_fd, I_PUSH, "arp") == -1) {
+		taplog_log(TAPLOG_ERR, "Error pushing the ARP module\n");
 		close(tap_fd);
 		return -1;
 	}
