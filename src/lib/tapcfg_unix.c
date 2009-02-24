@@ -25,7 +25,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/sockio.h>
 
 #include <arpa/inet.h>
 
@@ -306,12 +305,8 @@ tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 	}
 
 	ret = tapcfg_hwaddr_ioctl(tapcfg->ctrl_fd, tapcfg->ifname, hwaddr);
-	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
-		           "Error trying to set new hardware address: %s\n",
-		           strerror(errno));
+	if (ret == -1)
 		return -1;
-	}
 
 	memcpy(tapcfg->hwaddr, hwaddr, HWADDRLEN);
 
@@ -329,7 +324,13 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 int
 tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 {
+#ifdef __sun__
+	struct lifreq ifr;
+	int flags = IFF_UP;
+#else
 	struct ifreq ifr;
+	int flags = IFF_UP | IFF_RUNNING;
+#endif
 
 	assert(tapcfg);
 
@@ -339,9 +340,15 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		return 0;
 	}
 
-	memset(&ifr, 0, sizeof(struct ifreq));
+	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
+	if (ioctl(tapcfg->ctrl_fd,
+#ifdef __sun__
+	          SIOCGLIFFLAGS,
+#else
+	          SIOCGIFFLAGS,
+#endif
+	          &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
 		           tapcfg->ifname,
@@ -350,15 +357,19 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	}
 
 	if (enabled) {
-		ifr.ifr_flags |= IFF_UP;
-		ifr.ifr_flags |= IFF_RUNNING;
+		ifr.ifr_flags |= flags;
 		tapcfg_iface_prepare(tapcfg->ifname);
 	} else {
-		ifr.ifr_flags &= ~IFF_UP;
-		ifr.ifr_flags &= ~IFF_RUNNING;
+		ifr.ifr_flags &= ~flags;
 	}
 
-	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
+	if (ioctl(tapcfg->ctrl_fd,
+#ifdef __sun__
+	          SIOCSLIFFLAGS,
+#else
+	          SIOCSIFFLAGS,
+#endif
+	          &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error calling SIOCSIFFLAGS for interface %s: %s\n",
 		           tapcfg->ifname,

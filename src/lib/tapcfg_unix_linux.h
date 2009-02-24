@@ -86,13 +86,21 @@ tapcfg_hwaddr_ioctl(int ctrl_fd,
                     const char *hwaddr)
 {
 	struct ifreq ifr;
+	int ret;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, ifname);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, HWADDRLEN);
 
-	return ioctl(ctrl_fd, SIOCSIFHWADDR, &ifr);
+	ret = ioctl(ctrl_fd, SIOCSIFHWADDR, &ifr);
+	if (ret == -1) {
+		taplog_log(TAPLOG_ERR,
+			   "Error trying to set new hardware address: %s\n",
+			   strerror(errno));
+	}
+
+	return ret;
 }
 
 static int

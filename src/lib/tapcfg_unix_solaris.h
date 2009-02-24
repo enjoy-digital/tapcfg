@@ -13,6 +13,7 @@
  *  Lesser General Public License for more details.
  */
 
+#include <sys/sockio.h>
 #include <sys/stropts.h>
 
 #define TUNNEWPPA       (('T'<<16) | 0x0001)
