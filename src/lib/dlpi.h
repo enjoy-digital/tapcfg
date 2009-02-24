@@ -24,7 +24,7 @@
 #include <sys/dlpi.h>
 
 static int
-dlpi_send_msg(int fd,
+dlpi_put_msg(int fd,
               void *prim, int prim_len,
               void *data, int data_len,
               int flags)
@@ -85,12 +85,18 @@ dlpi_attach(int fd, int ppa)
 	memset(&dl_attach_req, 0, sizeof(dl_attach_req));
 	dl_attach_req.dl_primitive = DL_ATTACH_REQ;
 	dl_attach_req.dl_ppa = ppa;
-	ret = dlpi_send_msg(fd, &dl_attach_req, sizeof(dl_attach_req), NULL, 0, 0);
-	if (ret) {
+	ret = dlpi_put_msg(fd, &dl_attach_req,
+	                   sizeof(dl_attach_req),
+	                   NULL, 0, 0);
+	if (ret < 0) {
 		return -1;
 	}
 
-	dlpi_get_msg(fd, buffer, sizeof(buffer), NULL, NULL, 0);
+	ret = dlpi_get_msg(fd, buffer, sizeof(buffer),
+	                   NULL, NULL, 0);
+	if (ret != 0) {
+		return -1;
+	}
 	p_ok_ack = (dl_ok_ack_t *) buffer;
 	if (p_ok_ack->dl_primitive != DL_OK_ACK) {
 		return -1;
@@ -111,12 +117,18 @@ dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
 	memset(&dl_phys_addr_req, 0, sizeof(dl_phys_addr_req));
 	dl_phys_addr_req.dl_primitive = DL_PHYS_ADDR_REQ;
 	dl_phys_addr_req.dl_addr_type = DL_CURR_PHYS_ADDR;
-	ret = dlpi_send_msg(fd, &dl_phys_addr_req, sizeof(dl_phys_addr_req), NULL, 0, 0);
-	if (ret) {
+	ret = dlpi_put_msg(fd, &dl_phys_addr_req,
+	                   sizeof(dl_phys_addr_req),
+	                   NULL, 0, 0);
+	if (ret < 0) {
 		return -1;
 	}
 
-	dlpi_get_msg(fd, buffer, sizeof(buffer), NULL, NULL, 0);
+	ret = dlpi_get_msg(fd, buffer, sizeof(buffer),
+	                   NULL, NULL, 0);
+	if (ret != 0) {
+		return -1;
+	}
 	p_phys_addr_ack = (dl_phys_addr_ack_t *) buffer;
 	if (p_phys_addr_ack->dl_primitive != DL_PHYS_ADDR_ACK) {
 		return -1;
@@ -126,7 +138,8 @@ dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
 		return -1;
 	}
 
-	result = ((char *) p_phys_addr_ack) + p_phys_addr_ack->dl_addr_offset;
+	result = ((char *) p_phys_addr_ack) +
+	         p_phys_addr_ack->dl_addr_offset;
 	memcpy(hwaddr, result, length);
 
 	return 0;
@@ -149,14 +162,18 @@ dlpi_set_physaddr(int fd, const char *hwaddr, int length)
 	memcpy(buffer + offset, hwaddr, length);
 	p_set_phys_addr_req->dl_addr_offset = offset;
 	
-	ret = dlpi_send_msg(fd, p_set_phys_addr_req,
-	                    sizeof(dl_set_phys_addr_req_t) + length,
-	                    NULL, 0, 0);
-	if (ret) {
+	ret = dlpi_put_msg(fd, p_set_phys_addr_req,
+	                   sizeof(dl_set_phys_addr_req_t) + length,
+	                   NULL, 0, 0);
+	if (ret < 0) {
 		return -1;
 	}
 
-	dlpi_get_msg(fd, buffer, sizeof(buffer), NULL, NULL, 0);
+	ret = dlpi_get_msg(fd, buffer, sizeof(buffer),
+	                   NULL, NULL, 0);
+	if (ret != 0) {
+		return -1;
+	}
 	p_ok_ack = (dl_ok_ack_t *) buffer;
 	if (p_ok_ack->dl_primitive != DL_OK_ACK) {
 		return -1;
