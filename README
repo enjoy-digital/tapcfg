@@ -22,6 +22,12 @@ FreeBSD:
 Requires that the TAP driver is loaded to the system. This can usually be done
 by running the command "kldload if_tap" as root.
 
+OpenBSD:
+
+Starting from OpenBSD 3.5, tun devices are dynamically created at boot time. So
+if you want to for example create device "tun0", run the command "touch
+/etc/hostname.tun0" as root and reboot the system.
+
 Solaris:
 
 Requires that TAP driver is installed to the system. It can be downloaded from
