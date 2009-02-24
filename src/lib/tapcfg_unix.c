@@ -96,6 +96,11 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		return 0;
 	}
 
+	if (ifname == NULL) {
+		ifname = "tap0";
+		fallback = 1;
+	}
+
 	tap_fd = tapcfg_start_dev(tapcfg, ifname, fallback);
 	if (tap_fd < 0) {
 		goto err;
