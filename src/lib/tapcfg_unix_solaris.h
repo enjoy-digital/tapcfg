@@ -447,6 +447,20 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 
 	sin = (struct sockaddr_in *) &ifr.ifr_addr;
 	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = addr | ~mask;
+
+	if (ioctl(ctrl_fd, SIOCSIFBRDADDR, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error trying to configure IPv4 netmask: %s\n",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, ifname);
+
+	sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = mask;
 
 	if (ioctl(ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
