@@ -1,0 +1,30 @@
+
+Notice about the contents
+-------------------------
+
+This directory contains the source code for 3rd party device drivers. All
+drivers should be updated to the latest versions as of 2009-02-25, and because
+the development seems to be quite slow, it is unlikely that there will be big
+changes in them. However I will try to keep them up to date and update this file
+as well when necessary.
+
+These drivers are crucial for tapcfg to work, so it's safer to keep them all in
+one place. However they are not made or updated by me unless otherwise noted.
+All questions and comments can be sent to the original authors.
+
+
+License
+-------
+
+Drivers are released under following licenses:
+
+osx/tuntap - tun/tap driver for Mac OS X
+ * 3-clause BSD license
+
+solaris/tuntap - Multithreaded STREAMS tun (tap) pseudo device driver
+ * GPLv2 or any later version
+
+windows/tap-win32 - TAP-Win32/TAP-Win64 driver
+ * GPLv2 only
+
+
