@@ -22,3 +22,9 @@ FreeBSD:
 Requires that the TAP driver is loaded to the system. This can usually be done
 by running the command "kldload if_tap" as root.
 
+Solaris:
+
+Requires that TAP driver is installed to the system. It can be downloaded from
+http://www.whiteboard.ne.jp/~admin2/tuntap/ or installed using pkg-get with the
+command "pkg-get install tap".
+
