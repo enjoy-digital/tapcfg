@@ -164,8 +164,11 @@ tapcfg_attach_ipv6(const char *ifname)
 #endif
 
 static void
-tapcfg_iface_prepare(const char *ifname)
+tapcfg_iface_prepare(const char *ifname, int enabled)
 {
+	if (!enabled)
+		return;
+
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
 		taplog_log(TAPLOG_INFO,

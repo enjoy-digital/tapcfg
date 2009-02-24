@@ -364,7 +364,6 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 
 	if (enabled) {
 		ifr.ifr_flags |= flags;
-		tapcfg_iface_prepare(tapcfg->ifname);
 	} else {
 		ifr.ifr_flags &= ~flags;
 	}
@@ -376,6 +375,8 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		           strerror(errno));
 		return -1;
 	}
+
+	tapcfg_iface_prepare(tapcfg->ifname, enabled);
 	tapcfg->enabled = enabled;
 
 	return 0;

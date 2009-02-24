@@ -347,8 +347,45 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 }
 
 static void
-tapcfg_iface_prepare(const char *ifname)
+tapcfg_iface_prepare(const char *ifname, int enabled)
 {
+	struct lifreq lifr;
+	int ctrl_fd;
+
+	ctrl_fd = socket(AF_INET6, SOCK_DGRAM, 0);
+	if (ctrl_fd < 0) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't open control control socket for IPv6 status change\n");
+		return;
+	}
+
+	memset(&lifr, 0, sizeof(lifr));
+	strcpy(lifr.lifr_name, ifname);
+	if (ioctl(ctrl_fd, SIOCGLIFFLAGS, &lifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
+		           ifname,
+		           strerror(errno));
+		close(ctrl_fd);
+		return;
+	}
+
+	if (enabled) {
+		lifr.lifr_flags |= IFF_UP;
+	} else {
+		lifr.lifr_flags &= ~IFF_UP;
+	}
+
+	if (ioctl(ctrl_fd, SIOCSLIFFLAGS, &lifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+		           "Error calling SIOCSIFFLAGS for interface %s: %s\n",
+		           ifname,
+		           strerror(errno));
+		close(ctrl_fd);
+		return;
+	}
+
+	close(ctrl_fd);
 }
 
 static int
