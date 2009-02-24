@@ -173,7 +173,7 @@ tapcfg_iface_prepare(const char *ifname, int enabled)
 	if (getinet6sysctl(IPV6CTL_AUTO_LINKLOCAL) == 0) {
 		taplog_log(TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.auto_linklocal: 0 -> 1\n");
-		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 0);
+		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 1);
 	}
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
 		taplog_log(TAPLOG_INFO,
