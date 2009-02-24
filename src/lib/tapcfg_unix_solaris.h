@@ -23,8 +23,8 @@
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
-#define IP_NODE  "/dev/ip"
-#define IP6_NODE "/dev/ip6"
+#define IP_NODE  "/dev/udp"
+#define IP6_NODE "/dev/udp6"
 #define TAP_NODE "/dev/tap"
 #define ARP_NODE "/dev/tap"
 	int tap_fd = -1;
@@ -343,6 +343,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 
 	close(ip_fd);
 	tapcfg->ip_fd = -1;
+	close(ip6_fd);
 	tapcfg->ip6_fd = -1;
 }
 
