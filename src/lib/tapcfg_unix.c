@@ -49,6 +49,9 @@ struct tapcfg_s {
 
 	char buffer[TAPCFG_BUFSIZE];
 	int buflen;
+
+	/* A slight hack for solaris */
+	int extra_fd;
 };
 
 /* This will use the tapcfg_s struct so we need it here */
@@ -70,6 +73,7 @@ tapcfg_init()
 		return NULL;
 
 	tapcfg->tap_fd = -1;
+	tapcfg->extra_fd = -1;
 
 	return tapcfg;
 }
@@ -142,8 +146,14 @@ tapcfg_stop(tapcfg_t *tapcfg)
 		if (tapcfg->tap_fd != -1) {
 			close(tapcfg->tap_fd);
 			tapcfg->tap_fd = -1;
+		}
+		if (tapcfg->ctrl_fd != -1) {
 			close(tapcfg->ctrl_fd);
 			tapcfg->ctrl_fd = -1;
+		}
+		if (tapcfg->extra_fd != -1) {
+			close(tapcfg->extra_fd);
+			tapcfg->extra_fd = -1;
 		}
 		tapcfg->started = 0;
 		tapcfg->enabled = 0;
@@ -346,7 +356,6 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	printf("Calling first ioctl\n");
 	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
 		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
@@ -354,7 +363,6 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		           strerror(errno));
 		return -1;
 	}
-	printf("Called first ioctl\n");
 
 	if (enabled) {
 		ifr.ifr_flags |= flags;
@@ -362,7 +370,6 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	} else {
 		ifr.ifr_flags &= ~flags;
 	}
-	printf("Prepared device\n");
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,

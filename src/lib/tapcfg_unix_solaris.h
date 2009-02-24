@@ -26,6 +26,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	struct lifreq lifr;
 	struct strioctl strioc;
 	int ppa, newppa;
+	int arp_fd;
 
 	if (strncmp(ifname, "tap", 3)) {
 		if (!fallback) {
@@ -122,10 +123,34 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	}
 
 	if (ioctl(tap_fd, I_PUSH, "arp") == -1) {
-		taplog_log(TAPLOG_ERR, "Error pushing the ARP module\n");
+		taplog_log(TAPLOG_ERR, "Error pushing the ARP module to TAP fd\n");
 		close(tap_fd);
 		return -1;
 	}
+
+	arp_fd = open("/dev/tap", O_RDWR, 0);
+	if (arp_fd < 0) {
+		taplog_log(TAPLOG_ERR, "Error opening ARP fd\n");
+		close(tap_fd);
+		return -1;
+	}
+
+	if (ioctl(arp_fd, I_PUSH, "arp") == -1) {
+		taplog_log(TAPLOG_ERR, "Error pushing the ARP module 2\n");
+		close(tap_fd);
+		return -1;
+	}
+
+	strioc.ic_cmd = SIOCSLIFNAME;
+	strioc.ic_timout = 0;
+	strioc.ic_len = sizeof(lifr);
+	strioc.ic_dp = (char *) &lifr;
+	if (ioctl(arp_fd, I_STR, &strioc) == -1) {
+		taplog_log(TAPLOG_ERR, "Couldn't set interface name to ARP fd\n");
+		close(tap_fd);
+		return -1;
+	}
+	tapcfg->extra_fd = arp_fd;
 
 	/* XXX: Get MAC address on Solaris, need to use DLIP... */
 
