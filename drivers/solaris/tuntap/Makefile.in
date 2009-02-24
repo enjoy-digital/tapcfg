@@ -1,0 +1,53 @@
+# 
+#  Universal TUN/TAP device driver.
+# 
+#  Multithreaded STREAMS tun pseudo device driver.
+# 
+#  Copyright (C) 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
+# 
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  $Id: Makefile.in,v 1.7 2000/06/20 03:14:17 maxk Exp $
+#
+CONFIGURE_FILES = Makefile config.status config.cache config.h config.log
+
+CC = gcc
+LD = ld
+
+DEFS = @DEFS@
+CFLAGS = $(DEFS) -O2 -Wall -D_KERNEL -I.
+
+ADD_DRV = /usr/sbin/add_drv
+REM_DRV = /usr/sbin/rem_drv
+DRV_DIR = /usr/kernel/drv
+
+INSTALL = @INSTALL@
+
+all: module
+
+module: tun.o
+	$(LD) -r -o tun tun.o
+
+tun.o: tun.c if_tun.h
+	$(CC) $(CFLAGS) -c tun.c
+
+inst: module 
+	$(INSTALL) -m 644 -o root -g root if_tun.h /usr/include/net 
+	$(INSTALL) -m 644 -o root -g root tun $(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root tun.conf $(DRV_DIR)
+	-$(REM_DRV) tun >/dev/null 2>&1
+	$(ADD_DRV) tun	
+
+clean:
+	rm -f tun *.o *~
+
+distclean:
+	rm -f $(CONFIGURE_FILES)
