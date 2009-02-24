@@ -352,6 +352,8 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		return 0;
 	}
 
+	tapcfg_iface_prepare(tapcfg->ifname, enabled);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
@@ -375,8 +377,6 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		           strerror(errno));
 		return -1;
 	}
-
-	tapcfg_iface_prepare(tapcfg->ifname, enabled);
 	tapcfg->enabled = enabled;
 
 	return 0;
