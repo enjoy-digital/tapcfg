@@ -15,7 +15,13 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  *  GNU General Public License for more details.
  *
- *  $Id: if_tun.h,v 1.4 2000/05/01 12:23:27 maxk Exp $
+ *  $Id: if_tun.h,v 1.4 2000/05/01 12:23:27 maxk Exp 
+ */
+
+/*
+ *  Modified by: Kazuyoshi <admin2@whiteboard.ne.jp>
+ *  Modified for supporting Ethernet tunneling as known as TAP.
+ *  $Date: 2006/04/28 15:38:13 $, $Revision: 1.2 $
  */
 
 #ifndef	_SYS_IF_TUN_H
@@ -23,7 +29,7 @@
 
 #ifdef _KERNEL
 /* Uncomment to enable debuging */
-/* #define TUN_DEBUG 1 */
+//#define TUN_DEBUG 1
 
 #ifdef TUN_DEBUG
 #define DBG	 cmn_err
@@ -36,6 +42,9 @@ struct tunppa {
   unsigned int id;    		/* Iface number		*/
   queue_t *rq;			/* Control Stream RQ    */
   struct tunstr * p_str; 	/* Protocol Streams 	*/
+#ifdef TUNTAP_TAP
+    struct ether_addr  etheraddr;  /* Ethernet Address */
+#endif    
 }; 
 #define TUNMAXPPA	20
 
@@ -65,6 +74,9 @@ struct tunstr {
 #define SNIFFER(a) ( (a & TUN_ALL_SAP) || (a & TUN_ALL_PHY) )
 
 struct tundladdr {
+#ifdef TUNTAP_TAP    
+  struct ether_addr  etheraddr;
+#endif    
   u_short sap;
 };
 #define TUN_ADDR_LEN  	(sizeof(struct tundladdr))

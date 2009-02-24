@@ -15,39 +15,53 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #  GNU General Public License for more details.
 #
-#  $Id: Makefile.in,v 1.7 2000/06/20 03:14:17 maxk Exp $
+#  $Id: Makefile.in,v 1.7 2000/06/20 03:14:17 maxk Exp
 #
+
+# Modified by Kazuyoshi <admin2@whiteboard.ne.jp>
+# Modified for supporting Ethernet tunneling as known as TAP.
+# $Date: 2006/04/28 15:38:13 $, $Revision: 1.2 $
+
 CONFIGURE_FILES = Makefile config.status config.cache config.h config.log
 
 CC = gcc
 LD = ld
 
 DEFS = @DEFS@
-CFLAGS = $(DEFS) -O2 -Wall -D_KERNEL -I.
+CFLAGS = $(DEFS) -O2 -Wall -D_KERNEL -I. @M64_OPT@
 
 ADD_DRV = /usr/sbin/add_drv
 REM_DRV = /usr/sbin/rem_drv
-DRV_DIR = /usr/kernel/drv
+DRV_DIR = @DRV_DIR@
+DRV_CONF_DIR = /usr/kernel/drv
 
 INSTALL = @INSTALL@
 
-all: module
+all: modules
 
-module: tun.o
+modules: tun.o tap.o
 	$(LD) -r -o tun tun.o
+	$(LD) -r -o tap tap.o
 
 tun.o: tun.c if_tun.h
-	$(CC) $(CFLAGS) -c tun.c
+	$(CC) $(CFLAGS) -c tun.c -o tun.o -DTUNTAP_TUN
 
-inst: module 
+tap.o: tun.c if_tun.h
+	$(CC) $(CFLAGS) -c tun.c -o tap.o -DTUNTAP_TAP
+
+install: modules 
 	$(INSTALL) -m 644 -o root -g root if_tun.h /usr/include/net 
 	$(INSTALL) -m 644 -o root -g root tun $(DRV_DIR)
-	$(INSTALL) -m 644 -o root -g root tun.conf $(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root tap $(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root tun.conf $(DRV_CONF_DIR)
+	$(INSTALL) -m 644 -o root -g root tap.conf $(DRV_CONF_DIR)
 	-$(REM_DRV) tun >/dev/null 2>&1
+	-$(REM_DRV) tap >/dev/null 2>&1
 	$(ADD_DRV) tun	
+	$(ADD_DRV) tap
 
 clean:
-	rm -f tun *.o *~
+	rm -f tun tap *.o *~
 
 distclean:
 	rm -f $(CONFIGURE_FILES)

@@ -15,7 +15,12 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  *  GNU General Public License for more details.
  *
- *  $Id: tun.c,v 1.12 2000/06/20 03:14:17 maxk Exp $
+ *  $Id: tun.c,v 1.12 2000/06/20 03:14:17 maxk Exp 
+ */
+/*
+ *  Modified by: Kazuyoshi <admin2@whiteboard.ne.jp>
+ *  Modified for supporting Ethernet tunneling driver as known as TAP.
+ *  $Date: 2006/11/04 16:10:31 $, $Revision: 1.11 $
  */
 
 #include <sys/types.h>
@@ -40,6 +45,11 @@
 
 #include "if_tun.h"
 
+#if defined(TUNTAP_TAP) || defined(TUNTAP_TUN)
+#else
+#error either TUNTAP_TAP or TUNTAP_TUN need to be defined.
+#endif
+
 static  int  tunprobe(dev_info_t *);
 static	int  tunattach(dev_info_t *, ddi_attach_cmd_t);
 static	int  tundetach(dev_info_t *, ddi_detach_cmd_t);
@@ -50,10 +60,27 @@ static	int  tunwput(queue_t *wq, mblk_t *mb);
 static	int  tunwsrv(queue_t *wq);
 
 static  void tun_frame(queue_t *wq, mblk_t *mpi, int q);
+#ifdef TUNTAP_TAP
+static mblk_t *tun_eth_hdr(mblk_t *mp, int type, struct ether_addr dest_addr, struct ether_addr src_addr);
+static int tun_frame_is_eligible(struct ether_header *etherhdr, struct tunstr *str);
+static int tun_msg_len(mblk_t *mp);
+static void tun_generate_mac_addr(void);
+#elif defined(TUNTAP_TUN)
+static mblk_t *tun_eth_hdr(mblk_t *mp, int type);
+#endif    
+
+#ifdef TUNTAP_TAP  
+static unsigned char broadcastaddr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+static struct ether_addr localmacaddr;
+#endif  
 
 static struct module_info tunminfo = {
   125,		/* mi_idnum  - Module ID number	*/
-  "tun",	/* mi_idname - Module name 	*/
+#ifdef TUNTAP_TAP  
+  "tap",	/* mi_idname - Module name 	*/
+#elif defined(TUNTAP_TUN)
+  "tun",        /* mi_idname - Module name      */
+#endif  
   21,		/* mi_minpsz - Min packet size 	*/
   2048,		/* mi_maxpsz - Max packet size 	*/
   (32 * 1024),	/* mi_hiwat  - Hi-water mark 	*/
@@ -171,13 +198,21 @@ static int tunattach(dev_info_t *dev, ddi_attach_cmd_t cmd)
 
   if( cmd == DDI_ATTACH ){
      /* Create the filesystem device node */
-     if(ddi_create_minor_node(dev,"tun", S_IFCHR, ddi_get_instance(dev), 
+#ifdef TUNTAP_TAP      
+     if(ddi_create_minor_node(dev,"tap", S_IFCHR, ddi_get_instance(dev),
+#elif defined(TUNTAP_TUN)
+     if(ddi_create_minor_node(dev,"tun", S_IFCHR, ddi_get_instance(dev),
+#endif                              
 			      DDI_PSEUDO, CLONE_DEV) == DDI_FAILURE) {
 	cmn_err(CE_CONT,"tun: ddi_create_minor_node failed");
 	return DDI_FAILURE;
      }
      tun_dev = dev;
 
+#ifdef TUNTAP_TAP
+     /* Generate local mac address */
+     tun_generate_mac_addr();
+#endif
      ddi_report_dev(dev);
      return (DDI_SUCCESS);
   } else if( cmd == DDI_RESUME ){
@@ -215,7 +250,7 @@ static int tuninfo(dev_info_t *devi, ddi_info_cmd_t infocmd, void *arg, void **r
 	return DDI_SUCCESS;
 
      case DDI_INFO_DEVT2INSTANCE:
-	*result = (void *)getminor(dev);
+	*result = (void *)(intptr_t) getminor(dev);
 	return DDI_SUCCESS;
   }
   return DDI_FAILURE;
@@ -225,6 +260,8 @@ static int tunopen(queue_t *rq, dev_t *dev, int flag, int sflag, cred_t *credp)
 {
   register struct tunstr *str, **prev;
   int minordev, rc = 0;
+
+  str = NULL;
 
   /* Determine minor device number */
   prev = &tun_str;
@@ -263,7 +300,7 @@ static int tunclose(queue_t *rq)
 
   qprocsoff(rq);
 
-  DBG(CE_CONT,"tun: tunclose str %p min %d\n", str, str->minor);
+  DBG(CE_CONT,"tun: tunclose str %p min %lu\n", str, str->minor);
 
   if( (ppa = str->ppa) ){
      if( str->flags & TUN_CONTROL ){
@@ -272,6 +309,8 @@ static int tunclose(queue_t *rq)
 	/* Unlink all protocol Streams from the PPA */
 	for(tmp = ppa->p_str; tmp; tmp = tmp->p_next){
 	   flushq(WR(tmp->rq), FLUSHDATA);
+           /* Just in case, change state to DL_UNATACHED */
+           tmp->state = DL_UNATTACHED;
 	   tmp->ppa = NULL;
   	   DBG(CE_CONT,"tun: str %p detached from PPA %p\n", tmp, ppa);
 	}
@@ -329,6 +368,11 @@ struct tunppa * tun_alloc_ppa(int id)
   ppa->id = id;
   tun_ppa[id] = ppa;
 
+#ifdef TUNTAP_TAP  
+  /* Copy local mac address and use it for this ppa */
+  bcopy(&localmacaddr, &ppa->etheraddr, ETHERADDRL);  
+#endif  
+
   return ppa;
 }   
 
@@ -345,7 +389,10 @@ static void tun_ioctl(queue_t *wq, mblk_t *mp)
      case TUNNEWPPA:
 	/* Allocate new PPA and assign control stream */
 
+        /* Reverted to original code */
         p = *(int *)mp->b_cont->b_rptr;
+        //p = -1;
+
 	if( p < -1 || p > TUNMAXPPA){
            tuniocack(wq, mp, M_IOCNAK, 0, EINVAL);
 	   return;
@@ -483,8 +530,13 @@ static dl_info_ack_t tun_dl_info = {
   DL_STYLE2,                      /* dl_provider_style */
   sizeof(dl_info_ack_t),          /* dl_addr_offset */
   DL_VERSION_2,                   /* dl_version */
-  0,		                  /* dl_brdcst_addr_length */
-  0,				  /* dl_brdcst_addr_offset */
+#ifdef TUNTAP_TAP  
+  ETHERADDRL,                     /* dl_brdcst_addr_length */
+  sizeof (dl_info_ack_t) + TUN_ADDR_LEN, /* dl_brdcst_addr_offset */
+#elif defined(TUNTAP_TUN)
+  0,                              /* dl_brdcst_addr_length */
+  0,                              /* dl_brdcst_addr_offset */
+#endif  
   0                               /* dl_growth */
 };
 
@@ -494,6 +546,9 @@ static void tun_info_req(queue_t *wq, mblk_t *mp)
   struct tundladdr *dla;
   dl_info_ack_t *dli;
   int size;
+#ifdef TUNTAP_TAP  
+  struct tunppa *ppa = str->ppa;
+#endif  
 
   if(MBLKL(mp) < DL_INFO_REQ_SIZE){
      tundlerrack(wq, mp, DL_INFO_REQ, DL_BADPRIM, 0);
@@ -502,7 +557,11 @@ static void tun_info_req(queue_t *wq, mblk_t *mp)
 
   DBG(CE_CONT,"tun: tun_info_req str %p\n", str);
 
+#ifdef TUNTAP_TAP
+  size = sizeof(dl_info_ack_t) + TUN_ADDR_LEN + ETHERADDRL;
+#elif defined(TUNTAP_TUN)
   size = sizeof(dl_info_ack_t) + TUN_ADDR_LEN;
+#endif  
   if( !(mp = tunchmsg(mp, size, M_PCPROTO, DL_INFO_ACK)) ){
      tunerr(wq, ENOSR);
      return;
@@ -515,6 +574,13 @@ static void tun_info_req(queue_t *wq, mblk_t *mp)
   dla = (struct tundladdr *)(mp->b_rptr + dli->dl_addr_offset);
   dla->sap = str->sap;
 
+#ifdef TUNTAP_TAP
+  if( ppa != NULL )
+      bcopy(&ppa->etheraddr, &dla->etheraddr, ETHERADDRL);
+  else 
+      bzero(&dla->etheraddr, ETHERADDRL);
+  bcopy(broadcastaddr, mp->b_rptr + dli->dl_brdcst_addr_offset, ETHERADDRL);
+#endif  
   qreply(wq, mp);
 }
 
@@ -576,7 +642,7 @@ static void tun_detach_req(queue_t *wq, mblk_t *mp)
      tundlerrack(wq, mp, DL_DETACH_REQ, DL_OUTSTATE, 0);
      return;
   }
-
+  
   /* Unlink from PPA list */
   for(prev = &ppa->p_str; (tmp = *prev); prev = &tmp->p_next)
      if( tmp == str ) break;
@@ -596,8 +662,9 @@ static void tun_bind_req(queue_t *wq, mblk_t *mp)
   struct tunstr *str;
   int size, xidtest;
   uint32_t sap;
+  struct tunppa *ppa;
 
-  str = (struct tunstr *)wq->q_ptr;
+  str = (struct tunstr *)wq->q_ptr;    
   dlp = (union DL_primitives *)mp->b_rptr;
 
   if(MBLKL(mp) < DL_BIND_REQ_SIZE) {
@@ -609,6 +676,11 @@ static void tun_bind_req(queue_t *wq, mblk_t *mp)
      tundlerrack(wq, mp, DL_BIND_REQ, DL_OUTSTATE, 0);
      return;
   }
+
+  if ( (ppa = str->ppa) == NULL){
+     tundlerrack(wq, mp, DL_BIND_REQ, DL_SYSERR, 0);
+     return;
+  }  
 
   sap = dlp->bind_req.dl_sap;
   xidtest = dlp->bind_req.dl_xidtest_flg;
@@ -630,6 +702,9 @@ static void tun_bind_req(queue_t *wq, mblk_t *mp)
   DBG(CE_CONT,"tun: str %p bound to sap %d\n", str, sap);
 
   dladdr.sap = sap;
+#ifdef TUNTAP_TAP  
+  bcopy(&ppa->etheraddr, &dladdr.etheraddr, ETHERADDRL);
+#endif  
 
   size = sizeof(dl_bind_ack_t) + TUN_ADDR_LEN;
   if( !(mp = tunchmsg(mp, size, M_PCPROTO, DL_BIND_ACK)) ){
@@ -736,11 +811,14 @@ static void tun_promiscoff_req(queue_t *wq, mblk_t *mp)
 void tun_physaddr_req(queue_t *wq, mblk_t *mp)
 {
   union   DL_primitives   *dlp;
+#ifdef TUNTAP_TUN
   struct  ether_addr addr;
+#endif  
   int size;
-#ifdef TUN_DEBUG
   struct tunstr *str = (struct tunstr *)wq->q_ptr;
-
+  struct tunppa *ppa = str->ppa;
+  
+#ifdef TUN_DEBUG
   DBG(CE_CONT,"tun: tun_physaddr_req str %p\n", str);
 #endif
 
@@ -748,14 +826,23 @@ void tun_physaddr_req(queue_t *wq, mblk_t *mp)
      tundlerrack(wq, mp, DL_PHYS_ADDR_REQ, DL_BADPRIM, 0);
      return;
   }
-  bzero(&addr, sizeof(addr));
+
+  if ( ppa == NULL){
+     tundlerrack(wq, mp, DL_PHYS_ADDR_REQ, DL_SYSERR, 0);
+     return;
+  }
+
   size = sizeof(dl_phys_addr_ack_t) + ETHERADDRL;
   if( !(mp = tunchmsg(mp, size, M_PCPROTO, DL_PHYS_ADDR_ACK)) )
      return;
   dlp = (union DL_primitives *)mp->b_rptr;
   dlp->physaddr_ack.dl_addr_length = ETHERADDRL;
   dlp->physaddr_ack.dl_addr_offset = sizeof(dl_phys_addr_ack_t);
+#ifdef TUNTAP_TAP
+  bcopy(&ppa->etheraddr, (caddr_t)(mp->b_rptr + sizeof(dl_phys_addr_ack_t)), ETHERADDRL);
+#elif defined(TUNTAP_TUN)
   bcopy(&addr, (caddr_t)(mp->b_rptr + sizeof(dl_phys_addr_ack_t)), ETHERADDRL);
+#endif  
   qreply(wq, mp);
 }
 
@@ -764,9 +851,13 @@ static void tun_unitdata_req(queue_t *wq, mblk_t *mp)
   struct tunstr *str = (struct tunstr *)wq->q_ptr;
   struct tunppa *ppa = str->ppa; 
   mblk_t *nmp;
-
-  DBG(CE_CONT,"tun: tun_unitdata_req str %p data %d\n", str, msgdsize(mp));
-
+#ifdef TUNTAP_TAP
+  dl_unitdata_req_t *dl_unitdata_req;
+  struct tundladdr *dla;
+  u_short  type;
+#endif  
+  
+  DBG(CE_CONT,"tun: tun_unitdata_req str %p data %lu\n", str, (ulong_t)msgdsize(mp));
   if(str->state != DL_IDLE || !ppa ){
      tundlerrack(wq, mp, DL_UNITDATA_REQ, DL_OUTSTATE, 0);
      return;
@@ -777,12 +868,39 @@ static void tun_unitdata_req(queue_t *wq, mblk_t *mp)
      return;
   }
 
+#ifdef TUNTAP_TAP
+  /* Add ethernet header, in the case of TAP driver */  
+  dl_unitdata_req = (dl_unitdata_req_t *)mp->b_rptr;
+  dla = (struct tundladdr *)((char *)dl_unitdata_req + dl_unitdata_req->dl_dest_addr_offset);
+
+  /*
+   * In general idea, SAP value should be taken from DLSAP address given as a
+   * part of DL_UNITDATA_REQ message. But because x86 Solaris 9 doesn't
+   * give correct SAP value within DL_UNITDATA_REQ message, I decided to use
+   * SAP value to which the stream has bound.
+   * This might not be a good idea, but it would work with most cases...
+   */
+  /* type = dla->sap; */
+  type = str->sap;
+  
+  /* Check if 802.3 frame is required. If so, put data length into type
+     filed of ethernet header instead of frame type */
+  if (type <= ETHERMTU || str->sap == 0 ){
+      type = tun_msg_len(nmp);
+  }
+  if( (nmp=tun_eth_hdr(nmp, type, dla->etheraddr, ppa->etheraddr)) == NULL ){
+      mp->b_cont = NULL;
+      freemsg(mp);      
+      return;
+  }
+#endif
+
   /* Drop unidata_req part of the message */
   mp->b_cont = NULL;
-  freemsg(mp);  
-
+  freemsg(mp);
+  
   /* Route frame */
-  tun_frame(wq, nmp, TUN_QUEUE); 
+ tun_frame(wq, nmp, TUN_QUEUE);
 }
 
 static mblk_t * tun_unitdata_ind(mblk_t *mp, int type)
@@ -791,6 +909,9 @@ static mblk_t * tun_unitdata_ind(mblk_t *mp, int type)
   struct tundladdr *dla;
   mblk_t *nmp;
   int size;
+#ifdef TUNTAP_TAP    
+  struct ether_header *ether_header;
+#endif  
 
   DBG(CE_CONT,"tun: tun_unitdata_ind \n");
 
@@ -813,19 +934,39 @@ static mblk_t * tun_unitdata_ind(mblk_t *mp, int type)
   ud_ind->dl_src_addr_offset = sizeof(dl_unitdata_ind_t) + TUN_ADDR_LEN;
   ud_ind->dl_group_address = 0;
 
+#ifdef TUNTAP_TAP  
+  /* unitdata_ind needs to include real dest/src mac addresses */
+  ether_header = (struct ether_header *)mp->b_rptr;
+  dla = (struct tundladdr *)(nmp->b_rptr + ud_ind->dl_dest_addr_offset);
+  dla->sap = (u_short)ntohs(ether_header->ether_type);
+  bcopy((char *)&ether_header->ether_dhost, (char *)&dla->etheraddr, ETHERADDRL);
+  dla = (struct tundladdr *)(nmp->b_rptr + ud_ind->dl_src_addr_offset);
+  dla->sap = (u_short)ntohs(ether_header->ether_type);
+  bcopy((char *)&ether_header->ether_shost, (char *)&dla->etheraddr, ETHERADDRL);
+  /* change rptr to point protocol header(arp or ip header) */
+  mp->b_rptr =  mp->b_rptr + sizeof(struct ether_header); 
+#elif defined(TUNTAP_TUN)
   dla = (struct tundladdr *)(nmp->b_rptr + ud_ind->dl_dest_addr_offset);
   dla->sap = (uint16_t)type;
   dla = (struct tundladdr *)(nmp->b_rptr + ud_ind->dl_src_addr_offset);
   dla->sap = (uint16_t)type;
+#endif  
 
   nmp->b_cont = mp;
   return nmp;
 }
 
+#ifdef TUNTAP_TAP
+static mblk_t * tun_eth_hdr(mblk_t *mp, int type, struct ether_addr dest_addr, struct ether_addr src_addr)
+#elif defined(TUNTAP_TUN)
 static mblk_t * tun_eth_hdr(mblk_t *mp, int type)
+#endif    
 {
   mblk_t *nmp;
   int size;
+#ifdef TUNTAP_TAP  
+  struct ether_header *ether_header;
+#endif  
 
   DBG(CE_CONT,"tun: tun_eht_hdr \n");
 
@@ -837,12 +978,19 @@ static mblk_t * tun_eth_hdr(mblk_t *mp, int type)
   }
   DB_TYPE(nmp) = (uint8_t)M_DATA;
   nmp->b_wptr += sizeof(struct ether_header);
+#ifdef TUNTAP_TAP
+  ether_header = (struct ether_header *)nmp->b_rptr;
+  bcopy((char *)&dest_addr, (char *)&ether_header->ether_dhost, ETHERADDRL);
+  bcopy((char *)&src_addr,  (char *)&ether_header->ether_shost, ETHERADDRL);        
+  ether_header->ether_type = htons(type);
+#elif defined(TUNTAP_TUN)
   bzero(nmp->b_rptr, sizeof(struct ether_header));
   ((struct ether_header *)nmp->b_rptr)->ether_type = htons(type);
+#endif  
   nmp->b_cont = mp;
   return nmp;
-}
 
+}
 
 /* Route frames */
 static void tun_frame(queue_t *wq, mblk_t *mp, int q)
@@ -868,13 +1016,17 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
 	if( !(nmp = dupmsg(mp)) )
 	   continue;
 
-  	DBG(CE_CONT,"tun: frame %d -> sniffer %p\n", msgdsize(nmp), tmp);
+  	DBG(CE_CONT,"tun: frame %lu -> sniffer %p\n", (ulong_t)msgdsize(nmp), tmp);
 
         if( tmp->flags & TUN_RAW ){
-           if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) ) 
-	      putnext(tmp->rq, nmp);
-	   continue;
-	}          
+#ifdef TUNTAP_TUN
+           if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) )
+#endif               
+              putnext(tmp->rq, nmp);
+           continue;
+        }
+        /* In the case of TAP Driver, type(=ETHERTYP_IP) is needless,
+         * since type is resolved from ether header within tun_unitdata_ind() */
         if( (nmp=tun_unitdata_ind(nmp, ETHERTYPE_IP)) )
            putnext(tmp->rq, nmp);
      }
@@ -883,15 +1035,15 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
   if( !(str->flags & TUN_CONTROL) ){
      /* Data from the Protocol stream send it to 
       * the Control stream */ 
-     DBG(CE_CONT,"tun: frame %d -> control str\n", msgdsize(mp));
+     DBG(CE_CONT,"tun: frame %lu -> control str\n", (ulong_t)msgdsize(mp));
      if( canputnext(ppa->rq) ){
-	putnext(ppa->rq, mp);
+             putnext(ppa->rq, mp);
      } else {
 	if( q == TUN_QUEUE ){
-           DBG(CE_CONT,"tun: queueing frame %d\n", msgdsize(mp));
-	   putbq(wq, mp);
+           DBG(CE_CONT,"tun: queueing frame %lu\n", (ulong_t)msgdsize(mp));
+           putbq(wq, mp);
 	} else {
-           DBG(CE_CONT,"tun: dropping frame %d\n", msgdsize(mp));
+           DBG(CE_CONT,"tun: dropping frame %lu\n", (ulong_t)msgdsize(mp));
            freemsg(mp);
 	}
      }
@@ -899,17 +1051,28 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
      /* Data from the Control stream.  
       * Route frame to the Protocol streams. */
      for( tmp=ppa->p_str; tmp; tmp = tmp->p_next ){
+#ifdef TUNTAP_TAP
+        /* Check if frame is eligible for the Protocol stream */
+         if( tun_frame_is_eligible((struct ether_header *)mp->b_rptr, tmp) == 0)
+            continue;
+        if( canputnext(tmp->rq) ){
+#elif defined(TUNTAP_TUN)
         if( tmp->sap==ETHERTYPE_IP &&  canputnext(tmp->rq) ){
+#endif            
 	   if( !(nmp = dupmsg(mp)) )
 	      continue;
 
-  	   DBG(CE_CONT,"tun: frame %d -> proto %p\n", msgdsize(nmp), tmp);
+  	   DBG(CE_CONT,"tun: frame %lu -> proto %p\n", (ulong_t)msgdsize(nmp), tmp);
 
            if( tmp->flags & TUN_RAW ){
-              if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) ) 
+#ifdef TUNTAP_TUN
+                 if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) )
+#endif                     
 	         putnext(tmp->rq, nmp);
 	      continue;
-	   }          
+	   }
+           /* In the case of TAP Driver, type(=ETHERTYP_IP) is needless,
+            * since type is resolved from ether header within tun_unitdata_ind() */
            if( (nmp=tun_unitdata_ind(nmp, ETHERTYPE_IP)) )
               putnext(tmp->rq, nmp);
 	}
@@ -918,6 +1081,159 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
      freemsg(mp);
   }
 }
+#ifdef TUNTAP_TAP
+/*****************************************************************************
+ * tun_set_physaddr_req()
+ *
+ * Set MAC address to ppa as per request.
+ *****************************************************************************/
+static void
+tun_set_physaddr_req(queue_t *wq, mblk_t *mp)
+{
+  struct tunstr *str = (struct tunstr *)wq->q_ptr;
+  struct tunppa *ppa = str->ppa;     
+  dl_set_phys_addr_req_t *dl_set_phys_addr_req;
+
+  DBG(CE_CONT,"tun: tun_set_physaddr_req \n");  
+
+  dl_set_phys_addr_req = (dl_set_phys_addr_req_t *)mp->b_rptr;    
+
+  bcopy((char *)dl_set_phys_addr_req + sizeof (dl_set_phys_addr_req_t), ppa->etheraddr.ether_addr_octet, ETHERADDRL);
+
+  tundlokack(wq, mp, DL_SET_PHYS_ADDR_REQ);
+  return;
+}
+
+/*****************************************************************************
+ * tun_enabmulti_req()
+ *
+ * Always return DL_OK_ACK
+ *****************************************************************************/
+static void tun_enabmulti_req(queue_t *q, mblk_t *mp)
+{ 
+    tundlokack(q, mp, DL_ENABMULTI_REQ);            
+    return;
+}
+
+/*****************************************************************************
+ * tun_disabmulti_req()
+ *
+ * Always return DL_OK_ACK
+ *****************************************************************************/
+void static tun_disabmulti_req(queue_t *q, mblk_t *mp)
+{ 
+    tundlokack(q, mp, DL_DISABMULTI_REQ);            
+    return;
+}
+
+/*****************************************************************************
+ * tun_frame_is_eligible()
+ *
+ * Check sap value and dest/src mac address
+ *****************************************************************************/
+static int tun_frame_is_eligible(struct ether_header *etherhdr, struct tunstr *str)
+{
+    struct ether_addr *dstaddr; 
+    struct ether_addr *srcaddr; 
+    struct ether_addr *myaddr;  
+    u_short type;
+
+    dstaddr = &etherhdr->ether_dhost;
+    srcaddr = &etherhdr->ether_shost;
+    type    = (u_short)ntohs(etherhdr->ether_type);
+    myaddr  = &str->ppa->etheraddr;
+
+    DBG(CE_CONT,"tun: tun_frame_is_eligible\n");
+
+    /* Check if recieving frame is 802.3 frame. If so, allow it to be routed
+     * to stream which is bound to sap value 0 */
+    if ( type <= ETHERMTU && str->sap == 0){
+        DBG(CE_CONT,"tun: assumed 802.3 frame\n");         
+        return(1);
+    }
+    
+    /* Compare ether type with sap value */    
+    if(type != str->sap){
+        DBG(CE_CONT,"tun: SAP doesn't match\n");          
+        return(0);
+    }
+
+    /* Compare source address with my address */
+    if(bcmp(srcaddr->ether_addr_octet, myaddr->ether_addr_octet, ETHERADDRL) == 0){
+        DBG(CE_CONT,"tun: src is my addr");                  
+        return(0);
+    }
+
+    /* Compare destination address with my address */
+    if(bcmp(dstaddr->ether_addr_octet, myaddr->ether_addr_octet, ETHERADDRL)==0){
+        DBG(CE_CONT,"tun: dest is my addr");                          
+        return(1);
+    }
+
+    /* Check if destination address is broadcast address */
+    if(bcmp(dstaddr->ether_addr_octet, broadcastaddr, ETHERADDRL) == 0){
+        DBG(CE_CONT,"tun: dest is broadcast");                                  
+        return(1);
+    }
+
+    /* Check if destination address is multicast address.
+     * Allows all multicast address to route to protocol stream */
+    if(dstaddr->ether_addr_octet[0] & 0x01) {
+        DBG(CE_CONT,"tun: dest is multicast");        
+        return(1);
+    }
+
+    DBG(CE_CONT,"tun: dest doesn't match");
+    return(0);
+}
+
+/*****************************************************************************
+ * tun_msg_len()
+ *
+ * Calculate total message length.
+ *****************************************************************************/
+static int tun_msg_len(mblk_t *mp)
+{
+    int len = 0;
+    
+    do {
+        len += MBLKL(mp);
+    } while (( mp = mp->b_cont) != NULL);
+
+    return(len);
+}
+
+/*****************************************************************************
+ * tun_generate_mac_addr()
+ *
+ * Generate local mac address for tap 
+ *****************************************************************************/
+static void tun_generate_mac_addr()
+{
+    uint_t  tm;
+    uint_t  lb;
+
+    /* Get time and lbolt to generate last 3 octet of mac address */
+    tm =  (uint_t)ddi_get_time();
+    lb =  (uint_t)ddi_get_lbolt();
+
+    /* Set U/L bit to 1(=local) */
+    localmacaddr.ether_addr_octet[0] = 0x0a;
+    localmacaddr.ether_addr_octet[1] = 0x00;
+    localmacaddr.ether_addr_octet[2] = 0x20;
+    localmacaddr.ether_addr_octet[3] = (uchar_t)(((tm >> 16) + lb ) & 0xff);
+    localmacaddr.ether_addr_octet[4] = (uchar_t)(((tm >>  8) + lb ) & 0xff);
+    localmacaddr.ether_addr_octet[5] = (uchar_t)((tm + lb) & 0xff);
+
+    DBG(CE_CONT,"tun_generate_mac_addr: %x:%x:%x:%x:%x:%x\n",
+        localmacaddr.ether_addr_octet[0],
+        localmacaddr.ether_addr_octet[1],
+        localmacaddr.ether_addr_octet[2],
+        localmacaddr.ether_addr_octet[3],
+        localmacaddr.ether_addr_octet[4],
+        localmacaddr.ether_addr_octet[5]);
+}
+#endif
 
 static void tun_dlpi(queue_t *wq, mblk_t *mp)
 {
@@ -957,8 +1273,22 @@ static void tun_dlpi(queue_t *wq, mblk_t *mp)
 	tun_physaddr_req(wq, mp);
 	break;
 
+#ifdef TUNTAP_TAP
+     case DL_SET_PHYS_ADDR_REQ:
+	qwriter(wq, mp, tun_set_physaddr_req, PERIM_OUTER);         
+        break;
+        
      case DL_ENABMULTI_REQ:
+        tun_enabmulti_req(wq, mp);
+        break;
+        
+     case DL_DISABMULTI_REQ:        
+        tun_disabmulti_req(wq, mp);
+        break;        
+#elif defined(TUNTAP_TUN)
+     case DL_ENABMULTI_REQ:        
      case DL_DISABMULTI_REQ:
+#endif         
      default:
         tundlerrack(wq, mp, prim, DL_UNSUPPORTED, 0);
         break;
@@ -970,14 +1300,13 @@ static int tunwput(queue_t *wq, mblk_t *mp)
   union DL_primitives *dlp;
   uint32_t prim;
 #ifdef TUN_DEBUG
-  struct tunstr *str = (struct tunstr *)wq->q_ptr;
-
+  struct tunstr *str = (struct tunstr *)wq->q_ptr;    
   DBG(CE_CONT, "tun: tunwput str %p\n", str);
 #endif
 
   switch( DB_TYPE(mp) ){
      case M_DATA:
-	tun_frame(wq, mp, TUN_QUEUE);
+        tun_frame(wq, mp, TUN_QUEUE);
 	break;
 
      case M_PROTO:
@@ -1024,15 +1353,14 @@ static int tunwsrv(queue_t *wq)
 {
   mblk_t *mp;
 #ifdef TUN_DEBUG
-  struct tunstr *str = (struct tunstr *)wq->q_ptr;
-
+  struct tunstr *str = (struct tunstr *)wq->q_ptr;      
   DBG(CE_CONT,"tun: tunwsrv str %p\n", str);
 #endif
 
   while( (mp = getq(wq)) )
      switch( DB_TYPE(mp) ){
  	 case M_DATA:
-	    tun_frame(wq, mp, TUN_DROP);
+            tun_frame(wq, mp, TUN_DROP);
 	    break;
 
 	 case M_PROTO:
