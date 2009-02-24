@@ -89,6 +89,12 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	return tap_fd;
 }
 
+static void
+tapcfg_stop_dev(tapcfg_t *tapcfg)
+{
+	/* Nothing needed to cleanup here */
+}
+
 /* This is to accept router advertisements on KAME stack, these
  * functions are copied from usr.sbin/rtsold/if.c of OpenBSD */
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)

@@ -50,8 +50,8 @@ struct tapcfg_s {
 	char buffer[TAPCFG_BUFSIZE];
 	int buflen;
 
-	/* A slight hack for solaris */
-	int extra_fd;
+	/* These are required for Solaris implementation */
+	int ip_fd, ip6_fd;
 };
 
 /* This will use the tapcfg_s struct so we need it here */
@@ -73,7 +73,8 @@ tapcfg_init()
 		return NULL;
 
 	tapcfg->tap_fd = -1;
-	tapcfg->extra_fd = -1;
+	tapcfg->ip_fd = -1;
+	tapcfg->ip6_fd = -1;
 
 	return tapcfg;
 }
@@ -151,10 +152,6 @@ tapcfg_stop(tapcfg_t *tapcfg)
 		if (tapcfg->ctrl_fd != -1) {
 			close(tapcfg->ctrl_fd);
 			tapcfg->ctrl_fd = -1;
-		}
-		if (tapcfg->extra_fd != -1) {
-			close(tapcfg->extra_fd);
-			tapcfg->extra_fd = -1;
 		}
 		tapcfg->started = 0;
 		tapcfg->enabled = 0;

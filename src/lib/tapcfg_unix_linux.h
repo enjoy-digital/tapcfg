@@ -78,6 +78,12 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 }
 
 static void
+tapcfg_stop_dev(tapcfg_t *tapcfg)
+{
+	/* Nothing needed to cleanup here */
+}
+
+static void
 tapcfg_iface_prepare(const char *ifname)
 {
 	/* No preparation needed on Linux */
