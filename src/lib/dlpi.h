@@ -106,6 +106,36 @@ dlpi_attach(int fd, int ppa)
 }
 
 static int
+dlpi_detach(int fd)
+{
+	unsigned char buffer[DLPIBUFSIZE];
+	dl_detach_req_t dl_detach_req;
+	dl_ok_ack_t *p_ok_ack;
+	int ret;
+
+	memset(&dl_detach_req, 0, sizeof(dl_detach_req));
+	dl_detach_req.dl_primitive = DL_DETACH_REQ;
+	ret = dlpi_put_msg(fd, &dl_detach_req,
+	                   sizeof(dl_detach_req),
+	                   NULL, 0, 0);
+	if (ret < 0) {
+		return -1;
+	}
+
+	ret = dlpi_get_msg(fd, buffer, sizeof(buffer),
+	                   NULL, NULL, 0);
+	if (ret != 0) {
+		return -1;
+	}
+	p_ok_ack = (dl_ok_ack_t *) buffer;
+	if (p_ok_ack->dl_primitive != DL_OK_ACK) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
 {
 	unsigned char buffer[DLPIBUFSIZE];
