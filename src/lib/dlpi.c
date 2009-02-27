@@ -215,5 +215,56 @@ dlpi_set_physaddr(int fd, const char *hwaddr, int length)
 	return 0;
 }
 
+#ifdef MAIN
+#include <stdio.h>
+#include <fcntl.h>
+
+int
+main(int argc, char *argv[])
+{
+	int fd, ppa;
+	const char *endptr;
+	unsigned char hwaddr[6];
+	unsigned char testaddr[6] = { 0x00, 0x01, 0x23, 0x45, 0x67, 0x89 };
+
+	if (argc < 3) {
+		printf("Not enough arguments!\n");
+		printf("Usage: %s (device) (ppa)\n", argv[0]);
+		printf("Example for pcn0: %s /dev/pcn 0\n", argv[0]);
+		return -1;
+	}
+
+	ppa = strtol(argv[2], &endptr, 10);
+	if (*endptr != '\0') {
+		printf("Argument %s not a valid integer\n", argv[2]);
+		return -1;
+	}
+
+	fd = open(argv[1], O_RDWR);
+	if (fd < 0) {
+		printf("Error opening device %s", argv[1]);
+		return -1;
+	}
+
+	dlpi_attach(fd, ppa);
+	dlpi_get_physaddr(fd, hwaddr, sizeof(hwaddr));
+	printf("Got physical address: %.02x:%.02x:%.02x:%.02x:%.02x:%.02x\n",
+	       hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+	dlpi_set_physaddr(fd, (const char *) testaddr, sizeof(testaddr));
+	memcpy(testaddr, hwaddr, sizeof(hwaddr));
+	dlpi_get_physaddr(fd, hwaddr, sizeof(hwaddr));
+	printf("Got physical address after set: %.02x:%.02x:%.02x:%.02x:%.02x:%.02x\n",
+	       hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+	dlpi_set_physaddr(fd, (const char *) testaddr, sizeof(testaddr));
+	dlpi_get_physaddr(fd, hwaddr, sizeof(hwaddr));
+	printf("Got physical address after second set: %.02x:%.02x:%.02x:%.02x:%.02x:%.02x\n",
+	       hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+	dlpi_detach(fd);
+
+	return 0;
+}
+
+#endif
+
 #endif
 
