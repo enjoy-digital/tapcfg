@@ -320,7 +320,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 	ip_fd = tapcfg->ip_fd;
 	ip6_fd = tapcfg->ip6_fd;
 
-	if (dlpi_attach(tapcfg->tap_fd)) {
+	if (dlpi_detach(tapcfg->tap_fd)) {
 		taplog_log(TAPLOG_ERR,
 		           "Couldn't detach PPA from the DLPI interface: %s\n",
 		           strerror(errno));
