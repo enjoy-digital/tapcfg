@@ -292,11 +292,13 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	/* SIOCGENADDR doesn't work on Solaris, so we need to attach DLPI interface
 	 * and use it to query the hardware address instead, also works for setting */
+/*
 	if (dlpi_attach(tap_fd, newppa)) {
 		taplog_log(TAPLOG_ERR,
 		           "Couldn't attach PPA to the DLPI interface: %s\n",
 		           strerror(errno));
 	}
+*/
 	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr))) {
 		taplog_log(TAPLOG_ERR,
 		           "Couldn't query physical address from the DLPI interface: %s\n",
@@ -322,11 +324,13 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 	ip_fd = tapcfg->ip_fd;
 	ip6_fd = tapcfg->ip6_fd;
 
+/*
 	if (dlpi_detach(tapcfg->tap_fd)) {
 		taplog_log(TAPLOG_ERR,
 		           "Couldn't detach PPA from the DLPI interface: %s\n",
 		           strerror(errno));
 	}
+*/
 
 	memset(&lifr, 0, sizeof(struct lifreq));
 	strcpy(lifr.lifr_name, tapcfg->ifname);
@@ -367,7 +371,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 	close(ip6_fd);
 	tapcfg->ip6_fd = -1;
 
-	taplog_log(TAPLOG_INFO, "Device stopped successfully");
+	taplog_log(TAPLOG_INFO, "Device stopped successfully\n");
 }
 
 static void
