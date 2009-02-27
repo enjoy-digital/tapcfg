@@ -1,4 +1,5 @@
 
+- Check that it works nicely with Windows computers without IPv6
 - Move solaris plumbing to own function and when checking for available device, try complete plumbing
 - Port to work on NetBSD, at least address setting should be SIOCSIFPHYADDR
 
