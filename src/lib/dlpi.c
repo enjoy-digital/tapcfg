@@ -260,6 +260,7 @@ main(int argc, char *argv[])
 	printf("Got physical address after second set: %.02x:%.02x:%.02x:%.02x:%.02x:%.02x\n",
 	       hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
 	dlpi_detach(fd);
+	close(fd);
 
 	return 0;
 }
