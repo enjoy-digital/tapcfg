@@ -7,7 +7,7 @@ libenv = env.Clone()
 libenv.Append(CPPPATH = ['lib'])
 
 # Prepare the libobj and shlibobj object files
-libobj = libenv.Object(['lib/tapcfg.c','lib/taplog.c'])
+libobj = libenv.Object(['lib/tapcfg.c','lib/taplog.c','lib/dlpi.c'])
 if libenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']:
 	shlibobj = libobj
 else:
@@ -19,8 +19,8 @@ libenv.Library('lib/tapcfg', libobj, install=False)
 libenv.SharedLibrary('../build/tapcfg', shlibobj, install=False)
 
 # Compile the .Net bindings
-asm = env.CLILibrary('../build/TAP', ['bindings/NativeLib.cs','bindings/EthernetDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
-prog = env.CLIProgram('../build/TAPCfgTest', ['demos/TAPCfgTest.cs'], CILLIBS=asm)
+#asm = env.CLILibrary('../build/TAP', ['bindings/NativeLib.cs','bindings/EthernetDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
+#prog = env.CLIProgram('../build/TAPCfgTest', ['demos/TAPCfgTest.cs'], CILLIBS=asm)
 
 # Set up the environment for compiling the demo tests
 appenv = env.Clone()
