@@ -366,6 +366,8 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 	tapcfg->ip_fd = -1;
 	close(ip6_fd);
 	tapcfg->ip6_fd = -1;
+
+	taplog_log(TAPLOG_INFO, "Device stopped successfully");
 }
 
 static void
