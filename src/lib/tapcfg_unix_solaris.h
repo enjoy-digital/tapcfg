@@ -23,66 +23,32 @@
 
 
 static int
-tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
-{
+tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 #define IP_NODE  "/dev/udp"
 #define IP6_NODE "/dev/udp6"
 #define TAP_NODE "/dev/tap"
 #define ARP_NODE "/dev/tap"
-	int tap_fd = -1;
 	struct lifreq lifr;
 	struct strioctl strioc;
-	int ppa, newppa;
-	int ip_fd = -1, ip6_fd = -1;
+	char ifname[128];
+	int newppa;
 	int if_fd = -1, arp_fd = -1;
 	int ip_muxid = -1, arp_muxid = -1, ip6_muxid = -1;
 
-	if (strncmp(ifname, "tap", 3)) {
-		if (!fallback) {
-			taplog_log(TAPLOG_DEBUG,
-				   "Device name '%s' doesn't start with 'tap'\n",
-				   ifname);
-			return -1;
-		}
-		ppa = 0;
-	} else {
-		char *endptr;
-
-		ppa = strtol(ifname+3, &endptr, 10);
-		if (*endptr != '\0') {
-			if (!fallback)
-				return -1;
-			ppa = 0;
-		}
-	}
+	*new_tap_fd = *new_ip_fd = *new_ip6_fd = -1;
 
 	ip_fd = open(IP_NODE, O_RDWR, 0);
 	if (ip_fd < 0) {
-		taplog_log(TAPLOG_ERR,
-			   "Couldn't open the IP device\n");
-		taplog_log(TAPLOG_INFO,
-			   "Check that you are running the program with "
-			   "root privileges and have TUN/TAP driver installed\n");
 		goto error;
 	}
 
 	ip6_fd = open(IP6_NODE, O_RDWR, 0);
 	if (ip6_fd < 0) {
-		taplog_log(TAPLOG_ERR,
-			   "Couldn't open the IP6 device\n");
-		taplog_log(TAPLOG_INFO,
-			   "Check that you are running the program with "
-			   "root privileges and have TUN/TAP driver installed\n");
 		goto error;
 	}
 
 	tap_fd = open(TAP_NODE, O_RDWR, 0);
 	if (tap_fd < 0) {
-		taplog_log(TAPLOG_ERR,
-			   "Couldn't open the tap device\n");
-		taplog_log(TAPLOG_INFO,
-			   "Check that you are running the program with "
-			   "root privileges and have TUN/TAP driver installed\n");
 		goto error;
 	}
 
@@ -91,43 +57,12 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	strioc.ic_len = sizeof(ppa);
 	strioc.ic_dp = (char *) &ppa;
 	newppa = ioctl(tap_fd, I_STR, &strioc);
-	if (newppa == -1 && !fallback) {
-		taplog_log(TAPLOG_ERR,
-		           "Couldn't assign new interface: tap%d\n",
-		           ppa);
+	if (newppa == -1) {
 		goto error;
-	} else if (newppa == -1) {
-		int i;
-
-		taplog_log(TAPLOG_INFO,
-		           "Opening device '%s' failed, trying to find another one\n",
-		           ifname);
-		for (i=0; i<16; i++) {
-			if (i == ppa)
-				continue;
-
-			strioc.ic_cmd = TUNNEWPPA;
-			strioc.ic_timout = 0;
-			strioc.ic_len = sizeof(i);
-			strioc.ic_dp = (char *) &i;
-			newppa = ioctl(tap_fd, I_STR, &strioc);
-			if (newppa >= 0) {
-				/* Found one! */
-				break;
-			}
-		}
-		if (ppa == 16) {
-			taplog_log(TAPLOG_ERR,
-			           "Couldn't find suitable tap device to assign\n");
-			goto error;
-		}
 	}
 
-	/* Set the device name to be the one we found finally */
-	snprintf(tapcfg->ifname,
-	         sizeof(tapcfg->ifname)-1,
-	         "tap%d", newppa);
-	taplog_log(TAPLOG_DEBUG, "Device name %s\n", tapcfg->ifname);
+	ifname[sizeof(ifname)-1] = '\0';
+	snprintf(ifname, sizeof(ifname)-1, "tap%d", newppa);
 
 
 
@@ -152,10 +87,9 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		goto error;
 	}
 
-	strcpy(lifr.lifr_name, tapcfg->ifname);
+	strcpy(lifr.lifr_name, ifname);
 	lifr.lifr_ppa = ppa;
 	if (ioctl(if_fd, SIOCSLIFNAME, &lifr) == -1) {
-		taplog_log(TAPLOG_ERR, "Couldn't set interface name\n");
 		goto error;
 	}
 
@@ -208,7 +142,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	arp_fd = -1;
 
 	memset(&lifr, 0, sizeof(struct lifreq));
-	strcpy(lifr.lifr_name, tapcfg->ifname);
+	strcpy(lifr.lifr_name, ifname);
 	lifr.lifr_ip_muxid = ip_muxid;
 	lifr.lifr_arp_muxid = arp_muxid;
 
@@ -240,7 +174,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		goto error;
 	}
 
-	strcpy(lifr.lifr_name, tapcfg->ifname);
+	strcpy(lifr.lifr_name, ifname);
 	lifr.lifr_flags |= IFF_IPV6;
 	lifr.lifr_flags &= ~(IFF_BROADCAST | IFF_IPV4);
 	lifr.lifr_ppa = ppa;
@@ -258,7 +192,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	if_fd = -1;
 
 	memset(&lifr, 0, sizeof(struct lifreq));
-	strcpy(lifr.lifr_name, tapcfg->ifname);
+	strcpy(lifr.lifr_name, ifname);
 	lifr.lifr_ip_muxid = ip6_muxid;
 
 	if (ioctl(ip6_fd, SIOCSLIFMUXID, &lifr) < 0) {
@@ -270,22 +204,12 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 
 
-	/* SIOCGENADDR doesn't work on Solaris, so we need to attach DLPI interface
-	 * and use it to query the hardware address instead, also works for setting */
-	if (dlpi_attach(tap_fd, newppa)) {
-		taplog_log(TAPLOG_ERR,
-		           "Couldn't attach PPA to the DLPI interface: %s\n",
-		           strerror(errno));
-	}
-	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr))) {
-		taplog_log(TAPLOG_ERR,
-		           "Couldn't query physical address from the DLPI interface: %s\n",
-		           strerror(errno));
-	}
+	/* Return the results */
+	*new_tap_fd = tap_fd;
+	*new_ip_fd = ip_fd;
+	*new_ip6_fd = ip6_fd;
 
-	tapcfg->ip_fd = ip_fd;
-	tapcfg->ip6_fd = ip6_fd;
-	return tap_fd;
+	return newppa;
 
 error:
 	if (arp_muxid != -1)
@@ -304,6 +228,86 @@ error:
 		close(ip6_fd);
 	if (tap_fd != -1)
 		close(tap_fd);
+	return -1;
+}
+
+static int
+tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
+{
+	int tap_fd, ip_fd, ip6_fd;
+	int ppa, newppa;
+
+	if (strncmp(ifname, "tap", 3)) {
+		if (!fallback) {
+			taplog_log(TAPLOG_DEBUG,
+				   "Device name '%s' doesn't start with 'tap'\n",
+				   ifname);
+			return -1;
+		}
+		ppa = 0;
+	} else {
+		char *endptr;
+
+		ppa = strtol(ifname+3, &endptr, 10);
+		if (*endptr != '\0') {
+			if (!fallback)
+				return -1;
+			ppa = 0;
+		}
+	}
+
+	newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd) 
+	if (newppa == -1 && !fallback) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't open interface: tap%d\n",
+		           ppa);
+		return -1;
+	} else if (newppa == -1) {
+		int i;
+
+		taplog_log(TAPLOG_INFO,
+		           "Opening device '%s' failed, trying to find another one\n",
+		           ifname);
+		for (i=0; i<16; i++) {
+			if (i == ppa)
+				continue;
+
+			newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd) 
+			if (newppa >= 0)
+				break;
+		}
+		if (i == 16) {
+			taplog_log(TAPLOG_ERR,
+			           "Couldn't find suitable tap device to assign\n");
+			return -1;
+		}
+	}
+
+	/* Set the device name to be the one we found finally */
+	snprintf(tapcfg->ifname,
+	         sizeof(tapcfg->ifname)-1,
+	         "tap%d", newppa);
+	taplog_log(TAPLOG_DEBUG, "Device name %s\n", tapcfg->ifname);
+
+	/* SIOCGENADDR doesn't work on Solaris, so we need to attach DLPI interface
+	 * and use it to query the hardware address instead, also works for setting */
+	if (dlpi_attach(tap_fd, newppa)) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't attach PPA to the DLPI interface: %s\n",
+		           strerror(errno));
+	}
+	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr))) {
+		taplog_log(TAPLOG_ERR,
+		           "Couldn't query physical address from the DLPI interface: %s\n",
+		           strerror(errno));
+	}
+
+	tapcfg->ip_fd = ip_fd;
+	tapcfg->ip6_fd = ip6_fd;
+
+	return tap_fd;
+
+error:
 	return -1;
 }
 
