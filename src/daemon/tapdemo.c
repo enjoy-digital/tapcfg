@@ -166,9 +166,6 @@ int main(int argc, char *argv[]) {
 			       (unsigned char) hwaddr[i],
 			       (i == hwaddrlen-1) ? "\n" : ":");
 		}
-		if (tapcfg_iface_set_hwaddr(tapcfg, new_hwaddr, sizeof(new_hwaddr)) < 0) {
-			printf("Couldn't change the hardware address\n");
-		}
 
 		ifname = tapcfg_get_ifname(tapcfg);
 		printf("Got ifname: %s\n", ifname);
