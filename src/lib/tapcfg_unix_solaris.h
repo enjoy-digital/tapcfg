@@ -32,6 +32,7 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	struct strioctl strioc;
 	char ifname[128];
 	int newppa;
+	int tap_fd = -1, ip_fd = -1, ip6_fd = -1;
 	int if_fd = -1, arp_fd = -1;
 	int ip_muxid = -1, arp_muxid = -1, ip6_muxid = -1;
 
@@ -256,7 +257,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		}
 	}
 
-	newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd) 
+	newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd);
 	if (newppa == -1 && !fallback) {
 		taplog_log(TAPLOG_ERR,
 		           "Couldn't open interface: tap%d\n",
@@ -272,7 +273,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 			if (i == ppa)
 				continue;
 
-			newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd) 
+			newppa = tapcfg_plumb_device(i, &tap_fd, &ip_fd, &ip6_fd); 
 			if (newppa >= 0)
 				break;
 		}
@@ -306,9 +307,6 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	tapcfg->ip6_fd = ip6_fd;
 
 	return tap_fd;
-
-error:
-	return -1;
 }
 
 static void
