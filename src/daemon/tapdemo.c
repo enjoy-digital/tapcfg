@@ -154,7 +154,6 @@ int main(int argc, char *argv[]) {
 
 	if (tapcfg) {
 		const char *hwaddr;
-		const char new_hwaddr[] = { 0x00, 0x01, 0x23, 0x45, 0x67, 0x89 };
 		char *ifname;
 		int hwaddrlen;
 		int i, ret;
