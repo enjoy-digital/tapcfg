@@ -452,6 +452,8 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
+	struct addrinfo hints, *res;
+	struct sockaddr_in *saddr;
 	unsigned int addr, mask;
 	int i;
 
@@ -466,10 +468,18 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	}
 
 	/* Check that the given IPv4 address is valid */
-	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_family = AF_INET;
+	if (getaddrinfo(addrstr, NULL, &hints, &res)) {
+		taplog_log(TAPLOG_ERR,
+		           "Error converting string '%s' to "
+		           "address, check the format\n", addr);
 		return -1;
 	}
-	addr = inet_addr(addrstr);
+	saddr = (struct sockaddr_in *) res->ai_addr;
+	addr = saddr->sin_addr.s_addr;
+	freeaddrinfo(res);
 
 	/* Calculate the netmask from the network bit length */
 	for (i=netbits,mask=0; i; i--)

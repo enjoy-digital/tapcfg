@@ -517,7 +517,7 @@ int
 tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
 {
 	IPADDR buffer[4];
-	IPADDR mask;
+	IPADDR addr, mask;
 	DWORD len;
 
 	assert(tapcfg);
@@ -535,11 +535,11 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 		mask = (mask >> 1)|(1 << 31);
 
 	/* Check that the given IPv4 address is valid */
-	if (!tapcfg_address_is_valid(AF_INET, addrstr)) {
+	addr = inet_addr(addrstr);
+	if (addr == INADDR_NONE || addr == INADDR_ANY)
 		return -1;
-	}
 
-	buffer[0] = inet_addr(addrstr);
+	buffer[0] = addr;
 	buffer[1] = htonl(mask);
 	buffer[2] = htonl(htonl(buffer[0] | ~buffer[1])-1);
 	buffer[3] = 3600;
