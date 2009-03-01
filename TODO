@@ -1,5 +1,3 @@
 
 - Check that it works nicely with Windows computers without IPv6
-- Move solaris plumbing to own function and when checking for available device, try complete plumbing
-- Port to work on NetBSD, check if address setting should be SIOCSIFPHYADDR, it seems to be only for gif interfaces though... might work out-of-the-box
 

@@ -17,13 +17,42 @@
 #include <netinet/in.h>
 #include <ifaddrs.h>
 
+#ifdef __NetBSD__
+#  include <net/if_tap.h>
+#endif
+
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
+	struct ifaddrs *ifa;
+
+#ifdef __NetBSD__
+	struct ifreq ifr;
+
+	tap_fd = open("/dev/tap", O_RDWR);
+	if (tap_fd < 0) {
+		taplog_log(TAPLOG_ERR,
+			   "Couldn't open the tap device \"%s\"\n", ifname);
+		taplog_log(TAPLOG_INFO,
+			   "Check that you are running the program with "
+			   "root privileges and have TUN/TAP driver installed\n");
+		return -1;
+	}
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	if (ioctl(tap_fd, TAPGIFNAME, &ifr) == -1) {
+		taplog_log(TAPLOG_ERR,
+			   "Error getting the interface name: %s\n",
+			   strerror(errno));
+		return -1;
+	}
+
+	/* Set the device name to be the one we found finally */
+	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
+#else
 	char buf[128];
 	int i;
-	struct ifaddrs *ifa;
 
 	buf[sizeof(buf)-1] = '\0';
 
@@ -66,6 +95,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	/* Set the device name to be the one we found finally */
 	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf+5);
 	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
+#endif
 
 	/* Get MAC address on BSD, slightly trickier than Linux */
 	if (getifaddrs(&ifa) == 0) {
@@ -169,12 +199,14 @@ tapcfg_iface_prepare(const char *ifname, int enabled)
 	if (!enabled)
 		return;
 
-#if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
+#if defined(IPV6CTL_AUTO_LINKLOCAL)
 	if (getinet6sysctl(IPV6CTL_AUTO_LINKLOCAL) == 0) {
 		taplog_log(TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.auto_linklocal: 0 -> 1\n");
 		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 1);
 	}
+#endif
+#if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
 		taplog_log(TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.forwarding: 1 -> 0\n");
@@ -196,8 +228,10 @@ static int
 tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
                     const char *hwaddr)
 {
+	int ret = -1;
+#if defined(SIOCSIFLLADDR)
+	/* SIOCSIFLLADDR used in FreeBSD and OSX */
 	struct ifreq ifr;
-	int ret;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
@@ -206,10 +240,26 @@ tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
 	memcpy(ifr.ifr_addr.sa_data, hwaddr, HWADDRLEN);
 
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFLLADDR, &ifr);
+#elif defined(SIOCSIFPHYADDR)
+	/* SIOCSIFPHYADDR used in NetBSD */
+	struct ifaliasreq ifra;
+	struct sockaddr_dl *sdl;
+
+	memset(&ifra, 0, sizeof(struct ifaliasreq));
+	strcpy(ifra.ifra_name, tapcfg->ifname);
+
+	sdl = (struct sockaddr_dl *) &ifra.ifra_addr;
+	sdl->sdl_family = AF_LINK;
+	sdl->sdl_len = sizeof(struct sockaddr_dl);
+	sdl->sdl_alen = HWADDRLEN;
+	memcpy(LLADDR(sdl), hwaddr, HWADDRLEN);
+
+	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFPHYADDR, &ifra);
+#endif
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-			   "Error trying to set new hardware address: %s\n",
-			   strerror(errno));
+		           "Error trying to set new hardware address: %s\n",
+		           strerror(errno));
 	}
 
 	return ret;
