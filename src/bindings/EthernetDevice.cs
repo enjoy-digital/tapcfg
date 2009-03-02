@@ -40,7 +40,7 @@ namespace TAPNet {
 		}
 
 		private static void defaultCallback(string msg) {
-			Console.WriteLine(msg);
+			Console.Write(msg);
 		}
 
 		public EthernetDevice() {
