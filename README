@@ -22,6 +22,10 @@ FreeBSD:
 Requires that the TAP driver is loaded to the system. This can usually be done
 by running the command "kldload if_tap" as root.
 
+NetBSD:
+
+Should work when ran as root without problems.
+
 Solaris:
 
 Requires that TAP driver is installed to the system. It can be downloaded from
