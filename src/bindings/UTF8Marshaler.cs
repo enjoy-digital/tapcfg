@@ -17,7 +17,7 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace TAP {
+namespace TAPNet {
 	public class UTF8Marshaler : ICustomMarshaler {
 		static UTF8Marshaler marshaler = new UTF8Marshaler();
 

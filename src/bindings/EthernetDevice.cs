@@ -19,7 +19,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
-namespace TAP {
+namespace TAPNet {
 	public delegate void EthernetLogCallback(
 		[MarshalAs(UnmanagedType.CustomMarshaler,
 			   MarshalTypeRef = typeof(UTF8Marshaler))]

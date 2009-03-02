@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace TAP {
+namespace TAPNet {
 	public abstract class NativeLib {
 		public abstract void set_callback(EthernetLogCallback cb);
 		public abstract IntPtr init();

@@ -1,10 +1,10 @@
 
-using TAP;
+using TAPNet;
 using System;
 using System.Net;
 using System.Threading;
 
-public class TAPCfgTest {
+public class TAPNetTest {
 	private static void Main(string[] args) {
 		EthernetDevice dev = new EthernetDevice();
 		dev.Start("Device name", true);

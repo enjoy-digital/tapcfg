@@ -15,7 +15,7 @@
 
 using System;
 
-namespace TAP {
+namespace TAPNet {
 	public enum FrameType {
 		Ethernet_II,
 		Ethernet_RAW,
