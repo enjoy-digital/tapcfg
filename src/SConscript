@@ -19,7 +19,7 @@ libenv.Library('lib/tapcfg', libobj, install=False)
 libenv.SharedLibrary('../build/tapcfg', shlibobj, install=False)
 
 # Compile the .Net bindings
-asm = env.CLILibrary('../build/TAPNet', ['bindings/NativeLib.cs','bindings/EthernetDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
+asm = env.CLILibrary('../build/TAPNet', ['bindings/NativeLib.cs','bindings/VirtualDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
 prog = env.CLIProgram('../build/TAPNetTest', ['demos/TAPNetTest.cs'], CILLIBS=asm)
 
 # Set up the environment for compiling the demo tests
