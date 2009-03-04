@@ -66,6 +66,10 @@ namespace TAPNet {
 			}
 		}
 
+		public void Stop() {
+			_tapcfg.stop(_handle);
+		}
+
 		public bool WaitReadable(int msec) {
 			int ret = _tapcfg.wait_readable(_handle, msec);
 			return (ret != 0);
