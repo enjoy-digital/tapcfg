@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace TAPNet {
 	public abstract class NativeLib {
-		public abstract void set_callback(EthernetLogCallback cb);
+		public abstract void set_callback(TAPLogCallback cb);
 		public abstract IntPtr init();
 		public abstract void destroy(IntPtr tapcfg);
 		public abstract int start(IntPtr tapcfg, string ifname, bool fallback);
@@ -30,7 +30,7 @@ namespace TAPNet {
 		}
 
 		private class NativeLib32 : NativeLib {
-			public override void set_callback(EthernetLogCallback cb) {
+			public override void set_callback(TAPLogCallback cb) {
 				taplog_set_callback(cb);
 			}
 
@@ -99,7 +99,7 @@ namespace TAPNet {
 			}
 
 			[DllImport("tapcfg")]
-			private static extern void taplog_set_callback(EthernetLogCallback cb);
+			private static extern void taplog_set_callback(TAPLogCallback cb);
 
 			[DllImport("tapcfg")]
 			private static extern IntPtr tapcfg_init();
@@ -147,7 +147,7 @@ namespace TAPNet {
 		}
 
 		private class NativeLib64 : NativeLib {
-			public override void set_callback(EthernetLogCallback cb) {
+			public override void set_callback(TAPLogCallback cb) {
 				taplog_set_callback(cb);
 			}
 
@@ -216,7 +216,7 @@ namespace TAPNet {
 			}
 
 			[DllImport("tapcfg64")]
-			private static extern void taplog_set_callback(EthernetLogCallback cb);
+			private static extern void taplog_set_callback(TAPLogCallback cb);
 
 			[DllImport("tapcfg64")]
 			private static extern IntPtr tapcfg_init();

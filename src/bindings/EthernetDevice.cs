@@ -20,19 +20,19 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace TAPNet {
-	public delegate void EthernetLogCallback(
+	public delegate void TAPLogCallback(
 		[MarshalAs(UnmanagedType.CustomMarshaler,
 			   MarshalTypeRef = typeof(UTF8Marshaler))]
 		string msg);
 
-	public class EthernetDevice : IDisposable {
+	public class VirtualDevice : IDisposable {
 		private NativeLib _tapcfg;
 
 		private IntPtr _handle;
 		private bool _disposed = false;
 
-		private static EthernetLogCallback _logger;
-		public static EthernetLogCallback LogCallback {
+		private static TAPLogCallback _logger;
+		public static TAPLogCallback LogCallback {
 			set {
 				_logger = value;
 				NativeLib.GetInstance().set_callback(_logger);
@@ -43,9 +43,9 @@ namespace TAPNet {
 			Console.Write(msg);
 		}
 
-		public EthernetDevice() {
+		public VirtualDevice() {
 			if (_logger == null) {
-				EthernetDevice.LogCallback = new EthernetLogCallback(defaultCallback);
+				VirtualDevice.LogCallback = new TAPLogCallback(defaultCallback);
 			}
 
 			_tapcfg = NativeLib.GetInstance();
@@ -71,18 +71,25 @@ namespace TAPNet {
 			return (ret != 0);
 		}
 
-		public EthernetFrame Read() {
-			/* Maximum buffer is MTU plus 22 byte maximum header size */
-			byte[] buffer = new byte[1500 + 22];
-
+		public int ReadTo(byte[] buffer) {
 			int ret = _tapcfg.read(_handle, buffer, buffer.Length);
 			if (ret < 0) {
-				throw new IOException("Error reading Ethernet frame");
+				throw new IOException("Error reading frame");
 			} else if (ret == 0) {
 				throw new EndOfStreamException("Unexpected EOF");
 			}
 
-			return new EthernetFrame(buffer);
+			return ret;
+		}
+
+		public byte[] Read() {
+			byte[] buffer = new byte[4096];
+
+			int len = ReadTo(buffer);
+			byte[] ret = new byte[len];
+			Array.Copy(buffer, 0, ret, 0, len);
+
+			return ret;
 		}
 
 		public bool WaitWritable(int msec) {
@@ -90,16 +97,18 @@ namespace TAPNet {
 			return (ret != 0);
 		}
 
-		public void Write(EthernetFrame frame) {
-			byte[] buffer = frame.Data;
-
-			int ret = _tapcfg.write(_handle, buffer, buffer.Length);
+		public void WriteFrom(byte[] buffer, int length) {
+			int ret = _tapcfg.write(_handle, buffer, length);
 			if (ret < 0) {
-				throw new IOException("Error writing Ethernet frame");
+				throw new IOException("Error writing frame");
 			} else if (ret != buffer.Length) {
 				/* This shouldn't be possible, writes are blocking */
-				throw new IOException("Incomplete write writing Ethernet frame");
+				throw new IOException("Incomplete write when writing frame");
 			}
+		}
+
+		public void Write(byte[] buffer) {
+			WriteFrom(buffer, buffer.Length);
 		}
 
 		public bool Enabled {
@@ -129,7 +138,7 @@ namespace TAPNet {
 		public byte[] HWAddress {
 			get {
 				/* Allocate unmanaged memory to store the returned array length */
-				IntPtr lenptr = Marshal.AllocHGlobal(10);
+				IntPtr lenptr = Marshal.AllocHGlobal(8);
 
 				/* Call the function, length of the data array is stored in lenptr */
 				IntPtr data = _tapcfg.iface_get_hwaddr(_handle, lenptr);
