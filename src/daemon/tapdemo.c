@@ -207,12 +207,12 @@ int main(int argc, char *argv[]) {
 	}
 
 exit:
-	if (tapcfg) {
-		tapcfg_destroy(tapcfg);
-	}
 	if (server) {
 		tapserver_stop(server);
 		tapserver_destroy(server);
+	}
+	if (tapcfg) {
+		tapcfg_destroy(tapcfg);
 	}
 
 #ifdef _WIN32
