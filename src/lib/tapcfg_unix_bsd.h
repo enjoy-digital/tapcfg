@@ -185,7 +185,7 @@ tapcfg_attach_ipv6(const char *ifname)
 #endif
 
 static void
-tapcfg_iface_prepare(const char *ifname, int enabled)
+tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
 {
 	if (!enabled)
 		return;

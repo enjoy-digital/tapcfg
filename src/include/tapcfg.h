@@ -189,9 +189,11 @@ int tapcfg_iface_get_status(tapcfg_t *tapcfg);
  * network cable of the virtual interface is connected or not.
  * @param tapcfg is a pointer to an inited structure
  * @param enabled is the new status of the interface after call
+ * @param prepare_ipv6 is a flag that will prepare IPv6 local address
+ *        and router advertisement reception on systems that require it
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled);
+int tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6);
 
 /**
  * Get the maximum transfer unit for the device if possible.

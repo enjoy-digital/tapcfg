@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 		ret = tapcfg_iface_get_mtu(tapcfg);
 		printf("New MTU is %d\n", ret);
 
-		ret = tapcfg_iface_change_status(tapcfg, 1);
+		ret = tapcfg_iface_change_status(tapcfg, 1, 1);
 		if (ret == -1) {
 			printf("Error changing interface status\n");
 		}

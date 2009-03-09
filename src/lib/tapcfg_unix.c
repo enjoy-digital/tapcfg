@@ -336,7 +336,7 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
+tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6)
 {
 	struct ifreq ifr;
 #ifdef __sun__
@@ -353,7 +353,9 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		return 0;
 	}
 
-	tapcfg_iface_prepare(tapcfg->ifname, enabled);
+	if (prepare_ipv6) {
+		tapcfg_iface_prepare_ipv6(tapcfg->ifname, enabled);
+	}
 
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);

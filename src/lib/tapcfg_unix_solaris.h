@@ -360,7 +360,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 }
 
 static void
-tapcfg_iface_prepare(const char *ifname, int enabled)
+tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
 {
 	struct lifreq lifr;
 	int ctrl_fd;
