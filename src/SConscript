@@ -16,21 +16,18 @@ else:
 # Compile the static library into lib directory and shared library
 # for the bindings
 libenv.Library('lib/tapcfg', libobj, install=False)
+libenv.SharedLibrary('../build/tapcfg', shlibobj, install=False)
 
 # If we want to create universal binaries of the dynamic library on Mac, do it here
 if GetOption('universal'):
 	libenv["ENV"]["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
 	libenv.Append(CFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64', '-arch', 'x86_64'])
-	libenv32 = libenv.Clone()
 	libenv64 = libenv.Clone()
 
-	libenv32.Append(LINKFLAGS = ['-undefined', 'dynamic_lookup', '-arch', 'ppc', '-arch', 'i386'])
-	libenv32.SharedLibrary('../build/tapcfg', shlibobj, install=False)
+	libenv.Append(LINKFLAGS = ['-undefined', 'dynamic_lookup', '-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64', '-arch', 'x86_64'])
 
 	libenv64.Append(LINKFLAGS = ['-undefined', 'dynamic_lookup', '-arch', 'ppc64', '-arch', 'x86_64'])
 	libenv64.SharedLibrary('../build/tapcfg64', shlibobj, install=False)
-else:
-	libenv.SharedLibrary('../build/tapcfg', shlibobj, install=False)
 
 # Compile the .Net bindings
 if env.Detect('gmcs'):
