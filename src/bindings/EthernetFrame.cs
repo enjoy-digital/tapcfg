@@ -35,36 +35,41 @@ namespace TAPNet {
 	}
 
 	public class EthernetFrame {
-		private FrameType _frameType;
-		private byte[] _data;
-		private byte[] _src = new byte[6];
-		private byte[] _dst = new byte[6];
+		public readonly FrameType Type;
+		public readonly byte[] Data;
+		public readonly byte[] Source = new byte[6];
+		public readonly byte[] Destination = new byte[6];
+		public readonly byte[] Payload;
+
+		/* The VLAN related fields */
+		public readonly bool HasVLAN;
+		public readonly byte PCP, CFI;
+		public readonly int  VID;
+
+		/* The IEEE header related fields */
+		public readonly byte DSAP, SSAP, Ctrl;
+
+		/* The OUI field of SNAP header */
+		public readonly int OUI;
+
 		private int _etherType;
-		private byte[] _payload;
 
 		public static readonly byte[] Broadcast =
 			new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-		private EthernetFrame() {
-		}
-
 		public EthernetFrame(byte[] data) {
-			parseData(data);
-		}
-
-		private void parseData(byte[] data) {
-			this._data = data;
-			Array.Copy(data, 0, _dst, 0, 6);
-			Array.Copy(data, 6, _src, 0, 6);
+			this.Data = data;
+			Array.Copy(data, 0, this.Destination, 0, 6);
+			Array.Copy(data, 6, this.Source, 0, 6);
 			_etherType = (data[12] << 8) | data[13];
 			int hdrlen = 14;
 
-			/* IEEE 802.1Q tagged frame */
+			/* IEEE 802.1Q (VLAN) tagged frame */
 			if (_etherType == 0x8100) {
-//				int PCP = (data[hdrlen] >> 5) & 0x07;
-//				int CFI = (data[hdrlen] >> 4) & 0x01;
-//				int VID = ((data[hdrlen] & 0x0f) << 8) |
-//				          data[hdrlen+1];
+				this.PCP = (byte) ((data[hdrlen] >> 5) & 0x07);
+				this.CFI = (byte) ((data[hdrlen] >> 4) & 0x01);
+				this.VID = ((data[hdrlen] & 0x0f) << 8) |
+				           data[hdrlen+1];
 				hdrlen += 2;
 
 				_etherType = (data[hdrlen] << 8) | data[hdrlen+1];
@@ -73,12 +78,12 @@ namespace TAPNet {
 
 			/* This is a common Ethernet II frame */
 			if (_etherType >= 0x0800) {
-				_frameType = FrameType.Ethernet_II;
+				this.Type = FrameType.Ethernet_II;
 
-				_payload = new byte[data.Length - hdrlen];
+				this.Payload = new byte[data.Length - hdrlen];
 				Array.Copy(data, hdrlen,
-				           _payload, 0,
-				           _payload.Length);
+				           this.Payload, 0,
+				           this.Payload.Length);
 				return;
 			}
 
@@ -88,11 +93,11 @@ namespace TAPNet {
 			if (data[hdrlen] == 0xff && data[hdrlen+1] == 0xff) {
 				/* Raw Ethernet 802.3 (the broken Novell one)
 				 * Always contains a raw IPX frame */
-				_frameType = FrameType.Ethernet_RAW;
+				this.Type = FrameType.Ethernet_RAW;
 				_etherType = (int) EtherType.IPX;
 			} else {
 				/* IEEE 802.2/802.3 Ethernet */
-				_frameType = FrameType.Ethernet_IEEE;
+				this.Type = FrameType.Ethernet_IEEE;
 
 				byte DSAP = data[hdrlen++];
 				byte SSAP = data[hdrlen++];
@@ -100,10 +105,10 @@ namespace TAPNet {
 				payloadlen -= 3;
 
 				if ((DSAP & 0xfe) == 0xaa && (SSAP & 0xfe) == 0xaa) {
-					_frameType = FrameType.Ethernet_SNAP;
-					int OUI = (data[hdrlen + 0] << 8) |
-					          (data[hdrlen + 1] << 4) |
-					           data[hdrlen + 2];
+					this.Type = FrameType.Ethernet_SNAP;
+					OUI = (data[hdrlen + 0] << 8) |
+					      (data[hdrlen + 1] << 4) |
+					      data[hdrlen + 2];
 					payloadlen -= 3;
 					hdrlen += 3;
 
@@ -119,32 +124,12 @@ namespace TAPNet {
 			}
 
 			/* Copy the final payload data to the payload array */
-			_payload = new byte[payloadlen];
-			Array.Copy(data, hdrlen, _payload, 0, _payload.Length);
-		}
-
-		public byte[] Data {
-			get { return _data; }
-		}
-
-		public FrameType Type {
-			get { return _frameType; }
-		}
-
-		public byte[] Source {
-			get { return _src; }
-		}
-
-		public byte[] Destination {
-			get { return _dst; }
+			this.Payload = new byte[payloadlen];
+			Array.Copy(data, hdrlen, this.Payload, 0, this.Payload.Length);
 		}
 
 		public EtherType EtherType {
 			get { return (EtherType) _etherType; }
-		}
-
-		public byte[] Payload {
-			get { return _payload; }
 		}
 	}
 }
