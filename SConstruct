@@ -3,9 +3,13 @@ AddOption('--force-mingw',
           action='store_true', dest='mingw', default=False,
           help='Cross compile using MinGW for Windows')
 
+AddOption('--universal',
+          action='store_true', dest='universal', default=False,
+          help='Create Mac 32-bit and 64-bit universal binaries')
+
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
-env.Append(CFLAGS = ['-Wall', '-Werror', '-g', '-arch', 'ppc'])
+env.Append(CFLAGS = ['-Wall', '-Werror', '-g'])
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
