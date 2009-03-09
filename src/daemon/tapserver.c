@@ -43,6 +43,7 @@ struct tapserver_s {
 	unsigned short server_port;
 
 	int running;
+	int joined;
 	mutex_handle_t run_mutex;
 
 	int listening;
@@ -350,6 +351,7 @@ tapserver_start(tapserver_t *server, unsigned short port, int listen)
 		server->listening = 0;
 	}
 	server->running = 1;
+	server->joined = 0;
 
 	THREAD_CREATE(server->reader, reader_thread, server);
 	THREAD_CREATE(server->writer, writer_thread, server);
@@ -363,11 +365,12 @@ tapserver_stop(tapserver_t *server)
 	assert(server);
 
 	MUTEX_LOCK(server->run_mutex);
-	if (!server->running) {
+	if (server->joined) {
 		MUTEX_UNLOCK(server->run_mutex);
 		return;
 	}
 	server->running = 0;
+	server->joined = 1;
 	MUTEX_UNLOCK(server->run_mutex);
 
 	THREAD_JOIN(server->reader);
