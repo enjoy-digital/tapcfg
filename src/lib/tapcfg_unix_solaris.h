@@ -23,7 +23,7 @@
 
 
 static int
-tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
+tapcfg_plumb_device(taplog_t *taplog, int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 #define IP_NODE  "/dev/udp"
 #define IP6_NODE "/dev/udp6"
 #define TAP_NODE "/dev/tap"
@@ -72,19 +72,19 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	/* Setup IPv4 connectivity! */
 	if_fd = open(TAP_NODE, O_RDWR, 0);
 	if (if_fd < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
+		taplog_log(taplog, TAPLOG_ERR,
 		           "Couldn't open interface device");
 		goto error;
 	}
 
 	if (ioctl(if_fd, I_PUSH, "ip") < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error pushing the IP module");
+		taplog_log(taplog, TAPLOG_ERR, "Error pushing the IP module");
 		goto error;
 	}
 
 	memset(&lifr, 0, sizeof(struct lifreq));
 	if (ioctl(if_fd, SIOCGLIFFLAGS, &lifr) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Can't get interface flags");
+		taplog_log(taplog, TAPLOG_ERR, "Can't get interface flags");
 		goto error;
 	}
 
@@ -95,25 +95,25 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	}
 
 	if (ioctl(if_fd, I_PUSH, "arp") == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error pushing the ARP module to TAP fd");
+		taplog_log(taplog, TAPLOG_ERR, "Error pushing the ARP module to TAP fd");
 		goto error;
 	}
 
 	/* Push arp module to ip_fd */
 	ioctl(ip_fd, I_POP, NULL);
 	if (ioctl(ip_fd, I_PUSH, "arp") < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error pushing ARP module to IP fd");
+		taplog_log(taplog, TAPLOG_ERR, "Error pushing ARP module to IP fd");
 		goto error;
 	}
 
 	arp_fd = open(ARP_NODE, O_RDWR, 0);
 	if (arp_fd < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error opening ARP fd");
+		taplog_log(taplog, TAPLOG_ERR, "Error opening ARP fd");
 		goto error;
 	}
 
 	if (ioctl(arp_fd, I_PUSH, "arp") == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error pushing the ARP module 2");
+		taplog_log(taplog, TAPLOG_ERR, "Error pushing the ARP module 2");
 		goto error;
 	}
 
@@ -122,13 +122,13 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	strioc.ic_len = sizeof(lifr);
 	strioc.ic_dp = (char *) &lifr;
 	if (ioctl(arp_fd, I_STR, &strioc) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't set interface name to ARP fd");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't set interface name to ARP fd");
 		goto error;
 	}
 
 	ip_muxid = ioctl(ip_fd, I_PLINK, if_fd);
 	if (ip_muxid == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't link tap device to IP");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't link tap device to IP");
 		goto error;
 	}
 	close(if_fd);
@@ -136,7 +136,7 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 
 	arp_muxid = ioctl(ip_fd, I_PLINK, arp_fd);
 	if (arp_muxid == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't link tap device to ARP");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't link tap device to ARP");
 		goto error;
 	}
 	close(arp_fd);
@@ -148,7 +148,7 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	lifr.lifr_arp_muxid = arp_muxid;
 
 	if (ioctl(ip_fd, SIOCSLIFMUXID, &lifr) < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't call SIOCSLIFMUXID");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't call SIOCSLIFMUXID");
 		goto error;
 	}
 
@@ -159,19 +159,19 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	/* Setup IPv6 connectivity! */
 	if_fd = open(TAP_NODE, O_RDWR, 0);
 	if (if_fd < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
+		taplog_log(taplog, TAPLOG_ERR,
 		           "Couldn't open interface device for IPv6");
 		goto error;
 	}
 
 	if (ioctl(if_fd, I_PUSH, "ip") < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Error pushing the IP module for IPv6");
+		taplog_log(taplog, TAPLOG_ERR, "Error pushing the IP module for IPv6");
 		goto error;
 	}
 
 	memset(&lifr, 0, sizeof(struct lifreq));
 	if (ioctl(if_fd, SIOCGLIFFLAGS, &lifr) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Can't get interface flags for IPv6");
+		taplog_log(taplog, TAPLOG_ERR, "Can't get interface flags for IPv6");
 		goto error;
 	}
 
@@ -180,13 +180,13 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	lifr.lifr_flags &= ~(IFF_BROADCAST | IFF_IPV4);
 	lifr.lifr_ppa = ppa;
 	if (ioctl(if_fd, SIOCSLIFNAME, &lifr) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't set interface name");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't set interface name");
 		goto error;
 	}
 	
 	ip6_muxid = ioctl(ip6_fd, I_PLINK, if_fd);
 	if (ip6_muxid == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't link tap device to IP6");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't link tap device to IP6");
 		goto error;
 	}
 	close(if_fd);
@@ -197,7 +197,7 @@ tapcfg_plumb_device(int ppa, int *new_tap_fd, int *new_ip_fd, int *new_ip6_fd) {
 	lifr.lifr_ip_muxid = ip6_muxid;
 
 	if (ioctl(ip6_fd, SIOCSLIFMUXID, &lifr) < 0) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Couldn't call SIOCSLIFMUXID for IPv6");
+		taplog_log(taplog, TAPLOG_ERR, "Couldn't call SIOCSLIFMUXID for IPv6");
 		goto error;
 	}
 
@@ -257,7 +257,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		}
 	}
 
-	newppa = tapcfg_plumb_device(ppa, &tap_fd, &ip_fd, &ip6_fd);
+	newppa = tapcfg_plumb_device(&tapcfg->taplog, ppa, &tap_fd, &ip_fd, &ip6_fd);
 	if (newppa == -1 && !fallback) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Couldn't open interface: tap%d",
