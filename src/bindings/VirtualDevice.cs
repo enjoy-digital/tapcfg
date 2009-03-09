@@ -187,6 +187,11 @@ namespace TAPNet {
 			}
 		}
 
+		public void SetDHCPOptions(byte[] options) {
+			_tapcfg.iface_set_dhcp_options(_handle, options, options.Length);
+			/* XXX: Is it ok to ignore DHCP options setting failure */
+		}
+
 		public void Dispose() {
 			Dispose(true);
 			GC.SuppressFinalize(this);

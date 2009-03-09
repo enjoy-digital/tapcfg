@@ -21,6 +21,7 @@ namespace TAPNet {
 		public abstract int iface_get_mtu(IntPtr tapcfg);
 		public abstract int iface_set_mtu(IntPtr tapcfg, int mtu);
 		public abstract int iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
+		public abstract int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
 
 		public static NativeLib GetInstance() {
 			if (IntPtr.Size == 8)
@@ -98,6 +99,10 @@ namespace TAPNet {
 				return tapcfg_iface_set_ipv4(tapcfg, addr, netbits);
 			}
 
+			public override int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen) {
+				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
+			}
+
 			[DllImport("tapcfg")]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, TAPLogCallback cb);
 
@@ -144,6 +149,8 @@ namespace TAPNet {
 			private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
 			[DllImport("tapcfg")]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
+			[DllImport("tapcfg")]
+			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 
 		private class NativeLib64 : NativeLib {
@@ -215,6 +222,10 @@ namespace TAPNet {
 				return tapcfg_iface_set_ipv4(tapcfg, addr, netbits);
 			}
 
+			public override int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen) {
+				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
+			}
+
 			[DllImport("tapcfg64")]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, TAPLogCallback cb);
 
@@ -261,6 +272,8 @@ namespace TAPNet {
 			private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
 			[DllImport("tapcfg64")]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
+			[DllImport("tapcfg64")]
+			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 	}
 }
