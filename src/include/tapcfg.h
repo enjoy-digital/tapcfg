@@ -14,35 +14,27 @@
 typedef void (*taplog_callback_t)(char *msg);
 
 /**
+ * Typedef to the structure used by the library, should never
+ * be accessed directly.
+ */
+typedef struct tapcfg_s tapcfg_t;
+
+/**
  * Set the current logging level, all messages with lower
  * significance than the set level will be ignored.
+ * @param tapcfg is a pointer to an inited structure
  * @param level is the new level of logging
  */
-void taplog_set_level(int level);
+void tapcfg_set_log_level(tapcfg_t *tapcfg, int level);
 
 /**
  * Set callback to receive all the messages to be logged.
  * If not called at all or called with null parameter, then
  * all messages will be printed to stderr stream.
- * @param cb is the callback function for logging
+ * @param tapcfg is a pointer to an inited structure
+ * @param callback is the callback function for logging
  */
-void taplog_set_callback(taplog_callback_t cb);
-
-/**
- * Convert an UTF-8 encoded string to the local charset,
- * return NULL if there are characters in the string that
- * can't be represented in the local charset. The returned
- * string has to be freed.
- * @param str the UTF-8 string to be converted
- * @return The converted string in local charset or NULL on error.
- */
-char *taplog_utf8_to_local(const char *str);
-
-/**
- * Typedef to the structure used by the library, should never
- * be accessed directly.
- */
-typedef struct tapcfg_s tapcfg_t;
+void tapcfg_set_log_callback(tapcfg_t *tapcfg, taplog_callback_t callback);
 
 /**
  * Initializes a new tapcfg_t structure and allocates

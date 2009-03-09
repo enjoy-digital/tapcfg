@@ -39,8 +39,7 @@
 #define HWADDRLEN 6
 
 struct tapcfg_s {
-	int started;
-	int enabled;
+	TAPCFG_COMMON;
 
 	int tap_fd;
 	int ctrl_fd;
@@ -71,6 +70,8 @@ tapcfg_init()
 	tapcfg = calloc(1, sizeof(tapcfg_t));
 	if (!tapcfg)
 		return NULL;
+
+	taplog_init(&tapcfg->taplog);
 
 	tapcfg->tap_fd = -1;
 	tapcfg->ip_fd = -1;
@@ -113,7 +114,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	ctrl_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ctrl_fd == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error opening control socket for ioctls: %s",
 		           strerror(errno));
 		return -1;
@@ -207,7 +208,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	}
 
 	if (count < tapcfg->buflen) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Buffer not big enough for reading, "
 		           "need at least %d bytes",
 		           tapcfg->buflen);
@@ -218,8 +219,8 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	memcpy(buf, tapcfg->buffer, tapcfg->buflen);
 	tapcfg->buflen = 0;
 
-	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:");
-	taplog_log_ethernet_info(buf, ret);
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Read ethernet frame:");
+	taplog_log_ethernet_info(&tapcfg->taplog, buf, ret);
 
 	return ret;
 }
@@ -265,13 +266,13 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 
 	ret = write(tapcfg->tap_fd, buf, count);
 	if (ret != count) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error trying to write data to TAP device");
 		return -1;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:");
-	taplog_log_ethernet_info(buf, ret);
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Wrote ethernet frame:");
+	taplog_log_ethernet_info(&tapcfg->taplog, buf, ret);
 
 	return ret;
 }
@@ -357,7 +358,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error calling SIOCGIFFLAGS for interface %s: %s",
 		           tapcfg->ifname,
 		           strerror(errno));
@@ -371,7 +372,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	}
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error calling SIOCSIFFLAGS for interface %s: %s",
 		           tapcfg->ifname,
 		           strerror(errno));
@@ -399,7 +400,7 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 
 	ret = ioctl(tapcfg->ctrl_fd, SIOCGIFMTU, &ifr);
 	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error getting the MTU of device: %s",
 		           strerror(errno));
 		return -1;
@@ -440,7 +441,7 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFMTU, &ifr);
 	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error setting the MTU of device: %s",
 		           strerror(errno));
 		return -1;
@@ -472,7 +473,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_family = AF_INET;
 	if (getaddrinfo(addrstr, NULL, &hints, &res)) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error converting string '%s' to "
 		           "address, check the format", addr);
 		return -1;
@@ -485,8 +486,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	for (i=netbits,mask=0; i; i--)
 		mask = (mask >> 1)|(1 << 31);
 
-	tapcfg_ifaddr_ioctl(tapcfg->ctrl_fd,
-	                    tapcfg->ifname,
+	tapcfg_ifaddr_ioctl(tapcfg,
 	                    addr,
 	                    ntohl(mask));
 

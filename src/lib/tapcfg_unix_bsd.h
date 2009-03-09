@@ -39,7 +39,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		memmove(buf, buf+5, sizeof(buf)-5);
 	}
 	if (tap_fd < 0 && fallback) {
-		taplog_log(TAPLOG_INFO,
+		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
 		           "Opening device '%s' failed, trying to find another one",
 		           ifname);
 
@@ -50,7 +50,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 			memset(&ifr, 0, sizeof(struct ifreq));
 			if (ioctl(tap_fd, TAPGIFNAME, &ifr) == -1) {
-				taplog_log(TAPLOG_ERR,
+				taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 					   "Error getting the interface name: %s",
 					   strerror(errno));
 				return -1;
@@ -76,16 +76,16 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 #endif
 	}
 	if (tap_fd < 0) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 			   "Couldn't open the tap device \"%s\"", ifname);
-		taplog_log(TAPLOG_INFO,
+		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
 			   "Check that you are running the program with "
 			   "root privileges and have TUN/TAP driver installed");
 		return -1;
 	}
 
 	/* Set the device name to be the one we found finally */
-	taplog_log(TAPLOG_DEBUG, "Device name %s", buf);
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Device name %s", buf);
 	strncpy(tapcfg->ifname, buf, sizeof(tapcfg->ifname)-1);
 
 	/* Get MAC address on BSD, slightly trickier than Linux */
@@ -192,19 +192,19 @@ tapcfg_iface_prepare(const char *ifname, int enabled)
 
 #if defined(IPV6CTL_AUTO_LINKLOCAL)
 	if (getinet6sysctl(IPV6CTL_AUTO_LINKLOCAL) == 0) {
-		taplog_log(TAPLOG_INFO,
+		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.auto_linklocal: 0 -> 1");
 		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 1);
 	}
 #endif
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
-		taplog_log(TAPLOG_INFO,
+		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.forwarding: 1 -> 0");
 		setinet6sysctl(IPV6CTL_FORWARDING, 0);
 	}
 	if (getinet6sysctl(IPV6CTL_ACCEPT_RTADV) == 0) {
-		taplog_log(TAPLOG_INFO,
+		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
 		           "Setting sysctl net.inet6.ip6.accept_rtadv: 0 -> 1");
 		setinet6sysctl(IPV6CTL_ACCEPT_RTADV, 1);
 	}
@@ -248,7 +248,7 @@ tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFPHYADDR, &ifra);
 #endif
 	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error trying to set new hardware address: %s",
 		           strerror(errno));
 	}
@@ -257,8 +257,7 @@ tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
 }
 
 static int
-tapcfg_ifaddr_ioctl(int ctrl_fd,
-                    const char *ifname,
+tapcfg_ifaddr_ioctl(tapcfg_t *tapcfg,
                     unsigned int addr,
                     unsigned int mask)
 {
@@ -268,17 +267,17 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 	int ret;
 
 	memset(&ridreq, 0, sizeof(struct ifreq));
-	strcpy(ridreq.ifr_name, ifname);
-	ret = ioctl(ctrl_fd, SIOCDIFADDR, &ridreq);
+	strcpy(ridreq.ifr_name, tapcfg->ifname);
+	ret = ioctl(tapcfg->ctrl_fd, SIOCDIFADDR, &ridreq);
 	if (ret == -1 && errno != EADDRNOTAVAIL) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		          "Error calling SIOCDIFADDR: %s",
 		           strerror(errno));
 		return -1;
 	}
 
 	memset(&addreq, 0, sizeof(struct ifaliasreq));
-	strcpy(addreq.ifra_name, ifname);
+	strcpy(addreq.ifra_name, tapcfg->ifname);
 	sin = (struct sockaddr_in *) &addreq.ifra_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
@@ -287,9 +286,9 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = mask;
 	sin->sin_len = sizeof(struct sockaddr_in);
-	ret = ioctl(ctrl_fd, SIOCAIFADDR, &addreq);
+	ret = ioctl(tapcfg->ctrl_fd, SIOCAIFADDR, &addreq);
 	if (ret == -1) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error calling SIOCAIFADDR: %s",
 		           strerror(errno));
 		return -1;

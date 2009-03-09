@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #  include <windows.h>
@@ -24,18 +25,29 @@
 #include "tapcfg.h"
 #include "taplog.h"
 
-static int taplog_level = TAPLOG_INFO;
-static taplog_callback_t callback = NULL;
-
 void
-taplog_set_level(int level) {
-	taplog_level = level;
+taplog_init(taplog_t *taplog)
+{
+	assert(taplog);
+
+	taplog->level = TAPLOG_INFO;
+	taplog->callback = NULL;
 }
 
 void
-taplog_set_callback(taplog_callback_t cb)
+taplog_set_level(taplog_t *taplog, int level)
 {
-	callback = cb;
+	assert(taplog);
+
+	taplog->level = level;
+}
+
+void
+taplog_set_callback(taplog_t *taplog, taplog_callback_t callback)
+{
+	assert(taplog);
+
+	taplog->callback = callback;
 }
 
 char *
@@ -69,12 +81,12 @@ taplog_utf8_to_local(const char *str)
 }
 
 void
-taplog_log(int level, const char *fmt, ...)
+taplog_log(taplog_t *taplog, int level, const char *fmt, ...)
 {
 	char buffer[4096];
 	va_list ap;
 
-	if (level > taplog_level)
+	if (level > taplog->level)
 		return;
 
 	buffer[sizeof(buffer)-1] = '\0';
@@ -82,8 +94,8 @@ taplog_log(int level, const char *fmt, ...)
 	vsnprintf(buffer, sizeof(buffer)-1, fmt, ap);
 	va_end(ap);
 
-	if (callback) {
-		callback(buffer);
+	if (taplog->callback) {
+		taplog->callback(buffer);
 	} else {
 		char *local = taplog_utf8_to_local(buffer);
 
@@ -97,22 +109,24 @@ taplog_log(int level, const char *fmt, ...)
 }
 
 void
-taplog_log_ethernet_info(unsigned char *buffer, int len) {
+taplog_log_ethernet_info(taplog_t *taplog, unsigned char *buffer, int len) {
+	assert(taplog);
+
 	if (len < 14)
 		return;
 
-	taplog_log(TAPLOG_DEBUG,
+	taplog_log(taplog, TAPLOG_DEBUG,
 	           "Frame length %d (0x%04x) bytes",
 	           len, len);
-	taplog_log(TAPLOG_DEBUG,
+	taplog_log(taplog, TAPLOG_DEBUG,
 	           "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x",
 	           (buffer[6])&0xff, (buffer[7])&0xff, (buffer[8])&0xff, (buffer[9])&0xff,
 	           (buffer[10])&0xff, (buffer[11])&0xff);
-	taplog_log(TAPLOG_DEBUG,
+	taplog_log(taplog, TAPLOG_DEBUG,
 	           "Ethernet dst address: %02x:%02x:%02x:%02x:%02x:%02x",
 	           (buffer[0])&0xff, (buffer[1])&0xff, (buffer[2])&0xff, (buffer[3])&0xff,
 	           (buffer[4])&0xff, (buffer[5])&0xff);
-	taplog_log(TAPLOG_DEBUG,
+	taplog_log(taplog, TAPLOG_DEBUG,
 	           "EtherType 0x%04x",
 	           ((buffer[12] << 8) | buffer[13])&0xffff);
 }

@@ -37,7 +37,7 @@ struct panel_reg {
 
 /* Get a working tunnel adapter */
 static struct tap_reg *
-get_tap_reg()
+get_tap_reg(taplog_t *taplog)
 {
 	struct tap_reg *first = NULL;
 	struct tap_reg *last = NULL;
@@ -51,7 +51,7 @@ get_tap_reg()
 	                       KEY_READ,
 	                       &adapter_key);
 	if (status != ERROR_SUCCESS) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(taplog, TAPLOG_ERR,
 		           "Error opening registry key: %s",
 		           TAP_ADAPTER_KEY);
 		return NULL;
@@ -71,7 +71,7 @@ get_tap_reg()
 		if (status == ERROR_NO_MORE_ITEMS) {
 			break;
 		} else if (status != ERROR_SUCCESS) {
-			taplog_log(TAPLOG_ERR,
+			taplog_log(taplog, TAPLOG_ERR,
 			           "Error enumerating registry subkeys of key: %s (t0)",
 			           TAP_ADAPTER_KEY);
 			break;
@@ -82,7 +82,7 @@ get_tap_reg()
 		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, unit_string,
 		                       0, KEY_READ, &unit_key);
 		if (status != ERROR_SUCCESS) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 			           "Error opening registry key: %s (t1)",
 			           unit_string);
 			continue;
@@ -94,7 +94,7 @@ get_tap_reg()
 					  (LPBYTE) component_id,
 		                          &len);
 		if (status != ERROR_SUCCESS || data_type != REG_SZ) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 				   "Error opening registry key: %s\\ComponentId (t2)",
 				    unit_string);
 		} else {
@@ -151,7 +151,7 @@ free_tap_reg(struct tap_reg *tap_reg)
 
 /* Collect GUID's and names of all the Connections that are available */
 static struct panel_reg *
-get_panel_reg()
+get_panel_reg(taplog_t *taplog)
 {
 	struct panel_reg *first = NULL;
 	struct panel_reg *last = NULL;
@@ -165,7 +165,7 @@ get_panel_reg()
 	                       KEY_READ,
 	                       &network_connections_key);
 	if (status != ERROR_SUCCESS) {
-		taplog_log(TAPLOG_ERR,
+		taplog_log(taplog, TAPLOG_ERR,
 		           "Error opening registry key: %s (p0)",
 		           TAP_REGISTRY_KEY);
 		return NULL;
@@ -185,7 +185,7 @@ get_panel_reg()
 		if (status == ERROR_NO_MORE_ITEMS) {
 			break;
 		} else if (status != ERROR_SUCCESS) {
-			taplog_log(TAPLOG_ERR,
+			taplog_log(taplog, TAPLOG_ERR,
 			           "Error enumerating registry subkeys of key: %s (p1)",
 			           TAP_REGISTRY_KEY);
 			break;
@@ -198,7 +198,7 @@ get_panel_reg()
 		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, connection_string,
 		                       0, KEY_READ, &connection_key);
 		if (status != ERROR_SUCCESS) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 			           "Error opening registry key: %s (p2)",
 			           connection_string);
 			continue;
@@ -208,7 +208,7 @@ get_panel_reg()
 		status = RegQueryValueExW(connection_key, L"Name", NULL,
 		                          &name_type, name_data, &len);
 		if (status != ERROR_SUCCESS || name_type != REG_SZ) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 			           "Error opening registry key: %s\\%s\\Name (p3)",
 		                   TAP_REGISTRY_KEY, (LPBYTE) connection_string);
 		} else {
@@ -257,15 +257,16 @@ free_panel_reg(struct panel_reg *panel_reg)
 }
 
 static char *
-tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
+tapcfg_fixup_adapters(taplog_t *taplog, const char *ifname,
+                      char **guid, int fallback)
 {
-	struct tap_reg *tap_reg = get_tap_reg(), *tr;
-	struct panel_reg *panel_reg = get_panel_reg(), *pr;
+	struct tap_reg *tap_reg = get_tap_reg(taplog), *tr;
+	struct panel_reg *panel_reg = get_panel_reg(taplog), *pr;
 	struct panel_reg *adapter = NULL;
 	unsigned int found=0, valid=0;
 	char *ret = NULL;
 
-	taplog_log(TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:");
+	taplog_log(taplog, TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:");
 
 	/* loop through each TAP adapter registry entry */
 	for (tr=tap_reg; tr != NULL; tr=tr->next) {
@@ -275,7 +276,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		/* loop through each network connections entry in the control panel */
 		for (pr=panel_reg; pr != NULL; pr=pr->next) {
 			if (!strcmp(tr->guid, pr->guid)) {
-				taplog_log(TAPLOG_DEBUG, "'%s' %s", pr->name, tr->guid);
+				taplog_log(taplog, TAPLOG_DEBUG, "'%s' %s", pr->name, tr->guid);
 				links++;
 
 				/* If we haven't found adapter with a correct name yet
@@ -291,12 +292,12 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		}
 
 		if (!links) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 			           "*** Adapter with GUID %s doesn't have a link from the "
 			           "control panel", tr->guid);
 			valid_adapter = 0;
 		} else if (links > 1) {
-			taplog_log(TAPLOG_WARNING,
+			taplog_log(taplog, TAPLOG_WARNING,
 			           "*** Adapter with GUID %s has %u links from the Network "
 			           "Connections control panel, it should only be 1",
 			           tr->guid, links);
@@ -305,7 +306,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 
 		for (iterator=tap_reg; iterator != NULL; iterator=iterator->next) {
 			if (tr != iterator && !strcmp(tr->guid, iterator->guid)) {
-				taplog_log(TAPLOG_WARNING, "*** Duplicate Adapter GUID %s", tr->guid);
+				taplog_log(taplog, TAPLOG_WARNING, "*** Duplicate Adapter GUID %s", tr->guid);
 				valid_adapter = 0;
 			}
 		}
@@ -316,7 +317,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 	}
 
 	if (found == 1 && valid >= 1) {
-		taplog_log(TAPLOG_DEBUG,
+		taplog_log(taplog, TAPLOG_DEBUG,
 		           "Using configured interface %s",
 		           ifname);
 		ret = strdup(ifname);
@@ -324,7 +325,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 			*guid = strdup(adapter->guid);
 		}
 	} else if (found == 0 && valid == 1 && adapter && fallback) {
-		taplog_log(TAPLOG_INFO,
+		taplog_log(taplog, TAPLOG_INFO,
 		           "Using adapter '%s' instead of '%s' because it was the only one found",
 		           adapter->name, ifname);
 		ret = strdup(adapter->name);
@@ -332,7 +333,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 			*guid = strdup(adapter->guid);
 		}
 	} else {
-		taplog_log(TAPLOG_WARNING,
+		taplog_log(taplog, TAPLOG_WARNING,
 		           "Found %u adapters, %u of which were valid, don't know what to use",
 		           found, valid);
 	}

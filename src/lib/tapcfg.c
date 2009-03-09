@@ -28,9 +28,25 @@
 
 #define TAPCFG_BUFSIZE 4096
 
+#define TAPCFG_COMMON \
+	int started; \
+	int enabled; \
+	taplog_t taplog
+
 #if defined(_WIN32) || defined(_WIN64)
 #  include "tapcfg_windows.c"
 #else
 #  include "tapcfg_unix.c"
 #endif
 
+void
+tapcfg_set_log_level(tapcfg_t *tapcfg, int level)
+{
+	taplog_set_level(&tapcfg->taplog, level);
+}
+
+void
+tapcfg_set_log_callback(tapcfg_t *tapcfg, taplog_callback_t callback)
+{
+	taplog_set_callback(&tapcfg->taplog, callback);
+}
