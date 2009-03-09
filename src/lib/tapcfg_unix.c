@@ -339,11 +339,6 @@ int
 tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 {
 	struct ifreq ifr;
-#ifdef __sun__
-	int upflags = IFF_UP;
-#else
-	int upflags = IFF_UP | IFF_RUNNING;
-#endif
 
 	assert(tapcfg);
 
@@ -368,11 +363,21 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 		return -1;
 	}
 
+#ifdef __sun__
+	/* On Solaris enabling IPv6 doesn't require enabling IPv4,
+	 * also the IFF_RUNNING flag doesn't need to be set */
 	if (flags | TAPCFG_STATUS_IPV4_UP) {
-		ifr.ifr_flags |= upflags;
+		ifr.ifr_flags |= IFF_UP;
 	} else {
-		ifr.ifr_flags &= ~upflags;
+		ifr.ifr_flags &= ~IFF_UP;
 	}
+#else
+	if (flags) {
+		ifr.ifr_flags |= (IFF_UP | IFF_RUNNING);
+	} else {
+		ifr.ifr_flags &= ~(IFF_UP | IFF_RUNNING);
+	}
+#endif
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
