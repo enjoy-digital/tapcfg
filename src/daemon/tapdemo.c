@@ -111,8 +111,9 @@ int main(int argc, char *argv[]) {
 	server = tapserver_init(tapcfg, 50);
 
 	if (!strcmp(argv[1], "client")) {
+		int sfd = -1;
+#ifdef HAVE_GETADDRINFO
 		struct addrinfo hints, *result, *saddr;
-		int sfd;
 
 		memset(&hints, 0, sizeof(hints));
 		if (!strcmp(argv[2], "-4"))
@@ -139,10 +140,26 @@ int main(int argc, char *argv[]) {
 				break;
 
 			close(sfd);
+			sfd = -1;
 		}
 		freeaddrinfo(result);
+#else
+		struct sockaddr_in saddr;
 
-		if (saddr == NULL) {
+		saddr.sin_family = AF_INET;
+		saddr.sin_addr.s_addr = inet_addr(argv[3]);
+		saddr.sin_port = atoi(argv[4]); 
+
+		sfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (sfd != -1) {
+			if (connect(sfd, (struct sockaddr *) &saddr, sizeof(saddr)) == -1) {
+				close(sfd);
+				sfd = -1;
+			}
+		}
+#endif
+
+		if (sfd == -1) {
 			printf("Could not connect to host: %s %s\n",
 			       argv[3], argv[4]);
 			goto exit;
