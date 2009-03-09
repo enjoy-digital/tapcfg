@@ -6,29 +6,54 @@ Linux:
 
 Should work when ran as root without problems.
 
+The interface name is not defined in any way and can be any alphanumeric name.
+Automatically allocated device names are in format tapX.
+
 Windows:
 
 Requires TAP-Win32 driver installed, can be downloaded for example from
 http://www.sixxs.net/tools/aiccu/ location. The version tap901 is tested and
 recommended.
 
+The interface name can be basically anything, but it is fixed and can be
+changed from the control panel by the user.
+
 Mac OS X:
 
 Requires TunTap driver for the Mac OS X system. Can be downloaded from
 http://tuntaposx.sourceforge.net/ location.
+
+The interface name is always in format tapX and maps to '/dev/tapX'.
 
 FreeBSD:
 
 Requires that the TAP driver is loaded to the system. This can usually be done
 by running the command "kldload if_tap" as root.
 
+The interface name is always in format tapX and maps to '/dev/tapX'.
+
 NetBSD:
 
 Should work when ran as root without problems.
+
+The interface name is always in format tapX and maps to '/dev/tapX'. However
+the interface needs to be first created with 'ifconfig <ifname> create'.
+If an automatically created interface is wanted the interface name 'tap'
+should be used, system will change map it to an available tapX interface
+automatically.
 
 Solaris:
 
 Requires that TAP driver is installed to the system. It can be downloaded from
 http://www.whiteboard.ne.jp/~admin2/tuntap/ or installed using pkg-get with the
 command "pkg-get install tap".
+
+The interface name is always in format tapX.
+
+
+On all systems if the fallback flag is defined on TAP interface startup, an
+available legal TAP device is automatically searched and used on all systems,
+even if the defined interface is not available. It is recommended to use the
+fallback option for portability, because each system has slightly different
+naming conventions.
 
