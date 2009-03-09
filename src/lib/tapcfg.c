@@ -30,7 +30,7 @@
 
 #define TAPCFG_COMMON \
 	int started; \
-	int enabled; \
+	int status; \
 	taplog_t taplog
 
 #if defined(_WIN32) || defined(_WIN64)

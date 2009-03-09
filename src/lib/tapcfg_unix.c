@@ -125,7 +125,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	tapcfg->tap_fd = tap_fd;
 	tapcfg->ctrl_fd = ctrl_fd;
 	tapcfg->started = 1;
-	tapcfg->enabled = 0;
+	tapcfg->status = TAPCFG_STATUS_ALL_DOWN;
 
 	return 0;
 
@@ -155,7 +155,7 @@ tapcfg_stop(tapcfg_t *tapcfg)
 			tapcfg->ctrl_fd = -1;
 		}
 		tapcfg->started = 0;
-		tapcfg->enabled = 0;
+		tapcfg->status = TAPCFG_STATUS_ALL_DOWN;
 	}
 }
 
@@ -310,7 +310,7 @@ tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 
 	assert(tapcfg);
 
-	if (!tapcfg->started || tapcfg->enabled) {
+	if (!tapcfg->started || tapcfg->status) {
 		return -1;
 	}
 
@@ -332,29 +332,30 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
 
-	return tapcfg->enabled;
+	return tapcfg->status;
 }
 
 int
-tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6)
+tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 {
 	struct ifreq ifr;
 #ifdef __sun__
-	int flags = IFF_UP;
+	int upflags = IFF_UP;
 #else
-	int flags = IFF_UP | IFF_RUNNING;
+	int upflags = IFF_UP | IFF_RUNNING;
 #endif
 
 	assert(tapcfg);
 
 	if (!tapcfg->started ||
-	    enabled == tapcfg->enabled) {
+	    flags == tapcfg->status) {
 		/* No need for change, this is ok */
 		return 0;
 	}
 
-	if (prepare_ipv6) {
-		tapcfg_iface_prepare_ipv6(tapcfg->ifname, enabled);
+	if ((flags ^ tapcfg->status) | TAPCFG_STATUS_IPV6_UP) {
+		tapcfg_iface_prepare_ipv6(tapcfg->ifname,
+		                          flags | TAPCFG_STATUS_IPV6_UP);
 	}
 
 	memset(&ifr, 0, sizeof(ifr));
@@ -367,10 +368,10 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6)
 		return -1;
 	}
 
-	if (enabled) {
-		ifr.ifr_flags |= flags;
+	if (flags | TAPCFG_STATUS_IPV4_UP) {
+		ifr.ifr_flags |= upflags;
 	} else {
-		ifr.ifr_flags &= ~flags;
+		ifr.ifr_flags &= ~upflags;
 	}
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
@@ -380,7 +381,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6)
 		           strerror(errno));
 		return -1;
 	}
-	tapcfg->enabled = enabled;
+	tapcfg->status = flags;
 
 	return 0;
 }

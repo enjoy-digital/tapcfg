@@ -17,7 +17,7 @@ namespace TAPNet {
 		public abstract IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
 		public abstract int iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 		public abstract int iface_get_status(IntPtr tapcfg);
-		public abstract int iface_change_status(IntPtr tapcfg, int enabled);
+		public abstract int iface_change_status(IntPtr tapcfg, int flags);
 		public abstract int iface_get_mtu(IntPtr tapcfg);
 		public abstract int iface_set_mtu(IntPtr tapcfg, int mtu);
 		public abstract int iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
@@ -82,8 +82,8 @@ namespace TAPNet {
 				return tapcfg_iface_get_status(tapcfg);
 			}
 
-			public override int iface_change_status(IntPtr tapcfg, int enabled) {
-				return tapcfg_iface_change_status(tapcfg, enabled);
+			public override int iface_change_status(IntPtr tapcfg, int flags) {
+				return tapcfg_iface_change_status(tapcfg, flags);
 			}
 
 			public override int iface_get_mtu(IntPtr tapcfg) {
@@ -137,7 +137,7 @@ namespace TAPNet {
 			[DllImport("tapcfg")]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
 			[DllImport("tapcfg")]
-			private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
+			private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int flags);
 			[DllImport("tapcfg")]
 			private static extern int tapcfg_iface_get_mtu(IntPtr tapcfg);
 			[DllImport("tapcfg")]
@@ -199,8 +199,8 @@ namespace TAPNet {
 				return tapcfg_iface_get_status(tapcfg);
 			}
 
-			public override int iface_change_status(IntPtr tapcfg, int enabled) {
-				return tapcfg_iface_change_status(tapcfg, enabled);
+			public override int iface_change_status(IntPtr tapcfg, int flags) {
+				return tapcfg_iface_change_status(tapcfg, flags);
 			}
 
 			public override int iface_get_mtu(IntPtr tapcfg) {
@@ -254,7 +254,7 @@ namespace TAPNet {
 			[DllImport("tapcfg64")]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
 			[DllImport("tapcfg64")]
-			private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int enabled);
+			private static extern int tapcfg_iface_change_status(IntPtr tapcfg, int flags);
 			[DllImport("tapcfg64")]
 			private static extern int tapcfg_iface_get_mtu(IntPtr tapcfg);
 			[DllImport("tapcfg64")]

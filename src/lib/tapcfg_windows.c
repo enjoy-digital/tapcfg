@@ -204,7 +204,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	tapcfg->dev_handle = dev_handle;
 	tapcfg->started = 1;
-	tapcfg->enabled = 0;
+	tapcfg->status = 0;
 
 	return 0;
 }
@@ -220,7 +220,7 @@ tapcfg_stop(tapcfg_t *tapcfg)
 			tapcfg->dev_handle = INVALID_HANDLE_VALUE;
 		}
 		tapcfg->started = 0;
-		tapcfg->enabled = 0;
+		tapcfg->status = 0;
 	}
 }
 
@@ -422,7 +422,7 @@ tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length)
 {
 	assert(tapcfg);
 
-	if (!tapcfg->started || tapcfg->enabled) {
+	if (!tapcfg->started || tapcfg->status) {
 		return -1;
 	}
 
@@ -438,20 +438,20 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 {
 	assert(tapcfg);
 
-	return tapcfg->enabled;
+	return tapcfg->status;
 }
 
 int
-tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
+tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 {
-	unsigned long status = enabled;
+	unsigned long status = flags;
 	DWORD len;
 
 	assert(tapcfg);
 
 	if (!tapcfg->started) {
 		return -1;
-	} else if (enabled == tapcfg->enabled) {
+	} else if (flags == tapcfg->status) {
 		/* Already enabled, nothing required */
 		return 0;
 	}
@@ -466,7 +466,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	                     &len, NULL)) {
 		return -1;
 	}
-	tapcfg->enabled = enabled;
+	tapcfg->status = flags;
 
 	return 0;
 }

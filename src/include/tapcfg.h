@@ -11,6 +11,11 @@
 #define TAPLOG_INFO        6       /* informational */
 #define TAPLOG_DEBUG       7       /* debug-level messages */
 
+#define TAPCFG_STATUS_ALL_DOWN   0
+#define TAPCFG_STATUS_IPV4_UP    1
+#define TAPCFG_STATUS_IPV6_UP    2
+#define TAPCFG_STATUS_ALL_UP     0xffff
+
 typedef void (*taplog_callback_t)(char *msg);
 
 /**
@@ -188,12 +193,11 @@ int tapcfg_iface_get_status(tapcfg_t *tapcfg);
  * if the interface is up or down and in Windows it means if the
  * network cable of the virtual interface is connected or not.
  * @param tapcfg is a pointer to an inited structure
- * @param enabled is the new status of the interface after call
- * @param prepare_ipv6 is a flag that will prepare IPv6 local address
- *        and router advertisement reception on systems that require it
+ * @param flags can be TAPCFG_STATUS_IPV4_UP or TAPCFG_STATUS_IPV6_UP
+ *        or TAPCFG_STATUS_ALL_UP, which is the most common use case
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled, int prepare_ipv6);
+int tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags);
 
 /**
  * Get the maximum transfer unit for the device if possible.
