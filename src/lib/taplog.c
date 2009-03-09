@@ -88,10 +88,10 @@ taplog_log(int level, const char *fmt, ...)
 		char *local = taplog_utf8_to_local(buffer);
 
 		if (local) {
-			fprintf(stderr, "%s", local);
+			fprintf(stderr, "%s\n", local);
 			free(local);
 		} else {
-			fprintf(stderr, "%s", buffer);
+			fprintf(stderr, "%s\n", buffer);
 		}
 	}
 }
@@ -102,17 +102,17 @@ taplog_log_ethernet_info(unsigned char *buffer, int len) {
 		return;
 
 	taplog_log(TAPLOG_DEBUG,
-	           "Frame length %d (0x%04x) bytes\n",
+	           "Frame length %d (0x%04x) bytes",
 	           len, len);
 	taplog_log(TAPLOG_DEBUG,
-	           "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	           "Ethernet src address: %02x:%02x:%02x:%02x:%02x:%02x",
 	           (buffer[6])&0xff, (buffer[7])&0xff, (buffer[8])&0xff, (buffer[9])&0xff,
 	           (buffer[10])&0xff, (buffer[11])&0xff);
 	taplog_log(TAPLOG_DEBUG,
-	           "Ethernet dst address: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	           "Ethernet dst address: %02x:%02x:%02x:%02x:%02x:%02x",
 	           (buffer[0])&0xff, (buffer[1])&0xff, (buffer[2])&0xff, (buffer[3])&0xff,
 	           (buffer[4])&0xff, (buffer[5])&0xff);
 	taplog_log(TAPLOG_DEBUG,
-	           "EtherType 0x%04x\n",
+	           "EtherType 0x%04x",
 	           ((buffer[12] << 8) | buffer[13])&0xffff);
 }

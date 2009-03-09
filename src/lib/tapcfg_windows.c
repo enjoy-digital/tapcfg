@@ -110,17 +110,17 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	tapcfg->ifname = tapcfg_fixup_adapters(ifname, &adapterid, fallback);
 	if (!tapcfg->ifname) {
-		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...\n");
+		taplog_log(TAPLOG_ERR, "TAP adapter not configured properly...");
 		return -1;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "TAP adapter configured properly\n");
-	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'\n", tapcfg->ifname);
+	taplog_log(TAPLOG_DEBUG, "TAP adapter configured properly");
+	taplog_log(TAPLOG_DEBUG, "Interface name is '%s'", tapcfg->ifname);
 
 	snprintf(tapname, sizeof(tapname), TAP_DEVICE_DIR "%s.tap", adapterid);
 	free(adapterid);
 
-	taplog_log(TAPLOG_DEBUG, "Trying %s\n", tapname);
+	taplog_log(TAPLOG_DEBUG, "Trying %s", tapname);
 	dev_handle = CreateFile(tapname,
 				GENERIC_WRITE | GENERIC_READ,
 				0, /* ShareMode, don't let others open the device */
@@ -141,7 +141,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 				     &len, NULL)) {
 
 			taplog_log(TAPLOG_ERR,
-				   "Error calling DeviceIoControl: %d\n",
+				   "Error calling DeviceIoControl: %d",
 				   (int) GetLastError());
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
@@ -150,7 +150,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		}
 
 		taplog_log(TAPLOG_DEBUG,
-			   "TAP Driver Version %d.%d %s\n",
+			   "TAP Driver Version %d.%d %s",
 			   (int) info[0],
 			   (int) info[1],
 			   info[2] ? "(DEBUG)" : "");
@@ -158,11 +158,11 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		if (info[0] < TAP_WINDOWS_MIN_MAJOR ||
 		    (info[0] == TAP_WINDOWS_MIN_MAJOR && info[1] < TAP_WINDOWS_MIN_MINOR)) {
 			taplog_log(TAPLOG_ERR,
-			           "A TAP driver is required that is at least version %d.%d\n",
+			           "A TAP driver is required that is at least version %d.%d",
 			           TAP_WINDOWS_MIN_MAJOR, TAP_WINDOWS_MIN_MINOR);
 			taplog_log(TAPLOG_INFO,
 			           "If you recently upgraded your TAP driver, a reboot is probably "
-			           "required at this point to get Windows to see the new driver.\n");
+			           "required at this point to get Windows to see the new driver.");
 
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
@@ -181,7 +181,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 				     &len, NULL)) {
 
 			taplog_log(TAPLOG_ERR,
-				   "Error calling DeviceIoControl: %d\n",
+				   "Error calling DeviceIoControl: %d",
 				   (int) GetLastError());
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
@@ -190,14 +190,14 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		}
 
 		taplog_log(TAPLOG_DEBUG,
-			   "TAP interface MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
+			   "TAP interface MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
 		           hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
 
 		memcpy(tapcfg->hwaddr, hwaddr, sizeof(hwaddr));
 	}
 
 	if (dev_handle == INVALID_HANDLE_VALUE) {
-		taplog_log(TAPLOG_ERR, "No working Tap device found!\n");
+		taplog_log(TAPLOG_ERR, "No working Tap device found!");
 		return -1;
 	}
 
@@ -232,7 +232,7 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 	assert(tapcfg);
 
 	if (tapcfg->inbuflen) {
-		taplog_log(TAPLOG_DEBUG, "Found %d bytes from buffer\n", tapcfg->inbuflen);
+		taplog_log(TAPLOG_DEBUG, "Found %d bytes from buffer", tapcfg->inbuflen);
 		return 1;
 	} else if (!tapcfg->reading) {
 		/* No data available, start a new read */
@@ -241,7 +241,7 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 		tapcfg->overlapped_in.Offset = 0;
 		tapcfg->overlapped_in.OffsetHigh = 0;
 
-		taplog_log(TAPLOG_DEBUG, "Calling ReadFile function\n");
+		taplog_log(TAPLOG_DEBUG, "Calling ReadFile function");
 		retval = ReadFile(tapcfg->dev_handle,
 		                  tapcfg->inbuf,
 		                  sizeof(tapcfg->inbuf),
@@ -253,11 +253,11 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 			tapcfg->reading = 0;
 			tapcfg->inbuflen = len;
 			ret = 1;
-			taplog_log(TAPLOG_DEBUG, "Finished reading %d bytes with ReadFile\n", len);
+			taplog_log(TAPLOG_DEBUG, "Finished reading %d bytes with ReadFile", len);
 		} else if (GetLastError() != ERROR_IO_PENDING) {
 			tapcfg->reading = 0;
 			taplog_log(TAPLOG_ERR,
-			           "Error calling ReadFile: %d\n",
+			           "Error calling ReadFile: %d",
 			           GetLastError());
 		}
 	}
@@ -266,21 +266,21 @@ tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 		retval = WaitForSingleObject(tapcfg->overlapped_in.hEvent, timeout);
 
 		if (retval == WAIT_OBJECT_0) {
-			taplog_log(TAPLOG_DEBUG, "Calling GetOverlappedResult function\n");
+			taplog_log(TAPLOG_DEBUG, "Calling GetOverlappedResult function");
 			retval = GetOverlappedResult(tapcfg->dev_handle,
 			                             &tapcfg->overlapped_in,
 			                             &len, FALSE);
 			if (!retval) {
 				tapcfg->reading = 0;
 				taplog_log(TAPLOG_ERR,
-				           "Error calling GetOverlappedResult: %d\n",
+				           "Error calling GetOverlappedResult: %d",
 				           GetLastError());
 			} else {
 				tapcfg->reading = 0;
 				tapcfg->inbuflen = len;
 				ret = 1;
 				taplog_log(TAPLOG_DEBUG,
-				           "Finished reading %d bytes with GetOverlappedResult\n",
+				           "Finished reading %d bytes with GetOverlappedResult",
 				           len);
 			}
 		}
@@ -314,14 +314,14 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 
 	if (!tapcfg_wait_for_data(tapcfg, INFINITE)) {
 		taplog_log(TAPLOG_ERR,
-		           "Error waiting for data in read function\n");
+		           "Error waiting for data in read function");
 		return -1;
 	}
 
 	if (count < tapcfg->inbuflen) {
 		taplog_log(TAPLOG_ERR,
 		           "Buffer not big enough for reading, "
-		           "need at least %d bytes\n",
+		           "need at least %d bytes",
 		           tapcfg->inbuflen);
 		return -1;
 	}
@@ -330,7 +330,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	memcpy(buf, tapcfg->inbuf, tapcfg->inbuflen);
 	tapcfg->inbuflen = 0;
 
-	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:\n");
+	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:");
 	taplog_log_ethernet_info(buf, ret);
 
 	return ret;
@@ -369,7 +369,7 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 		                             INFINITE);
 		if (!retval) {
 			taplog_log(TAPLOG_ERR,
-			           "Error calling WaitForSingleObject\n");
+			           "Error calling WaitForSingleObject");
 			return -1;
 		}
 		retval = GetOverlappedResult(tapcfg->dev_handle,
@@ -379,12 +379,12 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 
 	if (!retval) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to write data to TAP device: %d\n",
+		           "Error trying to write data to TAP device: %d",
 		           GetLastError());
 		return -1;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:\n");
+	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:");
 	taplog_log_ethernet_info(buf, len);
 
 	return len;
@@ -455,7 +455,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 		return 0;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl\n");
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl");
 	if (!DeviceIoControl(tapcfg->dev_handle,
 	                     TAP_IOCTL_SET_MEDIA_STATUS,
 	                     &status, /* InBuffer */
@@ -482,7 +482,7 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 		return 0;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for getting MTU\n");
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for getting MTU");
 	if (!DeviceIoControl(tapcfg->dev_handle,
 	                     TAP_IOCTL_GET_MTU,
 	                     &mtu, /* InBuffer */
@@ -490,7 +490,7 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 	                     &mtu, /* OutBuffer */
 	                     sizeof(mtu),
 	                     &len, NULL)) {
-		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed\n");
+		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed");
 		return -1;
 	}
 
@@ -544,7 +544,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	buffer[2] = htonl(htonl(buffer[0] | ~buffer[1])-1);
 	buffer[3] = 3600;
 
-	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for MASQ\n");
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for MASQ");
 	if (!DeviceIoControl(tapcfg->dev_handle,
 	                     TAP_IOCTL_CONFIG_DHCP_MASQ,
 	                     &buffer, /* InBuffer */
@@ -552,7 +552,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	                     &buffer, /* OutBuffer */
 	                     sizeof(buffer),
 	                     &len, NULL)) {
-		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed\n");
+		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed");
 		return -1;
 	}
 

@@ -27,11 +27,11 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	tap_fd = open("/dev/net/tun", O_RDWR);
 	if (tap_fd == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error opening device /dev/net/tun: %s\n",
+		           "Error opening device /dev/net/tun: %s",
 		           strerror(errno));
 		taplog_log(TAPLOG_INFO,
 		           "Check that you are running the program with "
-		           "root privileges\n");
+		           "root privileges");
 		return -1;
 	}
 
@@ -44,7 +44,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	if (ret == -1 && errno == EINVAL && fallback) {
 		taplog_log(TAPLOG_INFO,
-		           "Opening device '%s' failed, trying to find another one\n",
+		           "Opening device '%s' failed, trying to find another one",
 		           ifname);
 		/* Try again without device name */
 		memset(&ifr, 0, sizeof(ifr));
@@ -53,13 +53,13 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	}
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error setting the interface \"%s\": %s\n",
+		           "Error setting the interface \"%s\": %s",
 		           ifname, strerror(errno));
 		return -1;
 	}
 
 	/* Set the device name to be the one we got from OS */
-	taplog_log(TAPLOG_DEBUG, "Device name %s\n", ifr.ifr_name);
+	taplog_log(TAPLOG_DEBUG, "Device name %s", ifr.ifr_name);
 	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
 
 	/* Get the hardware address of the TAP interface */
@@ -68,7 +68,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	ret = ioctl(tap_fd, SIOCGIFHWADDR, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error getting the hardware address: %s\n",
+		           "Error getting the hardware address: %s",
 		           strerror(errno));
 		return -1;
 	}
@@ -104,7 +104,7 @@ tapcfg_hwaddr_ioctl(tapcfg_t *tapcfg,
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFHWADDR, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-			   "Error trying to set new hardware address: %s\n",
+			   "Error trying to set new hardware address: %s",
 			   strerror(errno));
 	}
 
@@ -129,7 +129,7 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 
 	if (ioctl(ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv4 address: %s\n",
+		           "Error trying to configure IPv4 address: %s",
 		           strerror(errno));
 		return -1;
 	}
@@ -143,7 +143,7 @@ tapcfg_ifaddr_ioctl(int ctrl_fd,
 
 	if (ioctl(ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to configure IPv4 netmask: %s\n",
+		           "Error trying to configure IPv4 netmask: %s",
 		           strerror(errno));
 		return -1;
 	}

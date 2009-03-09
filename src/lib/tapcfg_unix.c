@@ -114,7 +114,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	ctrl_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ctrl_fd == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error opening control socket for ioctls: %s\n",
+		           "Error opening control socket for ioctls: %s",
 		           strerror(errno));
 		return -1;
 	}
@@ -209,7 +209,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	if (count < tapcfg->buflen) {
 		taplog_log(TAPLOG_ERR,
 		           "Buffer not big enough for reading, "
-		           "need at least %d bytes\n",
+		           "need at least %d bytes",
 		           tapcfg->buflen);
 		return -1;
 	}
@@ -218,7 +218,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	memcpy(buf, tapcfg->buffer, tapcfg->buflen);
 	tapcfg->buflen = 0;
 
-	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:\n");
+	taplog_log(TAPLOG_DEBUG, "Read ethernet frame:");
 	taplog_log_ethernet_info(buf, ret);
 
 	return ret;
@@ -266,11 +266,11 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	ret = write(tapcfg->tap_fd, buf, count);
 	if (ret != count) {
 		taplog_log(TAPLOG_ERR,
-		           "Error trying to write data to TAP device\n");
+		           "Error trying to write data to TAP device");
 		return -1;
 	}
 
-	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:\n");
+	taplog_log(TAPLOG_DEBUG, "Wrote ethernet frame:");
 	taplog_log_ethernet_info(buf, ret);
 
 	return ret;
@@ -358,7 +358,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 	if (ioctl(tapcfg->ctrl_fd, SIOCGIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error calling SIOCGIFFLAGS for interface %s: %s\n",
+		           "Error calling SIOCGIFFLAGS for interface %s: %s",
 		           tapcfg->ifname,
 		           strerror(errno));
 		return -1;
@@ -372,7 +372,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int enabled)
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFFLAGS, &ifr) == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error calling SIOCSIFFLAGS for interface %s: %s\n",
+		           "Error calling SIOCSIFFLAGS for interface %s: %s",
 		           tapcfg->ifname,
 		           strerror(errno));
 		return -1;
@@ -400,7 +400,7 @@ tapcfg_iface_get_mtu(tapcfg_t *tapcfg)
 	ret = ioctl(tapcfg->ctrl_fd, SIOCGIFMTU, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error getting the MTU of device: %s\n",
+		           "Error getting the MTU of device: %s",
 		           strerror(errno));
 		return -1;
 	}
@@ -441,7 +441,7 @@ tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu)
 	ret = ioctl(tapcfg->ctrl_fd, SIOCSIFMTU, &ifr);
 	if (ret == -1) {
 		taplog_log(TAPLOG_ERR,
-		           "Error setting the MTU of device: %s\n",
+		           "Error setting the MTU of device: %s",
 		           strerror(errno));
 		return -1;
 	}
@@ -474,7 +474,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	if (getaddrinfo(addrstr, NULL, &hints, &res)) {
 		taplog_log(TAPLOG_ERR,
 		           "Error converting string '%s' to "
-		           "address, check the format\n", addr);
+		           "address, check the format", addr);
 		return -1;
 	}
 	saddr = (struct sockaddr_in *) res->ai_addr;

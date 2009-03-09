@@ -40,7 +40,7 @@ namespace TAPNet {
 		}
 
 		private static void defaultCallback(string msg) {
-			Console.Write(msg);
+			Console.WriteLine(msg);
 		}
 
 		public VirtualDevice() {

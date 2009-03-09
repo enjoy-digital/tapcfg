@@ -52,7 +52,7 @@ get_tap_reg()
 	                       &adapter_key);
 	if (status != ERROR_SUCCESS) {
 		taplog_log(TAPLOG_ERR,
-		           "Error opening registry key: %s\n",
+		           "Error opening registry key: %s",
 		           TAP_ADAPTER_KEY);
 		return NULL;
 	}
@@ -72,7 +72,7 @@ get_tap_reg()
 			break;
 		} else if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_ERR,
-			           "Error enumerating registry subkeys of key: %s (t0)\n",
+			           "Error enumerating registry subkeys of key: %s (t0)",
 			           TAP_ADAPTER_KEY);
 			break;
 		}
@@ -83,7 +83,7 @@ get_tap_reg()
 		                       0, KEY_READ, &unit_key);
 		if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_WARNING,
-			           "Error opening registry key: %s (t1)\n",
+			           "Error opening registry key: %s (t1)",
 			           unit_string);
 			continue;
 		}
@@ -95,7 +95,7 @@ get_tap_reg()
 		                          &len);
 		if (status != ERROR_SUCCESS || data_type != REG_SZ) {
 			taplog_log(TAPLOG_WARNING,
-				   "Error opening registry key: %s\\ComponentId (t2)\n",
+				   "Error opening registry key: %s\\ComponentId (t2)",
 				    unit_string);
 		} else {
 			char net_cfg_instance_id[256];
@@ -166,7 +166,7 @@ get_panel_reg()
 	                       &network_connections_key);
 	if (status != ERROR_SUCCESS) {
 		taplog_log(TAPLOG_ERR,
-		           "Error opening registry key: %s (p0)\n",
+		           "Error opening registry key: %s (p0)",
 		           TAP_REGISTRY_KEY);
 		return NULL;
 	}
@@ -186,7 +186,7 @@ get_panel_reg()
 			break;
 		} else if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_ERR,
-			           "Error enumerating registry subkeys of key: %s (p1)\n",
+			           "Error enumerating registry subkeys of key: %s (p1)",
 			           TAP_REGISTRY_KEY);
 			break;
 		} else if (enum_name[0] != '{') {
@@ -199,7 +199,7 @@ get_panel_reg()
 		                       0, KEY_READ, &connection_key);
 		if (status != ERROR_SUCCESS) {
 			taplog_log(TAPLOG_WARNING,
-			           "Error opening registry key: %s (p2)\n",
+			           "Error opening registry key: %s (p2)",
 			           connection_string);
 			continue;
 		}
@@ -209,7 +209,7 @@ get_panel_reg()
 		                          &name_type, name_data, &len);
 		if (status != ERROR_SUCCESS || name_type != REG_SZ) {
 			taplog_log(TAPLOG_WARNING,
-			           "Error opening registry key: %s\\%s\\Name (p3)\n",
+			           "Error opening registry key: %s\\%s\\Name (p3)",
 		                   TAP_REGISTRY_KEY, (LPBYTE) connection_string);
 		} else {
 			struct panel_reg *reg;
@@ -265,7 +265,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 	unsigned int found=0, valid=0;
 	char *ret = NULL;
 
-	taplog_log(TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:\n");
+	taplog_log(TAPLOG_DEBUG, "Available TAP adapters [name, GUID]:");
 
 	/* loop through each TAP adapter registry entry */
 	for (tr=tap_reg; tr != NULL; tr=tr->next) {
@@ -275,7 +275,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		/* loop through each network connections entry in the control panel */
 		for (pr=panel_reg; pr != NULL; pr=pr->next) {
 			if (!strcmp(tr->guid, pr->guid)) {
-				taplog_log(TAPLOG_DEBUG, "'%s' %s\n", pr->name, tr->guid);
+				taplog_log(TAPLOG_DEBUG, "'%s' %s", pr->name, tr->guid);
 				links++;
 
 				/* If we haven't found adapter with a correct name yet
@@ -293,19 +293,19 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		if (!links) {
 			taplog_log(TAPLOG_WARNING,
 			           "*** Adapter with GUID %s doesn't have a link from the "
-			           "control panel\n", tr->guid);
+			           "control panel", tr->guid);
 			valid_adapter = 0;
 		} else if (links > 1) {
 			taplog_log(TAPLOG_WARNING,
 			           "*** Adapter with GUID %s has %u links from the Network "
-			           "Connections control panel, it should only be 1\n",
+			           "Connections control panel, it should only be 1",
 			           tr->guid, links);
 			valid_adapter = 0;
 		}
 
 		for (iterator=tap_reg; iterator != NULL; iterator=iterator->next) {
 			if (tr != iterator && !strcmp(tr->guid, iterator->guid)) {
-				taplog_log(TAPLOG_WARNING, "*** Duplicate Adapter GUID %s\n", tr->guid);
+				taplog_log(TAPLOG_WARNING, "*** Duplicate Adapter GUID %s", tr->guid);
 				valid_adapter = 0;
 			}
 		}
@@ -317,7 +317,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 
 	if (found == 1 && valid >= 1) {
 		taplog_log(TAPLOG_DEBUG,
-		           "Using configured interface %s\n",
+		           "Using configured interface %s",
 		           ifname);
 		ret = strdup(ifname);
 		if (guid) {
@@ -325,7 +325,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		}
 	} else if (found == 0 && valid == 1 && adapter && fallback) {
 		taplog_log(TAPLOG_INFO,
-		           "Using adapter '%s' instead of '%s' because it was the only one found\n",
+		           "Using adapter '%s' instead of '%s' because it was the only one found",
 		           adapter->name, ifname);
 		ret = strdup(adapter->name);
 		if (guid) {
@@ -333,7 +333,7 @@ tapcfg_fixup_adapters(const char *ifname, char **guid, int fallback)
 		}
 	} else {
 		taplog_log(TAPLOG_WARNING,
-		           "Found %u adapters, %u of which were valid, don't know what to use\n",
+		           "Found %u adapters, %u of which were valid, don't know what to use",
 		           found, valid);
 	}
 
