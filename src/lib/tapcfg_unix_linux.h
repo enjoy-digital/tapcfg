@@ -84,7 +84,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 }
 
 static void
-tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
+tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 {
 	/* No IPv6 preparation needed on Linux */
 }

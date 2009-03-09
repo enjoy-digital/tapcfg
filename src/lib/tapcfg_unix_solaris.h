@@ -273,7 +273,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 			if (i == ppa)
 				continue;
 
-			newppa = tapcfg_plumb_device(i, &tap_fd, &ip_fd, &ip6_fd); 
+			newppa = tapcfg_plumb_device(&tapcfg->taplog, i, &tap_fd, &ip_fd, &ip6_fd); 
 			if (newppa >= 0)
 				break;
 		}
@@ -360,7 +360,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 }
 
 static void
-tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
+tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 {
 	struct lifreq lifr;
 	int ctrl_fd;
@@ -373,11 +373,11 @@ tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
 	}
 
 	memset(&lifr, 0, sizeof(lifr));
-	strcpy(lifr.lifr_name, ifname);
+	strcpy(lifr.lifr_name, tapcfg->ifname);
 	if (ioctl(ctrl_fd, SIOCGLIFFLAGS, &lifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error calling SIOCGIFFLAGS for interface %s: %s",
-		           ifname,
+		           tapcfg->ifname,
 		           strerror(errno));
 		close(ctrl_fd);
 		return;
@@ -392,7 +392,7 @@ tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
 	if (ioctl(ctrl_fd, SIOCSLIFFLAGS, &lifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error calling SIOCSIFFLAGS for interface %s: %s",
-		           ifname,
+		           tapcfg->ifname,
 		           strerror(errno));
 		close(ctrl_fd);
 		return;

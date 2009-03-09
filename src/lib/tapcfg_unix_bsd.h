@@ -185,7 +185,7 @@ tapcfg_attach_ipv6(const char *ifname)
 #endif
 
 static void
-tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
+tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 {
 	if (!enabled)
 		return;
@@ -211,7 +211,7 @@ tapcfg_iface_prepare_ipv6(const char *ifname, int enabled)
 #endif
 
 #ifdef __APPLE__
-	tapcfg_attach_ipv6(ifname);
+	tapcfg_attach_ipv6(tapcfg->ifname);
 #endif
 }
 
