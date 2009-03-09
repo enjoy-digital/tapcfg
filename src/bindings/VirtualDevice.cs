@@ -31,27 +31,23 @@ namespace TAPNet {
 		private IntPtr _handle;
 		private bool _disposed = false;
 
-		private static TAPLogCallback _logger;
-		public static TAPLogCallback LogCallback {
-			set {
-				_logger = value;
-				NativeLib.GetInstance().set_callback(_logger);
-			}
-		}
-
 		private static void defaultCallback(string msg) {
 			Console.WriteLine(msg);
 		}
 
 		public VirtualDevice() {
-			if (_logger == null) {
-				VirtualDevice.LogCallback = new TAPLogCallback(defaultCallback);
-			}
-
 			_tapcfg = NativeLib.GetInstance();
 			_handle = _tapcfg.init();
 			if (_handle == IntPtr.Zero) {
 				throw new Exception("Error initializing the tapcfg library");
+			}
+
+			LogCallback = new TAPLogCallback(defaultCallback);
+		}
+
+		public TAPLogCallback LogCallback {
+			set {
+				_tapcfg.set_log_callback(_handle, value);
 			}
 		}
 
