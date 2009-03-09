@@ -188,8 +188,11 @@ namespace TAPNet {
 		}
 
 		public void SetDHCPOptions(byte[] options) {
-			_tapcfg.iface_set_dhcp_options(_handle, options, options.Length);
-			/* XXX: Is it ok to ignore DHCP options setting failure */
+			int ret = _tapcfg.iface_set_dhcp_options(_handle, options, options.Length);
+
+			if (ret < 0) {
+				throw new Exception("Error setting DHCP options to interface");
+			}
 		}
 
 		public void Dispose() {
