@@ -349,7 +349,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 	}
 
 	if ((flags ^ tapcfg->status) | TAPCFG_STATUS_IPV6_UP) {
-		tapcfg_iface_prepare_ipv6(tapcfg->ifname,
+		tapcfg_iface_prepare_ipv6(tapcfg,
 		                          flags | TAPCFG_STATUS_IPV6_UP);
 	}
 
