@@ -103,7 +103,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	}
 
 	if (ifname == NULL) {
-		ifname = "tap0";
+		ifname = "";
 		fallback = 1;
 	}
 

@@ -107,6 +107,7 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	if (!ifname) {
 		ifname = "";
+		fallback = 1;
 	}
 
 	tapcfg->ifname = tapcfg_fixup_adapters(&tapcfg->taplog, ifname, &adapterid, fallback);
