@@ -561,7 +561,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 }
 
 int
-tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
+tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
 {
 	DWORD len;
 
@@ -571,13 +571,13 @@ tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen
 		return 0;
 	}
 
-	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Calling DeviceIoControl for DHCP_\n");
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Calling DeviceIoControl for DHCP_SET_OPT\n");
 	if (!DeviceIoControl(tapcfg->dev_handle,
 	                     TAP_IOCTL_CONFIG_DHCP_SET_OPT,
-	                     &buffer, /* InBuffer */
-	                     sizeof(buffer),
-	                     &buffer, /* OutBuffer */
-	                     sizeof(buffer),
+	                     buffer, /* InBuffer */
+	                     buflen,
+	                     buffer, /* OutBuffer */
+	                     buflen,
 	                     &len, NULL)) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Calling DeviceIoControl failed\n");
 		return -1;

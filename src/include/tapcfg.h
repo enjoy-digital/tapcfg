@@ -233,14 +233,15 @@ int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netb
  * using DHCP instead of basic IPv4 address setting. Basically this function
  * works only on Windows platform and should return -1 on all other systems.
  * It can be used for example to add DNS servers to the interface cleanly on
- * Windows. The buffer should include a DHCP option data as defined by
- * RFC2132 document.
+ * Windows. The buffer should include DHCP option data as defined by RFC2123.
+ * Notice that each call to this function will overwrite the values defined
+ * earlier!
  * @param tapcfg is a pointer to an inited structure
  * @param buffer is a pointer to the DHCP option data buffer
  * @param buflen is the length of the option data buffer
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
+int tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
 
 #endif /* TAPCFG_H */
 
