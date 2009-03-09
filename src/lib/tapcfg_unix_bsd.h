@@ -24,13 +24,57 @@
 static int
 tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
+	char buf[128];
 	int tap_fd = -1;
 	struct ifaddrs *ifa;
 
-#ifdef __NetBSD__
-	struct ifreq ifr;
+	buf[sizeof(buf)-1] = '\0';
 
-	tap_fd = open("/dev/tap", O_RDWR);
+	/* If we have a configured interface name, try that first */
+	if (ifname && strlen(ifname) <= MAX_IFNAME && !strrchr(ifname, ' ')) {
+		snprintf(buf, sizeof(buf)-1, "/dev/%s", ifname);
+		tap_fd = open(buf, O_RDWR);
+
+		/* Copy device name into buffer */
+		memmove(buf, buf+5, sizeof(buf)-5);
+	}
+	if (tap_fd < 0 && fallback) {
+		taplog_log(TAPLOG_INFO,
+		           "Opening device '%s' failed, trying to find another one\n",
+		           ifname);
+
+#ifdef __NetBSD__
+		tap_fd = open("/dev/tap", O_RDWR);
+		if (tap_fd >= 0) {
+			struct ifreq ifr;
+
+			memset(&ifr, 0, sizeof(struct ifreq));
+			if (ioctl(tap_fd, TAPGIFNAME, &ifr) == -1) {
+				taplog_log(TAPLOG_ERR,
+					   "Error getting the interface name: %s\n",
+					   strerror(errno));
+				return -1;
+			}
+			/* Copy device name into buffer */
+			strncpy(buf, ifr.ifr_name, sizeof(buf)-1);
+		}
+#else
+		{
+			int i;
+
+			/* Try all possible devices, because configured name failed */
+			for (i=0; i<16; i++) {
+				snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
+				tap_fd = open(buf, O_RDWR);
+				if (tap_fd >= 0) {
+					/* Found one! Copy device name into buffer */
+					memmove(buf, buf+5, sizeof(buf)-5);
+					break;
+				}
+			}
+		}
+#endif
+	}
 	if (tap_fd < 0) {
 		taplog_log(TAPLOG_ERR,
 			   "Couldn't open the tap device \"%s\"\n", ifname);
@@ -40,62 +84,9 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(struct ifreq));
-	if (ioctl(tap_fd, TAPGIFNAME, &ifr) == -1) {
-		taplog_log(TAPLOG_ERR,
-			   "Error getting the interface name: %s\n",
-			   strerror(errno));
-		return -1;
-	}
-
 	/* Set the device name to be the one we found finally */
-	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
-#else
-	char buf[128];
-	int i;
-
-	buf[sizeof(buf)-1] = '\0';
-
-	/* If we have a configured interface name, try that first */
-	if (ifname && strlen(ifname) <= MAX_IFNAME && !strrchr(ifname, ' ')) {
-		snprintf(buf, sizeof(buf)-1, "/dev/%s", ifname);
-		tap_fd = open(buf, O_RDWR);
-	}
-	if (tap_fd < 0 && !fallback) {
-		taplog_log(TAPLOG_ERR,
-			   "Couldn't open the tap device \"%s\"\n", ifname);
-		taplog_log(TAPLOG_INFO,
-			   "Check that you are running the program with "
-			   "root privileges and have TUN/TAP driver installed\n");
-		return -1;
-	} else if (tap_fd < 0) {
-		taplog_log(TAPLOG_INFO,
-		           "Opening device '%s' failed, trying to find another one\n",
-		           ifname);
-
-		/* Try all possible devices, because configured name failed */
-		for (i=0; i<16; i++) {
-			snprintf(buf, sizeof(buf)-1, "/dev/tap%u", i);
-			tap_fd = open(buf, O_RDWR);
-			if (tap_fd >= 0) {
-				/* Found one! */
-				break;
-			}
-		}
-		if (i == 16) {
-			taplog_log(TAPLOG_ERR,
-				   "Couldn't find a suitable tap device\n");
-			taplog_log(TAPLOG_INFO,
-				   "Check that you are running the program with "
-				   "root privileges and have TUN/TAP driver installed\n");
-			return -1;
-		}
-	}
-
-	/* Set the device name to be the one we found finally */
-	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf+5);
-	strncpy(tapcfg->ifname, buf+5, sizeof(tapcfg->ifname)-1);
-#endif
+	taplog_log(TAPLOG_DEBUG, "Device name %s\n", buf);
+	strncpy(tapcfg->ifname, buf, sizeof(tapcfg->ifname)-1);
 
 	/* Get MAC address on BSD, slightly trickier than Linux */
 	if (getifaddrs(&ifa) == 0) {
