@@ -348,7 +348,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 		return 0;
 	}
 
-	if ((flags ^ tapcfg->status) | TAPCFG_STATUS_IPV6_UP) {
+	if ((flags ^ tapcfg->status) & TAPCFG_STATUS_IPV6_UP) {
 		tapcfg_iface_prepare_ipv6(tapcfg,
 		                          flags | TAPCFG_STATUS_IPV6_UP);
 	}
@@ -366,7 +366,7 @@ tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
 #ifdef __sun__
 	/* On Solaris enabling IPv6 doesn't require enabling IPv4,
 	 * also the IFF_RUNNING flag doesn't need to be set */
-	if (flags | TAPCFG_STATUS_IPV4_UP) {
+	if (flags & TAPCFG_STATUS_IPV4_UP) {
 		ifr.ifr_flags |= IFF_UP;
 	} else {
 		ifr.ifr_flags &= ~IFF_UP;
