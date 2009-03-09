@@ -558,3 +558,31 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 
 	return 0;
 }
+
+int
+tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
+{
+	DWORD len;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	taplog_log(TAPLOG_DEBUG, "Calling DeviceIoControl for DHCP_\n");
+	if (!DeviceIoControl(tapcfg->dev_handle,
+	                     TAP_IOCTL_CONFIG_DHCP_SET_OPT,
+	                     &buffer, /* InBuffer */
+	                     sizeof(buffer),
+	                     &buffer, /* OutBuffer */
+	                     sizeof(buffer),
+	                     &len, NULL)) {
+		taplog_log(TAPLOG_ERR, "Calling DeviceIoControl failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+

@@ -215,6 +215,7 @@ int tapcfg_iface_get_mtu(tapcfg_t *tapcfg);
  * not cause trouble in any other functionality.
  * @param tapcfg is a pointer to an inited structure
  * @param mtu is the new maximum transfer unit after calling the function
+ * @return Negative value if an error happened, non-negative otherwise.
  */
 int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
 
@@ -225,8 +226,23 @@ int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
  * @param addr is a string containing the address in standard numeric format
  * @param netbits is the number of bits in the netmask for this subnet,
  *        must be between [1, 32]
+ * @return Negative value if an error happened, non-negative otherwise.
  */
 int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
+
+/**
+ * Set a DHCP option if the IPv4 address of the interface is configured by
+ * using DHCP instead of basic IPv4 address setting. Basically this function
+ * works only on Windows platform and should return -1 on all other systems.
+ * It can be used for example to add DNS servers to the interface cleanly on
+ * Windows. The buffer should include a DHCP option data as defined by
+ * RFC2132 document.
+ * @param tapcfg is a pointer to an inited structure
+ * @param buffer is a pointer to the DHCP option data buffer
+ * @param buflen is the length of the option data buffer
+ * @return Negative value if an error happened, non-negative otherwise.
+ */
+int tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
 
 #endif /* TAPCFG_H */
 

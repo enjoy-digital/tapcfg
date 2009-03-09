@@ -492,3 +492,9 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 
 	return 0;
 }
+
+int
+tapcfg_iface_set_dhcp_option(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
+{
+	return -1;
+}
