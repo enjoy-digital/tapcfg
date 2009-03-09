@@ -6,8 +6,6 @@ AddOption('--force-mingw',
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 env.Append(CFLAGS = ['-Wall', '-Werror', '-g', '-arch', 'ppc'])
-env.Append(LINKFLAGS = ['-arch', 'ppc'])
-env.Append(MACOSX_DEPLOYMENT_TARGET = '10.2')
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
