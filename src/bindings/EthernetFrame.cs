@@ -50,7 +50,7 @@ namespace TAPNet {
 		/* The IEEE header related fields */
 		public readonly byte DSAP, SSAP, Ctrl;
 
-		/* The OUI field of SNAP header */
+		/* The SNAP header related OUI field */
 		public readonly int OUI;
 
 
@@ -111,11 +111,6 @@ namespace TAPNet {
 					           data[hdrlen + 2];
 					payloadlen -= 3;
 					hdrlen += 3;
-
-					if (OUI != 0x000000) {
-						/* FIXME: Organization Unique Id is
-						   non-zero, should mark that */
-					}
 
 					this.EtherType = (data[hdrlen] << 8) | data[hdrlen+1];
 					payloadlen -= 2;
