@@ -483,7 +483,7 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	if (getaddrinfo(addrstr, NULL, &hints, &res)) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error converting string '%s' to "
-		           "address, check the format", addr);
+		           "address, check the format", addrstr);
 		return -1;
 	}
 	saddr = (struct sockaddr_in *) res->ai_addr;

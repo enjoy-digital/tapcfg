@@ -9,7 +9,7 @@ AddOption('--universal',
 
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
-env.Append(CFLAGS = ['-Wall', '-Werror', '-g'])
+env.Append(CFLAGS = ['-Wall', '-Werror', '-O2'])
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
