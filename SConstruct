@@ -13,7 +13,7 @@ env.Append(CFLAGS = ['-Wall', '-Werror', '-O2'])
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
-	env.Append(CPPDEFINES = ['WINVER=0x0501'])
+	env.Append(CPPDEFINES = ['WINVER=0x0500'])
 
 conf = Configure(env)
 conf.CheckLib('socket')

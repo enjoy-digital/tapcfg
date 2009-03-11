@@ -58,7 +58,7 @@ namespace TAPNet {
 			new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 		public EthernetFrame(byte[] data) {
-			this.Data = data;
+			this.Data = (byte[]) data.Clone();
 			Array.Copy(data, 0, this.Destination, 0, 6);
 			Array.Copy(data, 6, this.Source, 0, 6);
 			this.EtherType = (data[12] << 8) | data[13];
