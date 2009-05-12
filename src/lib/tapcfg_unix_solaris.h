@@ -431,39 +431,25 @@ tapcfg_ifaddr_ioctl(tapcfg_t *tapcfg,
 
 	sin = (struct sockaddr_in *) &ifr.ifr_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
-
-	if (ioctl(tapcfg->ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
-		           "Error trying to configure IPv4 address: %s",
-		           strerror(errno));
-		return -1;
-	}
-
-	memset(&ifr,  0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-
-	sin = (struct sockaddr_in *) &ifr.ifr_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr | ~mask;
-
-	if (ioctl(tapcfg->ctrl_fd, SIOCSIFBRDADDR, &ifr) == -1) {
-		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
-		           "Error trying to configure IPv4 broadcast: %s",
-		           strerror(errno));
-		return -1;
-	}
-
-	memset(&ifr,  0, sizeof(struct ifreq));
-	strcpy(ifr.ifr_name, tapcfg->ifname);
-
-	sin = (struct sockaddr_in *) &ifr.ifr_addr;
-	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = mask;
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error trying to configure IPv4 netmask: %s",
+		           strerror(errno));
+		return -1;
+	}
+
+	memset(&ifr,  0, sizeof(struct ifreq));
+	strcpy(ifr.ifr_name, tapcfg->ifname);
+
+	sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = addr;
+
+	if (ioctl(tapcfg->ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
+		           "Error trying to configure IPv4 address: %s",
 		           strerror(errno));
 		return -1;
 	}
