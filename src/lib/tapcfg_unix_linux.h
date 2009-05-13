@@ -65,7 +65,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	/* Get the hardware address of the TAP interface */
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	ret = ioctl(tap_fd, SIOCGIFHWADDR, &ifr);
+	ret = ioctl(tapcfg->ctrl_fd, SIOCGIFHWADDR, &ifr);
 	if (ret == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error getting the hardware address: %s",
