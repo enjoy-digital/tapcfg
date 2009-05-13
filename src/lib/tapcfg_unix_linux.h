@@ -21,7 +21,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
 	int tap_fd = -1;
 	struct ifreq ifr;
-	int ret;
+	int s, ret;
 
 	/* Create a new tap device */
 	tap_fd = open("/dev/net/tun", O_RDWR);
@@ -55,6 +55,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error setting the interface \"%s\": %s",
 		           ifname, strerror(errno));
+		close(tap_fd);
 		return -1;
 	}
 
@@ -62,17 +63,27 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Device name %s", ifr.ifr_name);
 	strncpy(tapcfg->ifname, ifr.ifr_name, sizeof(tapcfg->ifname)-1);
 
+	/* Create a temporary socket for SIOCGIFHWADDR */
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (!s) {
+		close(tap_fd);
+		return -1;
+	}
+
 	/* Get the hardware address of the TAP interface */
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
-	ret = ioctl(tapcfg->ctrl_fd, SIOCGIFHWADDR, &ifr);
+	ret = ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (ret == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error getting the hardware address: %s",
 		           strerror(errno));
+		close(tap_fd);
+		close(s);
 		return -1;
 	}
 	memcpy(tapcfg->hwaddr, ifr.ifr_hwaddr.sa_data, HWADDRLEN);
+	close(s);
 
 	return tap_fd;
 }

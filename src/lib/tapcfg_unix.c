@@ -107,17 +107,17 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 		fallback = 1;
 	}
 
+	tap_fd = tapcfg_start_dev(tapcfg, ifname, fallback);
+	if (tap_fd < 0) {
+		goto err;
+	}
+
 	ctrl_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ctrl_fd == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Error opening control socket for ioctls: %s",
 		           strerror(errno));
 		return -1;
-	}
-
-	tap_fd = tapcfg_start_dev(tapcfg, ifname, fallback);
-	if (tap_fd < 0) {
-		goto err;
 	}
 
 	/* Mark the current fds and mark thread as running */
