@@ -120,9 +120,9 @@ namespace TAPNet {
 				int ret;
 
 				if (value) {
-					ret = _tapcfg.iface_change_status(_handle, 0xffff);
+					ret = _tapcfg.iface_set_status(_handle, 0xffff);
 				} else {
-					ret = _tapcfg.iface_change_status(_handle, 0);
+					ret = _tapcfg.iface_set_status(_handle, 0);
 				}
 
 				if (ret < 0) {

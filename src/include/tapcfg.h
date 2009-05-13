@@ -189,7 +189,7 @@ int tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length);
 int tapcfg_iface_get_status(tapcfg_t *tapcfg);
 
 /**
- * Get the status of the interface. In Unix systems this means
+ * Set the status of the interface. In Unix systems this means
  * if the interface is up or down and in Windows it means if the
  * network cable of the virtual interface is connected or not.
  * @param tapcfg is a pointer to an inited structure
@@ -197,7 +197,7 @@ int tapcfg_iface_get_status(tapcfg_t *tapcfg);
  *        or TAPCFG_STATUS_ALL_UP, which is the most common use case
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags);
+int tapcfg_iface_set_status(tapcfg_t *tapcfg, int flags);
 
 /**
  * Get the maximum transfer unit for the device if possible.

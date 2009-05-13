@@ -335,7 +335,7 @@ tapcfg_iface_get_status(tapcfg_t *tapcfg)
 }
 
 int
-tapcfg_iface_change_status(tapcfg_t *tapcfg, int flags)
+tapcfg_iface_set_status(tapcfg_t *tapcfg, int flags)
 {
 	struct ifreq ifr;
 
