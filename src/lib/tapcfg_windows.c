@@ -101,7 +101,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	char tapname[1024];
 	HANDLE dev_handle;
 	DWORD len;
-	int i;
 
 	assert(tapcfg);
 
