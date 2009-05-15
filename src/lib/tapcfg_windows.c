@@ -97,7 +97,7 @@ tapcfg_destroy(tapcfg_t *tapcfg)
 int
 tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 {
-	char *adapterid;
+	char *adapterid = NULL;
 	char tapname[1024];
 	HANDLE dev_handle;
 	DWORD len;

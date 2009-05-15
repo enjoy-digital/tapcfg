@@ -9,11 +9,12 @@ AddOption('--universal',
 
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
-env.Append(CFLAGS = ['-Wall', '-Werror', '-O2'])
 
 if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
 	env.Append(CPPDEFINES = ['WINVER=0x0500'])
+
+env.Append(CFLAGS = ['-Wall', '-Werror', '-O2'])
 
 conf = Configure(env)
 conf.CheckLib('socket')
