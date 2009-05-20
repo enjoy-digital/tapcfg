@@ -167,15 +167,16 @@ dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
 		return -1;
 	}
 
-	if (p_phys_addr_ack->dl_addr_length != length) {
+	if (p_phys_addr_ack->dl_addr_length > length) {
 		return -1;
 	}
+	length = p_phys_addr_ack->dl_addr_length;
 
 	result = ((char *) p_phys_addr_ack) +
 	         p_phys_addr_ack->dl_addr_offset;
 	memcpy(hwaddr, result, length);
 
-	return 0;
+	return length;
 }
 
 int

@@ -292,7 +292,7 @@ tapcfg_start_dev(tapcfg_t *tapcfg, const char *ifname, int fallback)
 
 	/* SIOCGENADDR doesn't work on Solaris, so we need to use the attached DLPI interface
 	 * and use it to query the hardware address instead, also works for setting */
-	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr))) {
+	if (dlpi_get_physaddr(tap_fd, tapcfg->hwaddr, sizeof(tapcfg->hwaddr)) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
 		           "Couldn't query physical address from the DLPI interface: %s",
 		           strerror(errno));
