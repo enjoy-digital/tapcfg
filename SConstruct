@@ -7,6 +7,7 @@ AddOption('--universal',
           action='store_true', dest='universal', default=False,
           help='Create Mac 32-bit and 64-bit universal binaries')
 
+BuildDir('build', 'src')
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 
@@ -29,5 +30,5 @@ else:
 			env.Append(CPPDEFINES = ['DISABLE_IPV6'])
 env = conf.Finish()
 
-env.SConscript('src/SConscript', exports='env')
+env.SConscript('build/SConscript', exports='env')
 
