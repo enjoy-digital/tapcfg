@@ -2,6 +2,8 @@
 * Simplify the Solaris implementation by removing SIOCSIFBRDADDR
 * Fix getting hwaddress on some older versions of Linux kernel
 * Rename function tapcfg_iface_change_status, breaks API
+* Fix some compilation warnings that were shown on Windows
+* Small change in DLPI handling related to physaddr length
 
 Version 0.9.0
 -------------
