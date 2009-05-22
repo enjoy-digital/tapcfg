@@ -4,6 +4,7 @@
 * Rename function tapcfg_iface_change_status, breaks API
 * Fix some compilation warnings that were shown on Windows
 * Small change in DLPI handling related to physaddr length
+* Updates to the SCons build system scripts related to Mac OS X
 
 Version 0.9.0
 -------------
