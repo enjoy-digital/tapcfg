@@ -11,10 +11,15 @@
 #define TAPLOG_INFO        6       /* informational */
 #define TAPLOG_DEBUG       7       /* debug-level messages */
 
-#define TAPCFG_STATUS_ALL_DOWN   0
-#define TAPCFG_STATUS_IPV4_UP    1
-#define TAPCFG_STATUS_IPV6_UP    2
+#define TAPCFG_STATUS_ALL_DOWN   0x0000
 #define TAPCFG_STATUS_ALL_UP     0xffff
+
+#define TAPCFG_STATUS_IPV4_UP    0x0001
+#define TAPCFG_STATUS_IPV4_ALL   0x000f
+
+#define TAPCFG_STATUS_IPV6_UP    0x0010
+#define TAPCFG_STATUS_IPV6_RADV  0x0020
+#define TAPCFG_STATUS_IPV6_ALL   0x00f0
 
 typedef void (*taplog_callback_t)(char *msg);
 

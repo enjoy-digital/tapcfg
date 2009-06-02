@@ -349,9 +349,8 @@ tapcfg_iface_set_status(tapcfg_t *tapcfg, int flags)
 		return 0;
 	}
 
-	if ((flags ^ tapcfg->status) & TAPCFG_STATUS_IPV6_UP) {
-		tapcfg_iface_prepare_ipv6(tapcfg,
-		                          flags | TAPCFG_STATUS_IPV6_UP);
+	if ((flags ^ tapcfg->status) & TAPCFG_STATUS_IPV6_ALL) {
+		tapcfg_iface_prepare_ipv6(tapcfg, flags);
 	}
 
 	memset(&ifr, 0, sizeof(ifr));

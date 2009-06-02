@@ -185,9 +185,10 @@ tapcfg_attach_ipv6(const char *ifname)
 #endif
 
 static void
-tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
+tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 {
-	if (!enabled)
+	/* Do nothing if IPv6 is not enabled */
+	if (!(flags | TAPCFG_STATUS_IPV6_UP))
 		return;
 
 #if defined(IPV6CTL_AUTO_LINKLOCAL)
@@ -197,6 +198,14 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 1);
 	}
 #endif
+#ifdef __APPLE__
+	tapcfg_attach_ipv6(tapcfg->ifname);
+#endif
+
+	/* Return if route advertisements are not requested */
+	if (!(flags | TAPCFG_STATUS_IPV6_RADV))
+		return;
+
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)
 	if (getinet6sysctl(IPV6CTL_FORWARDING) == 1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_INFO,
@@ -208,10 +217,6 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 		           "Setting sysctl net.inet6.ip6.accept_rtadv: 0 -> 1");
 		setinet6sysctl(IPV6CTL_ACCEPT_RTADV, 1);
 	}
-#endif
-
-#ifdef __APPLE__
-	tapcfg_attach_ipv6(tapcfg->ifname);
 #endif
 }
 

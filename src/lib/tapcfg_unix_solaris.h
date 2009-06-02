@@ -360,7 +360,7 @@ tapcfg_stop_dev(tapcfg_t *tapcfg)
 }
 
 static void
-tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
+tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 {
 	struct lifreq lifr;
 	int ctrl_fd;
@@ -383,7 +383,7 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int enabled)
 		return;
 	}
 
-	if (enabled) {
+	if (flags | TAPCFG_STATUS_IPV6_UP) {
 		lifr.lifr_flags |= IFF_UP;
 	} else {
 		lifr.lifr_flags &= ~IFF_UP;
