@@ -188,7 +188,7 @@ static void
 tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 {
 	/* Do nothing if IPv6 is not enabled */
-	if (!(flags | TAPCFG_STATUS_IPV6_UP))
+	if (!(flags & TAPCFG_STATUS_IPV6_UP))
 		return;
 
 #if defined(IPV6CTL_AUTO_LINKLOCAL)
@@ -203,7 +203,7 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 #endif
 
 	/* Return if route advertisements are not requested */
-	if (!(flags | TAPCFG_STATUS_IPV6_RADV))
+	if (!(flags & TAPCFG_STATUS_IPV6_RADV))
 		return;
 
 #if defined(IPV6CTL_FORWARDING) && defined(IPV6CTL_ACCEPT_RTADV)

@@ -383,7 +383,7 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 		return;
 	}
 
-	if (flags | TAPCFG_STATUS_IPV6_UP) {
+	if (flags & TAPCFG_STATUS_IPV6_UP) {
 		lifr.lifr_flags |= IFF_UP;
 	} else {
 		lifr.lifr_flags &= ~IFF_UP;
