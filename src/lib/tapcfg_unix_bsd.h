@@ -153,7 +153,7 @@ setinet6sysctl(int code, int newval)
 }
 #endif
 
-#ifdef __APPLE__
+#if defined(SIOCPROTOATTACH_IN6) && defined(SIOCLL_START)
 #include <netinet/in_var.h>
 
 /* This function is based on ip6tool.c of Darwin sources */
@@ -182,6 +182,12 @@ tapcfg_attach_ipv6(const char *ifname)
 
 	return 0;
 }
+#else
+static int
+tapcfg_attach_ipv6(const char *ifname)
+{
+	return 0;
+}
 #endif
 
 static void
@@ -198,9 +204,7 @@ tapcfg_iface_prepare_ipv6(tapcfg_t *tapcfg, int flags)
 		setinet6sysctl(IPV6CTL_AUTO_LINKLOCAL, 1);
 	}
 #endif
-#ifdef __APPLE__
 	tapcfg_attach_ipv6(tapcfg->ifname);
-#endif
 
 	/* Return if route advertisements are not requested */
 	if (!(flags & TAPCFG_STATUS_IPV6_RADV))
