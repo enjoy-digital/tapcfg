@@ -6,6 +6,7 @@
 * Small change in DLPI handling related to physaddr length
 * Updates to the SCons build system scripts related to Mac OS X
 * Redefine the TAPCFG_STATUS flags for flexibility, breaks API
+* Some OSX 10.4 defines not available on 10.5, fix handling
 
 Version 0.9.0
 -------------
