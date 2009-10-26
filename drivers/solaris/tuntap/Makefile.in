@@ -20,15 +20,17 @@
 
 # Modified by Kazuyoshi <admin2@whiteboard.ne.jp>
 # Modified for supporting Ethernet tunneling as known as TAP.
-# $Date: 2006/04/28 15:38:13 $, $Revision: 1.2 $
+# $Date: 2009/06/07 06:28:43 $, $Revision: 1.5 $
 
 CONFIGURE_FILES = Makefile config.status config.cache config.h config.log
 
-CC = gcc
+CC = @CC@
 LD = ld
+RM = rm
 
 DEFS = @DEFS@
-CFLAGS = $(DEFS) -O2 -Wall -D_KERNEL -I. @M64_OPT@
+CFLAGS = $(DEFS) @CFLAGS@ -D_KERNEL -I.
+LD_FLAGS = @LD_OPT@
 
 ADD_DRV = /usr/sbin/add_drv
 REM_DRV = /usr/sbin/rem_drv
@@ -37,11 +39,12 @@ DRV_CONF_DIR = /usr/kernel/drv
 
 INSTALL = @INSTALL@
 
-all: modules
+all: tun tap
 
-modules: tun.o tap.o
-	$(LD) -r -o tun tun.o
-	$(LD) -r -o tap tap.o
+tun: tun.o
+	$(LD) $(LD_FLAGS) -r -o tun tun.o
+tap: tap.o
+	$(LD) $(LD_FLAGS) -r -o tap tap.o
 
 tun.o: tun.c if_tun.h
 	$(CC) $(CFLAGS) -c tun.c -o tun.o -DTUNTAP_TUN
@@ -49,17 +52,26 @@ tun.o: tun.c if_tun.h
 tap.o: tun.c if_tun.h
 	$(CC) $(CFLAGS) -c tun.c -o tap.o -DTUNTAP_TAP
 
-install: modules 
-	$(INSTALL) -m 644 -o root -g root if_tun.h /usr/include/net 
-	$(INSTALL) -m 644 -o root -g root tun $(DRV_DIR)
-	$(INSTALL) -m 644 -o root -g root tap $(DRV_DIR)
-	$(INSTALL) -m 644 -o root -g root tun.conf $(DRV_CONF_DIR)
-	$(INSTALL) -m 644 -o root -g root tap.conf $(DRV_CONF_DIR)
-	-$(REM_DRV) tun >/dev/null 2>&1
-	-$(REM_DRV) tap >/dev/null 2>&1
-	$(ADD_DRV) tun	
-	$(ADD_DRV) tap
+install: tun tap
+	$(INSTALL) -d -m 0755 -o root -g bin $(DESTDIR)/usr/include/net
+	$(INSTALL) -d -m 0755 -o root -g sys $(DESTDIR)$(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root if_tun.h $(DESTDIR)/usr/include/net 
+	$(INSTALL) -m 644 -o root -g root tun $(DESTDIR)$(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root tap $(DESTDIR)$(DRV_DIR)
+	$(INSTALL) -m 644 -o root -g root tun.conf $(DESTDIR)$(DRV_CONF_DIR)
+	$(INSTALL) -m 644 -o root -g root tap.conf $(DESTDIR)$(DRV_CONF_DIR)
+	-[ -z "$(DESTDIR)" ]&& $(REM_DRV) tun >/dev/null 2>&1
+	-[ -z "$(DESTDIR)" ]&& $(REM_DRV) tap >/dev/null 2>&1
+	-[ -z "$(DESTDIR)" ]&& $(ADD_DRV) tun	
+	-[ -z "$(DESTDIR)" ]&& $(ADD_DRV) tap
 
+uninstall:
+	-[ -z "$(DESTDIR)" ]&& $(REM_DRV) tun >/dev/null 2>&1
+	-[ -z "$(DESTDIR)" ]&& $(REM_DRV) tap >/dev/null 2>&1
+	-[ -z "$(DESTDIR)" ]&& $(RM) $(DESTDIR)$(DRV_CONF_DIR)/tun.conf
+	-[ -z "$(DESTDIR)" ]&& $(RM) $(DESTDIR)$(DRV_CONF_DIR)/tap.conf
+	-[ -z "$(DESTDIR)" ]&& $(RM) $(DESTDIR)$(DRV_DIR)/tun
+	-[ -z "$(DESTDIR)" ]&& $(RM) $(DESTDIR)$(DRV_DIR)/tap
 clean:
 	rm -f tun tap *.o *~
 

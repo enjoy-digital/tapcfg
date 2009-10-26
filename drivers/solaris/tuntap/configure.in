@@ -18,45 +18,70 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl Modified by Kazuyoshi <admin2@whiteboard.ne.jp>
 dnl Modified for supporting Ethernet tunneling as known as TAP.
-dnl $Date: 2007/06/24 15:00:44 $, $Revision: 1.6 $
+dnl $Date: 2009/09/14 07:43:20 $, $Revision: 1.11 $
 
 AC_INIT
 AC_PROG_CC
 AC_PROG_INSTALL
 
+AC_ARG_ENABLE([64bit],
+   [  --disable-64bit         disable build of 64-bit driver],
+[use_64bit="$enableval"],[use_64bit=yes])
+
+if test "$use_64bit" = "yes"
+then
 AC_CHECK_PROG(ISAINFO, isainfo, yes, no, /usr/bin)
-if test "$ISAINFO" = "yes" ;
+else
+ISAINFO=no
+fi
+if test "$ISAINFO" = "yes" -a "$use_64bit" = "yes";
 then 
     KARCH=`/usr/bin/isainfo -k`
 else
-    KARCH='i386'
+    KARCH=`uname -p`
 fi
-
+IS_GNU_LD=`ld --version 2>&1 | grep  GNU`
+if test "$GCC" = yes; then
+	CFLAGS="$CFLAGS -Wall"
+fi
 case $KARCH in
      'sparc' | 'i386')
-	M64_OPT=""
 	DRV_DIR="/usr/kernel/drv"
 	;;
       'sparcv9')
-	M64_OPT="-m64"
+	CFLAGS="$CFLAGS -m64"
 	DRV_DIR="/usr/kernel/drv/sparcv9"
+	if test -n "$IS_GNU_LD";
+	then
+		LD_OPT="-melf64_sparc"
+	fi
 	;;
       'amd64')
-	M64_OPT="-m64 -mcmodel=kernel -mno-red-zone"
+	if test "$GCC" = yes; then
+		CFLAGS="$CFLAGS -m64 -mcmodel=kernel -mno-red-zone"
+	else
+		CFLAGS="$CFLAGS -m64 -xmodel=kernel"
+	fi
 	DRV_DIR="/usr/kernel/drv/amd64"
+	if test -n "$IS_GNU_LD";
+	then
+		LD_OPT="-melf_x86_64"
+	fi
 	;;
 esac
 REL="1.1"
 TUN_VER="$REL `date '+%m/%d/%Y'`"; export TUN_VER
 
 AC_ARG_ENABLE(debug,
-   --enable-debug        Enable debuging,
+[  --enable-debug          Enable debuging],
    AC_DEFINE(TUN_DEBUG, 1)
 )
 
 AC_DEFINE_UNQUOTED(TUN_VER, "$TUN_VER")
-AC_SUBST(M64_OPT)
+AC_SUBST(CFLAGS)
+AC_SUBST(LD_OPT)
 AC_SUBST(DRV_DIR)
+AC_SUBST(CC)
 
 AC_OUTPUT(Makefile)
 

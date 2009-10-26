@@ -21,7 +21,7 @@
 /*
  *  Modified by: Kazuyoshi <admin2@whiteboard.ne.jp>
  *  Modified for supporting Ethernet tunneling as known as TAP.
- *  $Date: 2006/04/28 15:38:13 $, $Revision: 1.2 $
+ *  $Date: 2009/06/07 06:28:43 $, $Revision: 1.3 $
  */
 
 #ifndef	_SYS_IF_TUN_H
