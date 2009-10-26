@@ -4,7 +4,7 @@
  * Some utilities and misc stuff.
  */
 /*
- * Copyright (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler <mattias.nissler@gmx.de>
+ * Copyright (c) 2004, 2005, 2006, 2007, 2008, 2009 Mattias Nissler <mattias.nissler@gmx.de>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
@@ -32,24 +32,13 @@
 
 extern "C" {
 
-#include <mach/vm_types.h>
-
-/* Why is there no stable public memory allocation API declared in the Kernel.framework headers?
- * For now, get kalloc (this is from XNU/osfmk/kern/kalloc.h)
- */
-extern void *kalloc(vm_size_t size);
-extern void kfree(void *data, vm_size_t size);
-
 /* In Darwin 8 (OS X Tiger) there is a problem with struct selinfo. It was made `private' to the
  * kernel, so its definition is not available from the headers in Kernel.framework. However, we need
  * to declare something :-(
  */
 struct selinfo {
-	char data[64];	/* should be enough... */
+	char data[128];	/* should be enough... */
 };
-
-/* Declare delay(), the kernel headers don't have it?!? */
-void delay(int usec);
 
 } /* extern "C" */
 

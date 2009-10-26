@@ -5,7 +5,7 @@
  * tap_interface.
  */
 /*
- * Copyright (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler <mattias.nissler@gmx.de>
+ * Copyright (c) 2004, 2005, 2006, 2007, 2008, 2009 Mattias Nissler <mattias.nissler@gmx.de>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
@@ -54,7 +54,7 @@ extern "C" {
 extern "C" {
 
 errno_t tuntap_if_output(ifnet_t ifp, mbuf_t m);
-errno_t tuntap_if_ioctl(ifnet_t ifp, u_int32_t cmd, void *arg);
+errno_t tuntap_if_ioctl(ifnet_t ifp, long unsigned int cmd, void *arg);
 errno_t tuntap_if_set_bpf_tap(ifnet_t ifp, bpf_tap_mode mode, int (*cb)(ifnet_t, mbuf_t));
 errno_t tuntap_if_demux(ifnet_t ifp, mbuf_t m, char *header, protocol_family_t *proto);
 errno_t tuntap_if_framer(ifnet_t ifp, mbuf_t *m, const struct sockaddr *dest,
@@ -264,7 +264,7 @@ class tuntap_interface {
 
 		/* interface functions. friends and implementation methods */
 		friend errno_t tuntap_if_output(ifnet_t ifp, mbuf_t m);
-		friend errno_t tuntap_if_ioctl(ifnet_t ifp, u_int32_t cmd, void *arg);
+		friend errno_t tuntap_if_ioctl(ifnet_t ifp, long unsigned int cmd, void *arg);
 		friend errno_t tuntap_if_set_bpf_tap(ifnet_t ifp, bpf_tap_mode mode,
 				int (*cb)(ifnet_t, mbuf_t));
 		friend errno_t tuntap_if_demux(ifnet_t ifp, mbuf_t m, char *header,

@@ -6,7 +6,8 @@
 # (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler
 #
 
-OBJS = ../tuntap.o ../tuntap_mgr.o ../lock.o kmod.o tun_inet_proto.o tun_inet6_proto.o tun.o
+OBJS = ../tuntap.o ../tuntap_mgr.o ../lock.o ../mem.o \
+	kmod.o tun_inet_proto.o tun_inet6_proto.o tun.o
 KMOD_BIN = tun
 BUNDLE_DIR = ../..
 BUNDLE_NAME = tun.kext
@@ -19,16 +20,13 @@ BUNDLE_SIGNATURE = ????
 BUNDLE_PACKAGETYPE = KEXT
 BUNDLE_VERSION = $(TUN_KEXT_VERSION)
 
-INCLUDE = -I.. \
-	-I/System/Library/Frameworks/Kernel.framework/Headers \
-	-I/System/Library/Frameworks/Kernel.framework/Headers/bsd
-CFLAGS = -static -nostdinc -Wall -msoft-float -mlong-branch -force_cpusubtype_ALL -fno-builtin \
-	-arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk/ \
+INCLUDE = -I.. -I/System/Library/Frameworks/Kernel.framework/Headers
+CFLAGS = -Wall -mkernel -force_cpusubtype_ALL \
+	-fno-builtin -fno-stack-protector -arch ppc -arch i386 -arch x86_64 \
 	-DKERNEL -D__APPLE__ -DKERNEL_PRIVATE -DTUNTAP_VERSION=\"$(TUNTAP_VERSION)\" \
-	-DTAP_KEXT_VERSION=\"$(TUN_KEXT_VERSION)\"
-CCFLAGS = $(CFLAGS) -nostdinc++ -fapple-kext -fno-exceptions -fno-rtti
-LDFLAGS = -static -Wall -nostdlib -r -lcc_kext \
-	-arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk/
+	-DTUN_KEXT_VERSION=\"$(TUN_KEXT_VERSION)\"
+CCFLAGS = $(CFLAGS)
+LDFLAGS = -Wall -mkernel -nostdlib -r -lcc_kext -arch ppc -arch i386 -arch x86_64 -Xlinker -kext
 
 CCP = g++
 CC = gcc

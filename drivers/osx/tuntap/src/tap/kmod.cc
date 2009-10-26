@@ -4,7 +4,7 @@
  * Kext definition (it is a mach kmod really...)
  */
 /*
- * Copyright (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler <mattias.nissler@gmx.de>
+ * Copyright (c) 2004, 2005, 2006, 2007, 2008, 2009 Mattias Nissler <mattias.nissler@gmx.de>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
@@ -28,6 +28,7 @@
  */
 
 #include "tap.h"
+#include "mem.h"
 
 extern "C" {
 
@@ -42,6 +43,8 @@ static tap_manager *mgr;
  */
 static kern_return_t tap_module_start(struct kmod_info *ki, void *data)
 {
+	mem_initialize(TAP_FAMILY_NAME);
+
 	/* initialize locking */
 	if (!tt_lock::initialize())
 		return KMOD_RETURN_FAILURE;
@@ -50,7 +53,7 @@ static kern_return_t tap_module_start(struct kmod_info *ki, void *data)
 	mgr = new tap_manager();
 
 	if (mgr != NULL) {
-		if (mgr->initialize(TAP_IF_COUNT, TAP_FAMILY_NAME))
+		if (mgr->initialize(TAP_IF_COUNT, (char *) TAP_FAMILY_NAME))
 			return KMOD_RETURN_SUCCESS;
 
 		delete mgr;
@@ -78,6 +81,8 @@ static kern_return_t tap_module_stop(struct kmod_info *ki, void *data)
 
 	/* clean up locking */
 	tt_lock::shutdown();
+
+	mem_shutdown();
 
 	return KMOD_RETURN_SUCCESS;
 } 

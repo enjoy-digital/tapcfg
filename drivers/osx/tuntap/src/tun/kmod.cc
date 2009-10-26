@@ -4,7 +4,7 @@
  * Kext definition (it is a mach kmod really...)
  */
 /*
- * Copyright (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler <mattias.nissler@gmx.de>
+ * Copyright (c) 2004, 2005, 2006, 2007, 2008, 2009 Mattias Nissler <mattias.nissler@gmx.de>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
@@ -28,6 +28,7 @@
  */
 
 #include "tun.h"
+#include "mem.h"
 
 extern "C" {
 
@@ -42,6 +43,8 @@ static tun_manager *mgr;
  */
 static kern_return_t tun_module_start(struct kmod_info *ki, void *data)
 {
+	mem_initialize(TUN_FAMILY_NAME);
+
 	/* initialize locking */
 	if (!tt_lock::initialize())
 		return KMOD_RETURN_FAILURE;
@@ -79,10 +82,12 @@ static kern_return_t tun_module_stop(struct kmod_info *ki, void *data)
 	/* clean up locking */
 	tt_lock::shutdown();
 
+	mem_shutdown();
+
 	return KMOD_RETURN_SUCCESS;
 }
 
-KMOD_DECL(tun, TAP_KEXT_VERSION)
+KMOD_DECL(tun, TUN_KEXT_VERSION)
 
 }
 

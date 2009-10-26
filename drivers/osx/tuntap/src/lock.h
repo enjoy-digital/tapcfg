@@ -4,7 +4,7 @@
  * Locking is not as straightforward for Tiger. So declare our own locking class.
  */
 /*
- * Copyright (c) 2004, 2005, 2006, 2007, 2008 Mattias Nissler <mattias.nissler@gmx.de>
+ * Copyright (c) 2004, 2005, 2006, 2007, 2008, 2009 Mattias Nissler <mattias.nissler@gmx.de>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
@@ -37,7 +37,7 @@ extern "C" {
 
 }
 
-/* our own locking class. This is the interface used for mutexes and rw locks (see below) */
+/* our own locking class. declares the common interface of the locking primitives. */
 class tt_lock {
 	
 	protected:
@@ -55,6 +55,11 @@ class tt_lock {
 		/* locking */
 		virtual void lock() = 0;
 		virtual void unlock() = 0;
+
+		/* monitor primitives */
+		virtual void sleep(void* cond) = 0;
+		virtual void sleep(void* cond, uint64_t) = 0;
+		virtual void wakeup(void* cond) = 0;
 };
 
 /* simple mutex */
@@ -62,51 +67,19 @@ class tt_mutex : public tt_lock {
 
 	private:
 		/* underlying darwin lock */
-		lck_mtx_t *lck;
+		lck_rw_t *lck;
 
 	public:
 		tt_mutex();
 		virtual ~tt_mutex();
 
-		virtual void lock();
-		virtual void unlock();
+		void lock();
+		void unlock();
 
-		/* The mutex can also be used as monitor. */
-		void sleep(void* cond, struct timespec* to);
+		/* monitor primitives */
+		void sleep(void* cond);
+		void sleep(void* cond, uint64_t);
 		void wakeup(void* cond);
-
-};
-
-/* read-write lock. Using the object directly you get read locking.  For write locking, pass the
- * result of write_lock() to auto_lock. */
-class tt_rwlock : public tt_lock {
-	
-	private:
-		/* underlying darwin lock */
-		lck_rw_t *lck;
-
-		class wl : public tt_lock {
-			protected:
-				lck_rw_t *lck;
-				friend class tt_rwlock;
-
-			public:
-				virtual void lock();
-				virtual void unlock();
-
-		} w_lock;
-
-	public:
-		/* intialize a new lock. */
-		tt_rwlock();
-		virtual ~tt_rwlock();
-
-		/* return a pointer to the write locking object */
-		tt_lock *write_lock();
-
-		virtual void lock();
-		virtual void unlock();
-
 };
 
 /* A very special locking class that we use to track threads that enter and leave the character
@@ -143,6 +116,11 @@ class tt_gate : public tt_lock {
 		void lock();
 		/* unlock the gate */
 		void unlock();
+
+		/* monitor primitives */
+		void sleep(void* cond);
+		void sleep(void* cond, uint64_t);
+		void wakeup(void* cond);
 };
 
 /* auto_lock and auto_rwlock serve as automatic lock managers: Create an object, passing the
