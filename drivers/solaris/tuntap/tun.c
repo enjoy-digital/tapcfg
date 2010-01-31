@@ -999,6 +999,16 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
   register struct tunppa *ppa;
   register struct tunstr *tmp;
   mblk_t *nmp;
+  u_short type = 0; /* In TAP mode, it only gets passed to tun_initdata_ind(), which ignores it */
+#if defined(TUNTAP_TUN)
+  unsigned char ip_v; /* IP version */
+
+  ip_v = mp->b_rptr[0] >> 4;
+  if(ip_v == 6)
+     type = ETHERTYPE_IPV6;
+  else
+     type = ETHERTYPE_IP;
+#endif
 
   if( !(ppa = str->ppa) ){
      /* Stream is not attached to PPA. Ignore frame. */
@@ -1020,14 +1030,12 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
 
         if( tmp->flags & TUN_RAW ){
 #ifdef TUNTAP_TUN
-           if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) )
+           if( (nmp=tun_eth_hdr(nmp, type)) )
 #endif
               putnext(tmp->rq, nmp);
            continue;
         }
-        /* In the case of TAP Driver, type(=ETHERTYP_IP) is needless,
-         * since type is resolved from ether header within tun_unitdata_ind() */
-        if( (nmp=tun_unitdata_ind(nmp, ETHERTYPE_IP)) )
+        if( (nmp=tun_unitdata_ind(nmp, type)) )
            putnext(tmp->rq, nmp);
      }
   }
@@ -1055,25 +1063,24 @@ static void tun_frame(queue_t *wq, mblk_t *mp, int q)
         /* Check if frame is eligible for the Protocol stream */
          if( tun_frame_is_eligible((struct ether_header *)mp->b_rptr, tmp) == 0)
             continue;
-        if( canputnext(tmp->rq) ){
 #elif defined(TUNTAP_TUN)
-        if( tmp->sap==ETHERTYPE_IP &&  canputnext(tmp->rq) ){
-#endif            
-	   if( !(nmp = dupmsg(mp)) )
-	      continue;
+         if (tmp->sap != type)
+            continue;
+#endif
+         if( canputnext(tmp->rq) ){
+           if( !(nmp = dupmsg(mp)))
+                 continue;
 
   	   DBG(CE_CONT,"tun: frame %lu -> proto %p\n", (ulong_t)msgdsize(nmp), tmp);
 
            if( tmp->flags & TUN_RAW ){
 #ifdef TUNTAP_TUN
-                 if( (nmp=tun_eth_hdr(nmp, ETHERTYPE_IP)) )
+                 if( (nmp=tun_eth_hdr(nmp, type)) )
 #endif
 	         putnext(tmp->rq, nmp);
 	      continue;
 	   }
-           /* In the case of TAP Driver, type(=ETHERTYP_IP) is needless,
-            * since type is resolved from ether header within tun_unitdata_ind() */
-           if( (nmp=tun_unitdata_ind(nmp, ETHERTYPE_IP)) )
+           if( (nmp=tun_unitdata_ind(nmp, type)) )
               putnext(tmp->rq, nmp);
 	}
      }
