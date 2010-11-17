@@ -34,7 +34,7 @@ if GetOption('gcc32'):
 	env.Append(CFLAGS = ['-m32'])
 	env.Append(CPPFLAGS = ['-m32'])
 	env.Append(CXXFLAGS = ['-m32'])
-	env.Append(LINKFLAGS = ['-m64'])
+	env.Append(LINKFLAGS = ['-m32'])
 
 if GetOption('gcc64'):
 	env.Append(CFLAGS = ['-m64'])
