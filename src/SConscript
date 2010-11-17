@@ -15,7 +15,8 @@ else:
 
 # Compile the static library into lib directory and shared library
 # for the bindings
-libenv.Library('tapcfg', libobj, install=False)
+if not libenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']:
+	libenv.Library('tapcfg', libobj, install=False)
 libenv.SharedLibrary('tapcfg', shlibobj, install=False)
 
 # If we want to create universal binaries of the dynamic library on Mac, do it here
@@ -53,7 +54,7 @@ appenv.Append(LIBPATH = ['.'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
 # Compile the daemon for testing
-tapserverobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
-appenv.Program('tapdemo', [tapserverobj,'daemon/tapdemo.c'], install=False)
-appenv.Program('tapcfgd', [tapserverobj,'daemon/client.c','daemon/daemon.c','daemon/main.c'], install=False)
+#tapserverobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
+#appenv.Program('tapdemo', [tapserverobj,'daemon/tapdemo.c'], install=False)
+#appenv.Program('tapcfgd', [tapserverobj,'daemon/client.c','daemon/daemon.c','daemon/main.c'], install=False)
 

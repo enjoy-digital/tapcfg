@@ -3,11 +3,15 @@ AddOption('--force-mingw',
           action='store_true', dest='mingw', default=False,
           help='Cross compile using MinGW for Windows')
 
+AddOption('--force-mingw64',
+          action='store_true', dest='mingw64', default=False,
+          help='Cross compile using MinGW for Windows 64-bit')
+
 AddOption('--universal',
           action='store_true', dest='universal', default=False,
           help='Create Mac 32-bit and 64-bit universal binaries')
 
-BuildDir('build', 'src')
+VariantDir('build', 'src')
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 
@@ -15,7 +19,10 @@ if GetOption('mingw'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
 	env.Append(CPPDEFINES = ['WINVER=0x0500'])
 
-env.Append(CFLAGS = ['-Wall', '-Werror', '-O2'])
+if GetOption('mingw64'):
+	env.Tool('crossmingw64', toolpath = ['scons-tools'])
+
+env.Append(CFLAGS = ['-Wall', '-Werror', '-O1'])
 
 conf = Configure(env)
 conf.CheckLib('socket')
