@@ -15,7 +15,7 @@ AddOption('--force-64bit',
           action='store_true', dest='gcc64', default=False,
           help='Always compile using 64-bit compiler flags')
 
-AddOption('--universal',
+AddOption('--build-universal',
           action='store_true', dest='universal', default=False,
           help='Create Mac 32-bit and 64-bit universal binaries')
 
