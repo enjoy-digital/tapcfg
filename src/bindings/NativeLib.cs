@@ -57,9 +57,10 @@ namespace TAPNet {
 				return new NativeLib32();
 		}
 
-		private delegate void InternalLogCallback(int level, IntPtr msg_ptr);
-
 		private LogCallback _logCallback = null;
+		private InternalLogCallback _internalLogCallback = null;
+
+		private delegate void InternalLogCallback(int level, IntPtr msg_ptr);
 		private void MarshalLogCallback(int level, IntPtr msg_ptr) {
 			LogLevel logLevel = LogLevel.Unknown;
 			if (level == 0)
@@ -85,10 +86,14 @@ namespace TAPNet {
 		}
 
 		private class NativeLib32 : NativeLib {
+			public NativeLib32() {
+				_internalLogCallback = new InternalLogCallback(MarshalLogCallback);
+			}
+
 			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
 				_logCallback = cb;
 				if (_logCallback != null) {
-					tapcfg_set_log_callback(tapcfg, new InternalLogCallback(MarshalLogCallback));
+					tapcfg_set_log_callback(tapcfg, _internalLogCallback);
 				} else {
 					tapcfg_set_log_callback(tapcfg, null);
 				}
@@ -214,10 +219,14 @@ namespace TAPNet {
 		}
 
 		private class NativeLib64 : NativeLib {
+			public NativeLib64() {
+				_internalLogCallback = new InternalLogCallback(MarshalLogCallback);
+			}
+
 			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
 				_logCallback = cb;
 				if (_logCallback != null) {
-					tapcfg_set_log_callback(tapcfg, new InternalLogCallback(MarshalLogCallback));
+					tapcfg_set_log_callback(tapcfg, _internalLogCallback);
 				} else {
 					tapcfg_set_log_callback(tapcfg, null);
 				}
