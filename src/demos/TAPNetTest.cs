@@ -21,7 +21,7 @@ using System.Threading;
 public class TAPNetTest {
 	private static void Main(string[] args) {
 		VirtualDevice dev = new VirtualDevice();
-		dev.LogCallback = new TAPLogCallback(LogCallback);
+		dev.LogCallback = new LogCallback(LogCallback);
 		dev.Start("Device name", true);
 		Console.WriteLine("Got device name: {0}", dev.DeviceName);
 		Console.WriteLine("Got device hwaddr: {0}", BitConverter.ToString(dev.HWAddress));

@@ -17,8 +17,10 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace TAPNet {
+	public delegate void LogCallback(string msg);
+
 	public abstract class NativeLib {
-		public abstract void set_log_callback(IntPtr tapcfg, TAPLogCallback cb);
+		public abstract void set_log_callback(IntPtr tapcfg, LogCallback cb);
 		public abstract IntPtr init();
 		public abstract void destroy(IntPtr tapcfg);
 		public abstract int start(IntPtr tapcfg, string ifname, bool fallback);
@@ -44,9 +46,23 @@ namespace TAPNet {
 				return new NativeLib32();
 		}
 
+		private delegate void InternalLogCallback(IntPtr msg_ptr);
+
+		private LogCallback _logCallback = null;
+		private void MarshalLogCallback(IntPtr msg_ptr) {
+			ICustomMarshaler marshaler = new UTF8Marshaler();
+			string msg = (string) marshaler.MarshalNativeToManaged(msg_ptr);
+			_logCallback(msg);
+		}
+
 		private class NativeLib32 : NativeLib {
-			public override void set_log_callback(IntPtr tapcfg, TAPLogCallback cb) {
-				tapcfg_set_log_callback(tapcfg, cb);
+			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
+				_logCallback = cb;
+				if (_logCallback != null) {
+					tapcfg_set_log_callback(tapcfg, new InternalLogCallback(MarshalLogCallback));
+				} else {
+					tapcfg_set_log_callback(tapcfg, null);
+				}
 			}
 
 			public override IntPtr init() {
@@ -58,7 +74,11 @@ namespace TAPNet {
 			}
 
 			public override int start(IntPtr tapcfg, string ifname, bool fallback) {
-				return tapcfg_start(tapcfg, ifname, fallback ? 1 : 0);
+				ICustomMarshaler marshaler = new UTF8Marshaler();
+				IntPtr ifname_ptr = marshaler.MarshalManagedToNative(ifname);
+				int ret = tapcfg_start(tapcfg, ifname_ptr, fallback ? 1 : 0);
+				marshaler.CleanUpNativeData(ifname_ptr);
+				return ret;
 			}
 
 			public override void stop(IntPtr tapcfg) {
@@ -82,7 +102,11 @@ namespace TAPNet {
 			}
 
 			public override string get_ifname(IntPtr tapcfg) {
-				return tapcfg_get_ifname(tapcfg);
+				ICustomMarshaler marshaler = new UTF8Marshaler();
+				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
+				string ret = (string) marshaler.MarshalNativeToManaged(ret_ptr);
+				marshaler.CleanUpNativeData(ret_ptr);
+				return ret;
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {
@@ -118,7 +142,7 @@ namespace TAPNet {
 			}
 
 			[DllImport("tapcfg32")]
-			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, TAPLogCallback cb);
+			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 
 			[DllImport("tapcfg32")]
 			private static extern IntPtr tapcfg_init();
@@ -126,10 +150,7 @@ namespace TAPNet {
 			private static extern void tapcfg_destroy(IntPtr tapcfg);
 
 			[DllImport("tapcfg32")]
-			private static extern int tapcfg_start(IntPtr tapcfg,
-				[MarshalAs(UnmanagedType.CustomMarshaler,
-					   MarshalTypeRef = typeof(UTF8Marshaler))]
-				string ifname, int fallback);
+			private static extern int tapcfg_start(IntPtr tapcfg, IntPtr ifname, int fallback);
 			[DllImport("tapcfg32")]
 			private static extern void tapcfg_stop(IntPtr tapcfg);
 
@@ -144,9 +165,7 @@ namespace TAPNet {
 			private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
 			[DllImport("tapcfg32")]
-			[return : MarshalAs(UnmanagedType.CustomMarshaler,
-					    MarshalTypeRef = typeof(UTF8Marshaler))]
-			private static extern string tapcfg_get_ifname(IntPtr tapcfg);
+			private static extern IntPtr tapcfg_get_ifname(IntPtr tapcfg);
 
 			[DllImport("tapcfg32")]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
@@ -168,8 +187,13 @@ namespace TAPNet {
 		}
 
 		private class NativeLib64 : NativeLib {
-			public override void set_log_callback(IntPtr tapcfg, TAPLogCallback cb) {
-				tapcfg_set_log_callback(tapcfg, cb);
+			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
+				_logCallback = cb;
+				if (_logCallback != null) {
+					tapcfg_set_log_callback(tapcfg, new InternalLogCallback(MarshalLogCallback));
+				} else {
+					tapcfg_set_log_callback(tapcfg, null);
+				}
 			}
 
 			public override IntPtr init() {
@@ -181,7 +205,11 @@ namespace TAPNet {
 			}
 
 			public override int start(IntPtr tapcfg, string ifname, bool fallback) {
-				return tapcfg_start(tapcfg, ifname, fallback ? 1 : 0);
+				ICustomMarshaler marshaler = new UTF8Marshaler();
+				IntPtr ifname_ptr = marshaler.MarshalManagedToNative(ifname);
+				int ret = tapcfg_start(tapcfg, ifname_ptr, fallback ? 1 : 0);
+				marshaler.CleanUpNativeData(ifname_ptr);
+				return ret;
 			}
 
 			public override void stop(IntPtr tapcfg) {
@@ -205,7 +233,11 @@ namespace TAPNet {
 			}
 
 			public override string get_ifname(IntPtr tapcfg) {
-				return tapcfg_get_ifname(tapcfg);
+				ICustomMarshaler marshaler = new UTF8Marshaler();
+				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
+				string ret = (string) marshaler.MarshalNativeToManaged(ret_ptr);
+				marshaler.CleanUpNativeData(ret_ptr);
+				return ret;
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {
@@ -241,7 +273,7 @@ namespace TAPNet {
 			}
 
 			[DllImport("tapcfg64")]
-			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, TAPLogCallback cb);
+			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 
 			[DllImport("tapcfg64")]
 			private static extern IntPtr tapcfg_init();
@@ -249,10 +281,7 @@ namespace TAPNet {
 			private static extern void tapcfg_destroy(IntPtr tapcfg);
 
 			[DllImport("tapcfg64")]
-			private static extern int tapcfg_start(IntPtr tapcfg,
-				[MarshalAs(UnmanagedType.CustomMarshaler,
-					   MarshalTypeRef = typeof(UTF8Marshaler))]
-				string ifname, int fallback);
+			private static extern int tapcfg_start(IntPtr tapcfg, IntPtr ifname, int fallback);
 			[DllImport("tapcfg64")]
 			private static extern void tapcfg_stop(IntPtr tapcfg);
 
@@ -267,9 +296,7 @@ namespace TAPNet {
 			private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
 			[DllImport("tapcfg64")]
-			[return : MarshalAs(UnmanagedType.CustomMarshaler,
-					    MarshalTypeRef = typeof(UTF8Marshaler))]
-			private static extern string tapcfg_get_ifname(IntPtr tapcfg);
+			private static extern IntPtr tapcfg_get_ifname(IntPtr tapcfg);
 
 			[DllImport("tapcfg64")]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);

@@ -20,11 +20,6 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace TAPNet {
-	public delegate void TAPLogCallback(
-		[MarshalAs(UnmanagedType.CustomMarshaler,
-			   MarshalTypeRef = typeof(UTF8Marshaler))]
-		string msg);
-
 	public class VirtualDevice : IDisposable {
 		private NativeLib _tapcfg;
 
@@ -42,10 +37,10 @@ namespace TAPNet {
 				throw new Exception("Error initializing the tapcfg library");
 			}
 
-			LogCallback = new TAPLogCallback(defaultCallback);
+			LogCallback = new LogCallback(defaultCallback);
 		}
 
-		public TAPLogCallback LogCallback {
+		public LogCallback LogCallback {
 			set {
 				_tapcfg.set_log_callback(_handle, value);
 			}
