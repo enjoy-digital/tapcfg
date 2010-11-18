@@ -129,13 +129,15 @@ tapcfg_ifaddr_ioctl(tapcfg_t *tapcfg,
 {
 	struct ifreq ifr;
 	struct sockaddr_in *sin;
+	struct in_addr *in_addr;
 
 	memset(&ifr,  0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 
+	ifr.ifr_addr.sa_family = AF_INET;
 	sin = (struct sockaddr_in *) &ifr.ifr_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
+	in_addr = &sin->sin_addr;
+	in_addr->s_addr = addr;
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFADDR, &ifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
@@ -147,9 +149,10 @@ tapcfg_ifaddr_ioctl(tapcfg_t *tapcfg,
 	memset(&ifr,  0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, tapcfg->ifname);
 
+	ifr.ifr_addr.sa_family = AF_INET;
 	sin = (struct sockaddr_in *) &ifr.ifr_netmask;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = mask;
+	in_addr = &sin->sin_addr;
+	in_addr->s_addr = mask;
 
 	if (ioctl(tapcfg->ctrl_fd, SIOCSIFNETMASK, &ifr) == -1) {
 		taplog_log(&tapcfg->taplog, TAPLOG_ERR,
