@@ -39,7 +39,7 @@ Should work when ran as root without problems.
 The interface name is always in format tapX and maps to '/dev/tapX'. However
 the interface needs to be first created with 'ifconfig <ifname> create'.
 If an automatically created interface is wanted the interface name 'tap'
-should be used, system will change map it to an available tapX interface
+should be used, system will map it to an available tapX interface
 automatically.
 
 Solaris:
