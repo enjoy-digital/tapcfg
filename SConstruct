@@ -1,6 +1,6 @@
 
-AddOption('--force-mingw',
-          action='store_true', dest='mingw', default=False,
+AddOption('--force-mingw32',
+          action='store_true', dest='mingw32', default=False,
           help='Cross compile using MinGW for Windows')
 
 AddOption('--force-mingw64',
@@ -23,7 +23,7 @@ VariantDir('build', 'src')
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 
-if GetOption('mingw'):
+if GetOption('mingw32'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
 	env.Append(CPPDEFINES = ['WINVER=0x0500'])
 
