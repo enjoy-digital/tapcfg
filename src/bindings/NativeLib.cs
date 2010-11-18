@@ -133,9 +133,7 @@ namespace TAPNet {
 			public override string get_ifname(IntPtr tapcfg) {
 				ICustomMarshaler marshaler = new UTF8Marshaler();
 				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
-				string ret = (string) marshaler.MarshalNativeToManaged(ret_ptr);
-				marshaler.CleanUpNativeData(ret_ptr);
-				return ret;
+				return (string) marshaler.MarshalNativeToManaged(ret_ptr);
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {
@@ -264,9 +262,7 @@ namespace TAPNet {
 			public override string get_ifname(IntPtr tapcfg) {
 				ICustomMarshaler marshaler = new UTF8Marshaler();
 				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
-				string ret = (string) marshaler.MarshalNativeToManaged(ret_ptr);
-				marshaler.CleanUpNativeData(ret_ptr);
-				return ret;
+				return (string) marshaler.MarshalNativeToManaged(ret_ptr);
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {

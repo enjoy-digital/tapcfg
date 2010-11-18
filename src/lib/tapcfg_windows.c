@@ -400,7 +400,7 @@ tapcfg_get_ifname(tapcfg_t *tapcfg)
 		return NULL;
 	}
 
-	return strdup(tapcfg->ifname);
+	return tapcfg->ifname;
 }
 
 const char *
