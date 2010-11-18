@@ -75,13 +75,13 @@ get_tap_reg(taplog_t *taplog)
 			           "Error enumerating registry subkeys of key: %s (t0)",
 			           TAP_ADAPTER_KEY);
 			break;
-		}
-		if (!strcmp(enum_name, "Properties")) {
+		} else if (!strcmp(enum_name, "Properties")) {
 			/* Properties key can not be opened, skip */
 			continue;
 		}
 
-		snprintf(unit_string, sizeof(unit_string),
+		unit_string[sizeof(unit_string)-1] = '\0';
+		snprintf(unit_string, sizeof(unit_string)-1,
 		         "%s\\%s", TAP_ADAPTER_KEY, enum_name);
 		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, unit_string,
 		                       0, KEY_READ, &unit_key);
@@ -120,6 +120,7 @@ get_tap_reg(taplog_t *taplog)
 
 					reg = calloc(1, sizeof(struct tap_reg));
 					if (!reg) { 
+						RegCloseKey(unit_key);
 						continue;
 					}
 					reg->guid = strdup(net_cfg_instance_id);
@@ -197,7 +198,8 @@ get_panel_reg(taplog_t *taplog)
 			continue;
 		}
 
-		snprintf(connection_string, sizeof(connection_string),
+		connection_string[sizeof(connection_string)-1] = '\0';
+		snprintf(connection_string, sizeof(connection_string)-1,
 		         "%s\\%s\\Connection", TAP_REGISTRY_KEY, enum_name);
 		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, connection_string,
 		                       0, KEY_READ, &connection_key);
@@ -214,12 +216,16 @@ get_panel_reg(taplog_t *taplog)
 		if (status != ERROR_SUCCESS || name_type != REG_SZ) {
 			taplog_log(taplog, TAPLOG_WARNING,
 			           "Error opening registry key: %s\\%s\\Name (p3)",
-		                   TAP_REGISTRY_KEY, (LPBYTE) connection_string);
+		                   TAP_REGISTRY_KEY, connection_string);
 		} else {
 			struct panel_reg *reg;
 			int namelen;
 
 			reg = calloc(1, sizeof(struct panel_reg));
+			if (!reg) {
+				RegCloseKey(connection_key);
+				continue;
+			}
 			reg->guid = strdup(enum_name);
 
 			/* Make the UTF-16 to UTF-8 conversion */
