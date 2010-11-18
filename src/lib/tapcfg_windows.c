@@ -118,7 +118,8 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "TAP adapter configured properly");
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Interface name is '%s'", tapcfg->ifname);
 
-	snprintf(tapname, sizeof(tapname), TAP_DEVICE_DIR "%s.tap", adapterid);
+	tapname[sizeof(tapname)-1] = '\0';
+	snprintf(tapname, sizeof(tapname)-1, TAP_DEVICE_DIR "%s.tap", adapterid);
 	free(adapterid);
 
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Trying %s", tapname);
@@ -146,8 +147,6 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 				   (int) GetLastError());
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
-
-			return -1;
 		}
 
 		taplog_log(&tapcfg->taplog, TAPLOG_DEBUG,
