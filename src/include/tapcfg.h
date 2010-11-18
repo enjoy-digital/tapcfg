@@ -21,7 +21,7 @@
 #define TAPCFG_STATUS_IPV6_RADV  0x0020
 #define TAPCFG_STATUS_IPV6_ALL   0x00f0
 
-typedef void (*taplog_callback_t)(char *msg);
+typedef void (*taplog_callback_t)(int level, char *msg);
 
 /**
  * Typedef to the structure used by the library, should never

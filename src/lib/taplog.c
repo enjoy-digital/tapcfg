@@ -95,7 +95,7 @@ taplog_log(taplog_t *taplog, int level, const char *fmt, ...)
 	va_end(ap);
 
 	if (taplog->callback) {
-		taplog->callback(buffer);
+		taplog->callback(level, buffer);
 	} else {
 		char *local = taplog_utf8_to_local(buffer);
 

@@ -35,7 +35,7 @@ public class TAPNetTest {
 		}
 	}
 
-	private static void LogCallback(string msg) {
-		Console.WriteLine(msg);
+	private static void LogCallback(LogLevel level, string msg) {
+		Console.WriteLine(level + ": " + msg);
 	}
 }

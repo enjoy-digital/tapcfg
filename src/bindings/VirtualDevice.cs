@@ -26,8 +26,8 @@ namespace TAPNet {
 		private IntPtr _handle;
 		private bool _disposed = false;
 
-		private static void defaultCallback(string msg) {
-			Console.WriteLine(msg);
+		private static void defaultCallback(LogLevel level, string msg) {
+			Console.WriteLine(level + ": " + msg);
 		}
 
 		public VirtualDevice() {

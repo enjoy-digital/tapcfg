@@ -17,7 +17,18 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace TAPNet {
-	public delegate void LogCallback(string msg);
+	public enum LogLevel {
+		Unknown,
+		Emergency,
+		Alert,
+		Critical,
+		Error,
+		Warning,
+		Notice,
+		Info,
+		Debug
+	};
+	public delegate void LogCallback(LogLevel level, string msg);
 
 	public abstract class NativeLib {
 		public abstract void set_log_callback(IntPtr tapcfg, LogCallback cb);
@@ -46,13 +57,31 @@ namespace TAPNet {
 				return new NativeLib32();
 		}
 
-		private delegate void InternalLogCallback(IntPtr msg_ptr);
+		private delegate void InternalLogCallback(int level, IntPtr msg_ptr);
 
 		private LogCallback _logCallback = null;
-		private void MarshalLogCallback(IntPtr msg_ptr) {
+		private void MarshalLogCallback(int level, IntPtr msg_ptr) {
+			LogLevel logLevel = LogLevel.Unknown;
+			if (level == 0)
+				logLevel = LogLevel.Emergency;
+			else if (level == 1)
+				logLevel = LogLevel.Alert;
+			else if (level == 2)
+				logLevel = LogLevel.Critical;
+			else if (level == 3)
+				logLevel = LogLevel.Error;
+			else if (level == 4)
+				logLevel = LogLevel.Warning;
+			else if (level == 5)
+				logLevel = LogLevel.Notice;
+			else if (level == 6)
+				logLevel = LogLevel.Info;
+			else if (level == 7)
+				logLevel = LogLevel.Debug;
+
 			ICustomMarshaler marshaler = new UTF8Marshaler();
 			string msg = (string) marshaler.MarshalNativeToManaged(msg_ptr);
-			_logCallback(msg);
+			_logCallback(logLevel, msg);
 		}
 
 		private class NativeLib32 : NativeLib {
