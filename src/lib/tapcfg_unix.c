@@ -221,7 +221,7 @@ tapcfg_read(tapcfg_t *tapcfg, void *buf, int count)
 	tapcfg->buflen = 0;
 
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Read ethernet frame:");
-	taplog_log_ethernet_info(&tapcfg->taplog, buf, ret);
+	taplog_log_ethernet_info(&tapcfg->taplog, TAPLOG_DEBUG, buf, ret);
 
 	return ret;
 }
@@ -273,7 +273,7 @@ tapcfg_write(tapcfg_t *tapcfg, void *buf, int count)
 	}
 
 	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Wrote ethernet frame:");
-	taplog_log_ethernet_info(&tapcfg->taplog, buf, ret);
+	taplog_log_ethernet_info(&tapcfg->taplog, TAPLOG_DEBUG, buf, ret);
 
 	return ret;
 }

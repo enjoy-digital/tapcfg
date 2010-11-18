@@ -28,7 +28,7 @@ void taplog_set_callback(taplog_t *taplog, taplog_callback_t callback);
 char *taplog_utf8_to_local(const char *str);
 
 void taplog_log(taplog_t *taplog, int level, const char *fmt, ...);
-void taplog_log_ethernet_info(taplog_t *taplog, unsigned char *buffer, int len);
+void taplog_log_ethernet_info(taplog_t *taplog, int level, unsigned char *buffer, int len);
 
 #endif /* TAPLOG_H */
 
