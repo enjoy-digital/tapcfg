@@ -26,9 +26,11 @@ env.Tool('gmcs', toolpath = ['scons-tools'])
 if GetOption('mingw32'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
 	env.Append(CPPDEFINES = ['WINVER=0x0500'])
+	env.Append(CPPDEFINES = ['DLL_EXPORT'])
 
 if GetOption('mingw64'):
 	env.Tool('crossmingw64', toolpath = ['scons-tools'])
+	env.Append(CPPDEFINES = ['DLL_EXPORT'])
 
 if GetOption('gcc32'):
 	env.Append(CFLAGS = ['-m32'])

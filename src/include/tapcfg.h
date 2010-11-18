@@ -1,6 +1,12 @@
 #ifndef TAPCFG_H
 #define TAPCFG_H
 
+#if defined(_WIN32) && defined(DLL_EXPORT)
+# define TAPCFG_API __declspec(dllexport)
+#else
+# define TAPCFG_API
+#endif
+
 /* Define syslog style log levels */
 #define TAPLOG_EMERG       0       /* system is unusable */
 #define TAPLOG_ALERT       1       /* action must be taken immediately */
@@ -35,7 +41,7 @@ typedef struct tapcfg_s tapcfg_t;
  * @param tapcfg is a pointer to an inited structure
  * @param level is the new level of logging
  */
-void tapcfg_set_log_level(tapcfg_t *tapcfg, int level);
+TAPCFG_API void tapcfg_set_log_level(tapcfg_t *tapcfg, int level);
 
 /**
  * Set callback to receive all the messages to be logged.
@@ -44,14 +50,14 @@ void tapcfg_set_log_level(tapcfg_t *tapcfg, int level);
  * @param tapcfg is a pointer to an inited structure
  * @param callback is the callback function for logging
  */
-void tapcfg_set_log_callback(tapcfg_t *tapcfg, taplog_callback_t callback);
+TAPCFG_API void tapcfg_set_log_callback(tapcfg_t *tapcfg, taplog_callback_t callback);
 
 /**
  * Initializes a new tapcfg_t structure and allocates
  * the required memory for it.
  * @return A pointer to the tapcfg_t structure to be used
  */
-tapcfg_t *tapcfg_init();
+TAPCFG_API tapcfg_t *tapcfg_init();
 
 /**
  * Destroys a tapcfg_t structure and frees all resources
@@ -60,7 +66,7 @@ tapcfg_t *tapcfg_init();
  * after calling this function.
  * @param tapcfg is a pointer to an inited structure
  */
-void tapcfg_destroy(tapcfg_t *tapcfg);
+TAPCFG_API void tapcfg_destroy(tapcfg_t *tapcfg);
 
 
 /**
@@ -79,7 +85,7 @@ void tapcfg_destroy(tapcfg_t *tapcfg);
  *        TAP interfaces are searched and used accordingly
  * @return Negative value on error, non-negative on success.
  */
-int tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback);
+TAPCFG_API int tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback);
 
 /**
  * Stops the network interface and frees all resources
@@ -87,7 +93,7 @@ int tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback);
  * tcptap_start can be started for the same structure.
  * @param tapcfg is a pointer to an inited structure
  */
-void tapcfg_stop(tapcfg_t *tapcfg);
+TAPCFG_API void tapcfg_stop(tapcfg_t *tapcfg);
 
 
 /**
@@ -101,7 +107,7 @@ void tapcfg_stop(tapcfg_t *tapcfg);
  *        the function will return immediately
  * @return Non-zero if the device is readable, zero otherwise.
  */
-int tapcfg_wait_readable(tapcfg_t *tapcfg, int msec);
+TAPCFG_API int tapcfg_wait_readable(tapcfg_t *tapcfg, int msec);
 
 /**
  * Read data from the device. This function will always
@@ -115,7 +121,7 @@ int tapcfg_wait_readable(tapcfg_t *tapcfg, int msec);
  * @param count is the maximum size of the buffer
  * @return Negative value on error, number of bytes read otherwise.
  */
-int tapcfg_read(tapcfg_t *tapcfg, void *buf, int count);
+TAPCFG_API int tapcfg_read(tapcfg_t *tapcfg, void *buf, int count);
 
 /**
  * Wait for data to be available for writing. This can
@@ -128,7 +134,7 @@ int tapcfg_read(tapcfg_t *tapcfg, void *buf, int count);
  *        the function will return immediately
  * @return Non-zero if the device is writable, zero otherwise.
  */
-int tapcfg_wait_writable(tapcfg_t *tapcfg, int msec);
+TAPCFG_API int tapcfg_wait_writable(tapcfg_t *tapcfg, int msec);
 
 /**
  * Write data to the device. This function will always
@@ -143,7 +149,7 @@ int tapcfg_wait_writable(tapcfg_t *tapcfg, int msec);
  * @param count is the number of bytes in the buffer
  * @return Negative value on error, number of bytes written otherwise.
  */
-int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
+TAPCFG_API int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
 
 
 /**
@@ -155,7 +161,7 @@ int tapcfg_write(tapcfg_t *tapcfg, void *buf, int count);
  *         name in UTF-8 encoding, should NOT be freed by the caller
  *         application after use! NULL if the device is not started.
  */
-char *tapcfg_get_ifname(tapcfg_t *tapcfg);
+TAPCFG_API char *tapcfg_get_ifname(tapcfg_t *tapcfg);
 
 /**
  * Get the current hardware MAC address of the interface. This
@@ -168,7 +174,7 @@ char *tapcfg_get_ifname(tapcfg_t *tapcfg);
  *         by the caller application after use! NULL if the device
  *         is not started.
  */
-const char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
+TAPCFG_API const char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
 
 /**
  * Set the current hardware MAC address of the interface. This
@@ -182,7 +188,7 @@ const char *tapcfg_iface_get_hwaddr(tapcfg_t *tapcfg, int *length);
  * @param length is the length of the array, should be always 6 for now
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length);
+TAPCFG_API int tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length);
 
 /**
  * Get the status of the interface. In Unix systems this means
@@ -191,7 +197,7 @@ int tapcfg_iface_set_hwaddr(tapcfg_t *tapcfg, const char *hwaddr, int length);
  * @param tapcfg is a pointer to an inited structure
  * @return Non-zero if the interface is enabled, zero otherwise.
  */
-int tapcfg_iface_get_status(tapcfg_t *tapcfg);
+TAPCFG_API int tapcfg_iface_get_status(tapcfg_t *tapcfg);
 
 /**
  * Set the status of the interface. In Unix systems this means
@@ -209,7 +215,7 @@ int tapcfg_iface_set_status(tapcfg_t *tapcfg, int flags);
  * @param tapcfg is a pointer to an inited structure
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_get_mtu(tapcfg_t *tapcfg);
+TAPCFG_API int tapcfg_iface_get_mtu(tapcfg_t *tapcfg);
 
 /**
  * Set the maximum transfer unit for the device if possible, this function
@@ -220,7 +226,7 @@ int tapcfg_iface_get_mtu(tapcfg_t *tapcfg);
  * @param mtu is the new maximum transfer unit after calling the function
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
+TAPCFG_API int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
 
 /**
  * Set the IPv4 address and netmask of the interface and update
@@ -231,7 +237,7 @@ int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
  *        must be between [1, 32]
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
+TAPCFG_API int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
 
 /**
  * Set a DHCP option if the IPv4 address of the interface is configured by
@@ -246,7 +252,7 @@ int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netb
  * @param buflen is the length of the option data buffer
  * @return Negative value if an error happened, non-negative otherwise.
  */
-int tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
+TAPCFG_API int tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
 
 #endif /* TAPCFG_H */
 
