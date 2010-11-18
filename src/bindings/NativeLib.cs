@@ -31,6 +31,8 @@ namespace TAPNet {
 	public delegate void LogCallback(LogLevel level, string msg);
 
 	public abstract class NativeLib {
+		public abstract int get_version();
+		public abstract void set_log_level(IntPtr tapcfg, int level);
 		public abstract void set_log_callback(IntPtr tapcfg, LogCallback cb);
 		public abstract IntPtr init();
 		public abstract void destroy(IntPtr tapcfg);
@@ -90,6 +92,14 @@ namespace TAPNet {
 				_internalLogCallback = new InternalLogCallback(MarshalLogCallback);
 			}
 
+			public override int get_version() {
+				return tapcfg_get_version();
+			}
+
+			public override void set_log_level(IntPtr tapcfg, int level) {
+				tapcfg_set_log_level(tapcfg, level);
+			}
+
 			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
 				_logCallback = cb;
 				if (_logCallback != null) {
@@ -173,6 +183,10 @@ namespace TAPNet {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
 			}
 
+			[DllImport("tapcfg32")]
+			private static extern int tapcfg_get_version();
+			[DllImport("tapcfg32")]
+			private static extern void tapcfg_set_log_level(IntPtr tapcfg, int level);
 			[DllImport("tapcfg32")]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 
@@ -223,6 +237,14 @@ namespace TAPNet {
 				_internalLogCallback = new InternalLogCallback(MarshalLogCallback);
 			}
 
+			public override int get_version() {
+				return tapcfg_get_version();
+			}
+
+			public override void set_log_level(IntPtr tapcfg, int level) {
+				tapcfg_set_log_level(tapcfg, level);
+			}
+
 			public override void set_log_callback(IntPtr tapcfg, LogCallback cb) {
 				_logCallback = cb;
 				if (_logCallback != null) {
@@ -306,6 +328,10 @@ namespace TAPNet {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
 			}
 
+			[DllImport("tapcfg64")]
+			private static extern int tapcfg_get_version();
+			[DllImport("tapcfg64")]
+			private static extern void tapcfg_set_log_level(IntPtr tapcfg, int level);
 			[DllImport("tapcfg64")]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 

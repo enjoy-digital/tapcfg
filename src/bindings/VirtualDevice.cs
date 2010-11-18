@@ -21,6 +21,8 @@ using System.Runtime.InteropServices;
 
 namespace TAPNet {
 	public class VirtualDevice : IDisposable {
+		private const int TAPCFG_VERSION = ((1 << 16) | 0);
+
 		private NativeLib _tapcfg;
 
 		private IntPtr _handle;
@@ -32,6 +34,12 @@ namespace TAPNet {
 
 		public VirtualDevice() {
 			_tapcfg = NativeLib.GetInstance();
+			int version = _tapcfg.get_version();
+			if (version != TAPCFG_VERSION) {
+				string theirVersion = (version >> 16) + "." + (version & 0xffff);
+				string ourVersion = (TAPCFG_VERSION >> 16) + "." + (TAPCFG_VERSION & 0xffff);
+				throw new Exception("Library version mismatch, got " + theirVersion + " required " + ourVersion);
+			}
 			_handle = _tapcfg.init();
 			if (_handle == IntPtr.Zero) {
 				throw new Exception("Error initializing the tapcfg library");
