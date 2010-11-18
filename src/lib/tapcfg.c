@@ -31,6 +31,12 @@
 #  include "tapcfg_unix.c"
 #endif
 
+int
+tapcfg_get_version()
+{
+	return TAPCFG_VERSION;
+}
+
 void
 tapcfg_set_log_level(tapcfg_t *tapcfg, int level)
 {

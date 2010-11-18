@@ -7,6 +7,11 @@
 # define TAPCFG_API
 #endif
 
+/* Current API version number, should be kept up to date */
+#define TAPCFG_VERSION_MAJOR  1
+#define TAPCFG_VERSION_MINOR  0
+#define TAPCFG_VERSION ((TAPCFG_VERSION_MAJOR << 16) | TAPCFG_VERSION_MINOR)
+
 /* Define syslog style log levels */
 #define TAPLOG_EMERG       0       /* system is unusable */
 #define TAPLOG_ALERT       1       /* action must be taken immediately */
@@ -34,6 +39,16 @@ typedef void (*taplog_callback_t)(int level, char *msg);
  * be accessed directly.
  */
 typedef struct tapcfg_s tapcfg_t;
+
+/**
+ * Get the current version of the library, this number only
+ * changes when the API is changed. In general it should be
+ * in format ((major << 16) | minor) where binary incompatible
+ * changes in API increase the minor version number and source
+ * incompatible changes increase the major version number.
+ * @return The version number encoded as an integer.
+ */
+TAPCFG_API int tapcfg_get_version();
 
 /**
  * Set the current logging level, all messages with lower
