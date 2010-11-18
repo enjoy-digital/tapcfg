@@ -216,6 +216,34 @@ dlpi_set_physaddr(int fd, const char *hwaddr, int length)
 	return 0;
 }
 
+#else
+
+int
+dlpi_attach(int fd, int ppa)
+{
+	return -1;
+}
+
+int
+dlpi_detach(int fd)
+{
+	return -1;
+}
+
+int
+dlpi_get_physaddr(int fd, unsigned char *hwaddr, int length)
+{
+	return -1;
+}
+
+int
+dlpi_set_physaddr(int fd, const char *hwaddr, int length)
+{
+	return -1;
+}
+
+#endif
+
 #ifdef MAIN
 #include <stdio.h>
 #include <fcntl.h>
@@ -265,8 +293,6 @@ main(int argc, char *argv[])
 
 	return 0;
 }
-
-#endif
 
 #endif
 
