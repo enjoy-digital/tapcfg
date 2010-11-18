@@ -76,6 +76,10 @@ get_tap_reg(taplog_t *taplog)
 			           TAP_ADAPTER_KEY);
 			break;
 		}
+		if (!strcmp(enum_name, "Properties")) {
+			/* Properties key can not be opened, skip */
+			continue;
+		}
 
 		snprintf(unit_string, sizeof(unit_string),
 		         "%s\\%s", TAP_ADAPTER_KEY, enum_name);
