@@ -57,8 +57,9 @@ appenv = conf.Finish()
 appenv.Append(LIBPATH = ['.'])
 appenv.Prepend(LIBS = ['tapcfg'])
 
-# Compile the daemon for testing
-#tapserverobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
-#appenv.Program('tapdemo', [tapserverobj,'daemon/tapdemo.c'], install=False)
-#appenv.Program('tapcfgd', [tapserverobj,'daemon/client.c','daemon/daemon.c','daemon/main.c'], install=False)
+# Compile the daemon for testing, broken on MinGW64 because of missing getopt.h
+if not GetOption('mingw64'):
+	tapserverobj = libenv.Object(['daemon/tapserver.c','daemon/serversock.c'])
+	appenv.Program('tapdemo', [tapserverobj,'daemon/tapdemo.c'], install=False)
+	appenv.Program('tapcfgd', [tapserverobj,'daemon/client.c','daemon/daemon.c','daemon/main.c'], install=False)
 
