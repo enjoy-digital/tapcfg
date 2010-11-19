@@ -58,6 +58,10 @@ namespace TAPNet {
 			Start(null, true);
 		}
 
+		public void Start(string deviceName) {
+			Start(deviceName, false);
+		}
+
 		public void Start(string deviceName, bool fallback) {
 			int ret = _tapcfg.start(_handle, deviceName, fallback);
 			if (ret < 0) {
