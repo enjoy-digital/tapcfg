@@ -6,6 +6,10 @@ env.Append(CPPPATH = ['include'])
 libenv = env.Clone()
 libenv.Append(CPPPATH = ['lib'])
 
+# Make sure libraries are compiled with DLL_EXPORT on windows
+if libenv['PLATFORM'] == 'win32' or GetOption('mingw32') or GetOption('mingw64'):
+	libenv.Append(CPPDEFINES = ['DLL_EXPORT'])
+
 # Prepare the libobj and shlibobj object files
 libobj = libenv.Object(['lib/tapcfg.c','lib/taplog.c','lib/dlpi.c'])
 if libenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']:

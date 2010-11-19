@@ -23,14 +23,14 @@ VariantDir('build', 'src')
 env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 
+if env['PLATFORM'] == 'win32' or GetOption('mingw32') or GetOption('mingw64'):
+	env.Append(CPPDEFINES = ['WINVER=0x0500'])
+
 if GetOption('mingw32'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
-	env.Append(CPPDEFINES = ['WINVER=0x0500'])
-	env.Append(CPPDEFINES = ['DLL_EXPORT'])
 
 if GetOption('mingw64'):
 	env.Tool('crossmingw64', toolpath = ['scons-tools'])
-	env.Append(CPPDEFINES = ['DLL_EXPORT'])
 
 if GetOption('gcc32'):
 	env.Append(CFLAGS = ['-m32'])
