@@ -1,18 +1,6 @@
 #ifndef TAPCFG_H
 #define TAPCFG_H
 
-/* On Windows __stdcall calling convention is used and it is
- * required on all callback functions to avoid segfault on
- * stack cleanup. In fact all the API functions could use the
- * __stdcall keyword as well, but the only benefit would be a
- * smaller binary size with the expense of more code
- */
-#if defined(_WIN32)
-# define TAPCFG_CALLBACK __stdcall
-#else
-# define TAPCFG_CALLBACK
-#endif
-
 /* On Windows we explicitly only export the API symbols */
 #if defined(_WIN32) && defined(DLL_EXPORT)
 # define TAPCFG_API __declspec(dllexport)
@@ -45,7 +33,7 @@
 #define TAPCFG_STATUS_IPV6_RADV  0x0020
 #define TAPCFG_STATUS_IPV6_ALL   0x00f0
 
-typedef void (TAPCFG_CALLBACK *taplog_callback_t)(int level, char *msg);
+typedef void (*taplog_callback_t)(int level, char *msg);
 
 /**
  * Typedef to the structure used by the library, should never

@@ -61,7 +61,9 @@ namespace TAPNet {
 
 		private LogCallback _logCallback = null;
 		private InternalLogCallback _internalLogCallback = null;
+		ICustomMarshaler _utf8Marshaler = new UTF8Marshaler();
 
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		private delegate void InternalLogCallback(int level, IntPtr msg_ptr);
 		private void MarshalLogCallback(int level, IntPtr msg_ptr) {
 			LogLevel logLevel = LogLevel.Unknown;
@@ -82,8 +84,7 @@ namespace TAPNet {
 			else if (level == 7)
 				logLevel = LogLevel.Debug;
 
-			ICustomMarshaler marshaler = new UTF8Marshaler();
-			string msg = (string) marshaler.MarshalNativeToManaged(msg_ptr);
+			string msg = (string) _utf8Marshaler.MarshalNativeToManaged(msg_ptr);
 			_logCallback(logLevel, msg);
 		}
 
@@ -118,10 +119,9 @@ namespace TAPNet {
 			}
 
 			public override int start(IntPtr tapcfg, string ifname, bool fallback) {
-				ICustomMarshaler marshaler = new UTF8Marshaler();
-				IntPtr ifname_ptr = marshaler.MarshalManagedToNative(ifname);
+				IntPtr ifname_ptr = _utf8Marshaler.MarshalManagedToNative(ifname);
 				int ret = tapcfg_start(tapcfg, ifname_ptr, fallback ? 1 : 0);
-				marshaler.CleanUpNativeData(ifname_ptr);
+				_utf8Marshaler.CleanUpNativeData(ifname_ptr);
 				return ret;
 			}
 
@@ -146,9 +146,8 @@ namespace TAPNet {
 			}
 
 			public override string get_ifname(IntPtr tapcfg) {
-				ICustomMarshaler marshaler = new UTF8Marshaler();
 				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
-				return (string) marshaler.MarshalNativeToManaged(ret_ptr);
+				return (string) _utf8Marshaler.MarshalNativeToManaged(ret_ptr);
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {
@@ -183,52 +182,52 @@ namespace TAPNet {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
 			}
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_get_version();
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_set_log_level(IntPtr tapcfg, int level);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_init();
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_destroy(IntPtr tapcfg);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_start(IntPtr tapcfg, IntPtr ifname, int fallback);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_stop(IntPtr tapcfg);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_wait_readable(IntPtr tapcfg, int msec);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_wait_writable(IntPtr tapcfg, int msec);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_get_ifname(IntPtr tapcfg);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_status(IntPtr tapcfg, int flags);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_get_mtu(IntPtr tapcfg);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
-			[DllImport("tapcfg32")]
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 
@@ -263,10 +262,9 @@ namespace TAPNet {
 			}
 
 			public override int start(IntPtr tapcfg, string ifname, bool fallback) {
-				ICustomMarshaler marshaler = new UTF8Marshaler();
-				IntPtr ifname_ptr = marshaler.MarshalManagedToNative(ifname);
+				IntPtr ifname_ptr = _utf8Marshaler.MarshalManagedToNative(ifname);
 				int ret = tapcfg_start(tapcfg, ifname_ptr, fallback ? 1 : 0);
-				marshaler.CleanUpNativeData(ifname_ptr);
+				_utf8Marshaler.CleanUpNativeData(ifname_ptr);
 				return ret;
 			}
 
@@ -291,9 +289,8 @@ namespace TAPNet {
 			}
 
 			public override string get_ifname(IntPtr tapcfg) {
-				ICustomMarshaler marshaler = new UTF8Marshaler();
 				IntPtr ret_ptr = tapcfg_get_ifname(tapcfg);
-				return (string) marshaler.MarshalNativeToManaged(ret_ptr);
+				return (string) _utf8Marshaler.MarshalNativeToManaged(ret_ptr);
 			}
 
 			public override IntPtr iface_get_hwaddr(IntPtr tapcfg, IntPtr length) {
@@ -328,52 +325,52 @@ namespace TAPNet {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
 			}
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_get_version();
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_set_log_level(IntPtr tapcfg, int level);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_set_log_callback(IntPtr tapcfg, InternalLogCallback cb);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_init();
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_destroy(IntPtr tapcfg);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_start(IntPtr tapcfg, IntPtr ifname, int fallback);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern void tapcfg_stop(IntPtr tapcfg);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_wait_readable(IntPtr tapcfg, int msec);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_wait_writable(IntPtr tapcfg, int msec);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_read(IntPtr tapcfg, byte[] buf, int count);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_write(IntPtr tapcfg, byte[] buf, int count);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_get_ifname(IntPtr tapcfg);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern IntPtr tapcfg_iface_get_hwaddr(IntPtr tapcfg, IntPtr length);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_hwaddr(IntPtr tapcfg, byte[] hwaddr, int length);
 
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_get_status(IntPtr tapcfg);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_status(IntPtr tapcfg, int flags);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_get_mtu(IntPtr tapcfg);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_mtu(IntPtr tapcfg, int mtu);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
-			[DllImport("tapcfg64")]
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 	}
