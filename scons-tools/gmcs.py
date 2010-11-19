@@ -19,12 +19,13 @@ def generate(env):
     env['BUILDERS']['CLIProgram'] = McsBuilder
     env['BUILDERS']['CLILibrary'] = McsLibBuilder
 
-    env['CSC']        = 'gmcs'
+    env['CSC']         = 'gmcs'
     env['_CSCLIBS']    = "${_stripixes('-r:', CILLIBS, '', '-r', '', __env__)}"
     env['_CSCLIBPATH'] = "${_stripixes('-lib:', CILLIBPATH, '', '-r', '', __env__)}"
-    env['CSCFLAGS']   = SCons.Util.CLVar('')
-    env['CSCCOM']     = SCons.Action.Action(csccom)
-    env['CSCLIBCOM']  = SCons.Action.Action(csclibcom)
+    env['CSCFLAGS']    = SCons.Util.CLVar('-platform:anycpu')
+    env['CSCLIBFLAGS'] = SCons.Util.CLVar('-platform:anycpu')
+    env['CSCCOM']      = SCons.Action.Action(csccom)
+    env['CSCLIBCOM']   = SCons.Action.Action(csclibcom)
 
 def exists(env):
     return internal_zip or env.Detect('gmcs')
