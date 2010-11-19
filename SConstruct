@@ -24,7 +24,7 @@ env = Environment()
 env.Tool('gmcs', toolpath = ['scons-tools'])
 
 if env['PLATFORM'] == 'win32' or GetOption('mingw32') or GetOption('mingw64'):
-	env.Append(CPPDEFINES = ['WINVER=0x0500'])
+	env.Append(CPPDEFINES = ['WINVER=0x0501'])
 
 if GetOption('mingw32'):
 	env.Tool('crossmingw', toolpath = ['scons-tools'])
