@@ -42,9 +42,15 @@ namespace TAPNet {
 		public int EtherType;
 		public readonly byte[] Payload;
 
-		/* The VLAN related fields */
+		/* The 802.1QinQ related fields */
+		public readonly bool HasQinQ;
+		public readonly int  QinQType;
+		public readonly int  QinQValue;
+
+		/* The 802.1Q (VLAN) related fields */
 		public readonly bool HasVLAN;
-		public readonly byte PCP, CFI;
+		public readonly byte PCP;
+		public readonly bool CFI;
 		public readonly int  VID;
 
 		/* The IEEE header related fields */
@@ -64,16 +70,52 @@ namespace TAPNet {
 			this.EtherType = (data[12] << 8) | data[13];
 			int hdrlen = 14;
 
-			/* IEEE 802.1Q (VLAN) tagged frame */
-			if (this.EtherType == 0x8100) {
-				this.PCP = (byte) ((data[hdrlen] >> 5) & 0x07);
-				this.CFI = (byte) ((data[hdrlen] >> 4) & 0x01);
-				this.VID = ((data[hdrlen] & 0x0f) << 8) |
-				           data[hdrlen+1];
+			/* IEEE 802.1QinQ (VLAN) tagged frame*/
+			switch (this.EtherType) {
+			case 0x8100: // IEEE 802.1Q (VLAN)
+			case 0x88a8: // 802.1ad
+			case 0x9100: // Unknown 802.1QinQ
+			case 0x9200: // Unknown 802.1QinQ
+				this.HasQinQ = true;
+				this.QinQType = this.EtherType;
+				this.QinQValue = (data[hdrlen] << 8) | data[hdrlen+1];
 				hdrlen += 2;
 
 				this.EtherType = (data[hdrlen] << 8) | data[hdrlen+1];
 				hdrlen += 2;
+				break;
+			}
+
+			/* IEEE 802.1Q (VLAN) tagged frame detection */
+			int vlanData = 0;
+			if (this.EtherType == 0x8100) {
+				this.HasVLAN = true;
+				vlanData = (data[hdrlen] << 8) | data[hdrlen+1];
+				hdrlen += 2;
+
+				this.EtherType = (data[hdrlen] << 8) | data[hdrlen+1];
+				hdrlen += 2;
+			} else if (this.HasQinQ && this.QinQType == 0x8100) {
+				this.HasVLAN = true;
+				vlanData = this.QinQValue;
+
+				this.HasQinQ = false;
+				this.QinQType = 0;
+				this.QinQValue = 0;
+			} else if (this.HasQinQ) {
+				// QinQ detected incorrectly, reset to defaults
+				this.HasQinQ = false;
+				this.QinQType = 0;
+				this.QinQValue = 0;
+				this.EtherType = (data[12] << 8) | data[13];
+				hdrlen = 14;
+			}
+
+			/* IEEE 802.1Q (VLAN) tagged frame parsing */
+			if (this.HasVLAN) {
+				this.PCP = (byte) ((vlanData >> 13) & 0x07);
+				this.CFI = ((vlanData >> 12) & 0x01) != 0;
+				this.VID = vlanData & 0xfff;
 			}
 
 			/* This is a common Ethernet II frame */
