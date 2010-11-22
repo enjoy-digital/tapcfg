@@ -22,8 +22,8 @@ def generate(env):
     env['CSC']         = 'gmcs'
     env['_CSCLIBS']    = "${_stripixes('-r:', CILLIBS, '', '-r', '', __env__)}"
     env['_CSCLIBPATH'] = "${_stripixes('-lib:', CILLIBPATH, '', '-r', '', __env__)}"
-    env['CSCFLAGS']    = SCons.Util.CLVar('-platform:anycpu')
-    env['CSCLIBFLAGS'] = SCons.Util.CLVar('-platform:anycpu')
+    env['CSCFLAGS']    = SCons.Util.CLVar('-platform:anycpu -codepage:utf8')
+    env['CSCLIBFLAGS'] = SCons.Util.CLVar('-platform:anycpu -codepage:utf8')
     env['CSCCOM']      = SCons.Action.Action(csccom)
     env['CSCLIBCOM']   = SCons.Action.Action(csclibcom)
 

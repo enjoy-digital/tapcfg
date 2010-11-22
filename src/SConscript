@@ -46,7 +46,7 @@ if GetOption('universal'):
 
 # Compile the .Net bindings
 if env.Detect('gmcs'):
-	asm = env.CLILibrary('TAPNet', ['bindings/NativeLib.cs','bindings/VirtualDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
+	asm = env.CLILibrary('TAPNet', ['bindings/AssemblyInfo.cs','bindings/NativeLib.cs','bindings/VirtualDevice.cs','bindings/EthernetFrame.cs','bindings/UTF8Marshaler.cs'])
 	prog = env.CLIProgram('TAPNetTest', ['demos/TAPNetTest.cs'], CILLIBS=[asm, 'System'])
 
 # Set up the environment for compiling the demo tests
