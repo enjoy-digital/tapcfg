@@ -48,6 +48,12 @@ namespace TAPNet {
 			LogCallback = new LogCallback(defaultCallback);
 		}
 
+		public LogLevel LogLevel {
+			set {
+				_tapcfg.set_log_level(_handle, value);
+			}
+		}
+
 		public LogCallback LogCallback {
 			set {
 				_tapcfg.set_log_callback(_handle, value);

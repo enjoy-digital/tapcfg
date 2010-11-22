@@ -18,21 +18,21 @@ using System.Runtime.InteropServices;
 
 namespace TAPNet {
 	public enum LogLevel {
-		Unknown,
-		Emergency,
-		Alert,
-		Critical,
-		Error,
-		Warning,
-		Notice,
-		Info,
-		Debug
+		Emergency  = 0,
+		Alert      = 1,
+		Critical   = 2,
+		Error      = 3,
+		Warning    = 4,
+		Notice     = 5,
+		Info       = 6,
+		Debug      = 7,
+		Unknown    = 255
 	};
 	public delegate void LogCallback(LogLevel level, string msg);
 
 	public abstract class NativeLib {
 		public abstract int get_version();
-		public abstract void set_log_level(IntPtr tapcfg, int level);
+		public abstract void set_log_level(IntPtr tapcfg, LogLevel logLevel);
 		public abstract void set_log_callback(IntPtr tapcfg, LogCallback cb);
 		public abstract IntPtr init();
 		public abstract void destroy(IntPtr tapcfg);
@@ -66,23 +66,14 @@ namespace TAPNet {
 		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		private delegate void InternalLogCallback(int level, IntPtr msg_ptr);
 		private void MarshalLogCallback(int level, IntPtr msg_ptr) {
-			LogLevel logLevel = LogLevel.Unknown;
-			if (level == 0)
-				logLevel = LogLevel.Emergency;
-			else if (level == 1)
-				logLevel = LogLevel.Alert;
-			else if (level == 2)
-				logLevel = LogLevel.Critical;
-			else if (level == 3)
-				logLevel = LogLevel.Error;
-			else if (level == 4)
-				logLevel = LogLevel.Warning;
-			else if (level == 5)
-				logLevel = LogLevel.Notice;
-			else if (level == 6)
-				logLevel = LogLevel.Info;
-			else if (level == 7)
-				logLevel = LogLevel.Debug;
+			object value = level;
+			LogLevel logLevel;
+
+			if (Enum.IsDefined(typeof(LogLevel), value)) {
+				logLevel = (LogLevel) Enum.ToObject(typeof(LogLevel), value);
+			} else {
+				logLevel = LogLevel.Unknown;
+			}
 
 			string msg = (string) _utf8Marshaler.MarshalNativeToManaged(msg_ptr);
 			_logCallback(logLevel, msg);
@@ -97,7 +88,8 @@ namespace TAPNet {
 				return tapcfg_get_version();
 			}
 
-			public override void set_log_level(IntPtr tapcfg, int level) {
+			public override void set_log_level(IntPtr tapcfg, LogLevel logLevel) {
+				int level = (int) logLevel;
 				tapcfg_set_log_level(tapcfg, level);
 			}
 
@@ -240,7 +232,8 @@ namespace TAPNet {
 				return tapcfg_get_version();
 			}
 
-			public override void set_log_level(IntPtr tapcfg, int level) {
+			public override void set_log_level(IntPtr tapcfg, LogLevel logLevel) {
+				int level = (int) logLevel;
 				tapcfg_set_log_level(tapcfg, level);
 			}
 
