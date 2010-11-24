@@ -6,7 +6,7 @@
  *
  * The TAP-Win32 version number is defined in tap-win32/SOURCES
  */
-#define TAP_ID "tap901"
+#define TAP_ID "tap0901"
 #define TAP_WIN32_MIN_MAJOR 9
 #define TAP_WIN32_MIN_MINOR 1
 
@@ -17,16 +17,16 @@
 #define DDKVER_MAJOR 7600
 
 /* Name of package */
-#define PACKAGE "tapcfg"
+#define PACKAGE "openvpn"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "TAPCfg"
+#define PACKAGE_NAME "OpenVPN"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "tapcfg"
+#define PACKAGE_TARNAME "openvpn"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.0.0"
+#define PACKAGE_VERSION "2.1.4"
 
 
 #endif
