@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <windows.h>
 #include <winioctl.h>
+#include <ws2tcpip.h>
 
 #include "tapcfg.h"
 #include "taplog.h"
@@ -35,6 +36,8 @@
 #define TAP_IOCTL_GET_LOG_LINE            TAP_CONTROL_CODE(8, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_DHCP_SET_OPT     TAP_CONTROL_CODE(9, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_TUN              TAP_CONTROL_CODE(10, METHOD_BUFFERED)
+#define TAP_IOCTL_CONFIG_DHCPV6_MASQ      TAP_CONTROL_CODE(11, METHOD_BUFFERED)
+#define TAP_IOCTL_CONFIG_DHCPV6_SET_OPT   TAP_CONTROL_CODE(12, METHOD_BUFFERED)
 
 #define TAP_DEVICE_DIR	                  "\\\\.\\Global\\"
 
@@ -560,6 +563,70 @@ tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 }
 
 int
+tapcfg_iface_set_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbits)
+{
+#ifdef HAVE_GETADDRINFO
+	UCHAR buffer[7*sizeof(ULONG)];
+	ULONG *lbuffer = (ULONG *)buffer;
+
+	struct addrinfo hints;
+	struct addrinfo *result = NULL;
+	struct sockaddr_in6 *sockaddr_ipv6;
+
+	DWORD len, res;
+
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	if (netbits == 0 || netbits > 128) {
+		return -1;
+	}
+
+	/* Setup the hints structure */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_family = AF_INET6;
+
+	/* Check that the given IPv6 address is valid */
+	res = getaddrinfo(addrstr, NULL, &hints, &result);
+	if (res != 0 || result == NULL) {
+		return -1;
+	}
+
+	/* Copy the IPv6 address into the buffer */
+	sockaddr_ipv6 = (struct sockaddr_in6 *)result->ai_addr;
+	memcpy(buffer, &sockaddr_ipv6->sin6_addr, sizeof(struct in6_addr));
+	sockaddr_ipv6 = NULL;
+	freeaddrinfo(result);
+	result = NULL;
+
+	/* Initialize the other variables in buffer */
+	lbuffer[4] = (netbits << 24);
+	lbuffer[5] = 0;
+	lbuffer[6] = 3600;
+
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Calling DeviceIoControl for IPv6 MASQ");
+	if (!DeviceIoControl(tapcfg->dev_handle,
+	                     TAP_IOCTL_CONFIG_DHCPV6_MASQ,
+	                     &buffer, /* InBuffer */
+	                     sizeof(buffer),
+	                     &buffer, /* OutBuffer */
+	                     sizeof(buffer),
+	                     &len, NULL)) {
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Calling DeviceIoControl failed");
+		return -1;
+	}
+
+	return 0;
+#else
+	return -1;
+#endif
+}
+
+int
 tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
 {
 	DWORD len;
@@ -585,4 +652,28 @@ tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int bufle
 	return 0;
 }
 
+int
+tapcfg_iface_set_dhcpv6_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen)
+{
+	DWORD len;
 
+	assert(tapcfg);
+
+	if (!tapcfg->started) {
+		return 0;
+	}
+
+	taplog_log(&tapcfg->taplog, TAPLOG_DEBUG, "Calling DeviceIoControl for DHCPV6_SET_OPT\n");
+	if (!DeviceIoControl(tapcfg->dev_handle,
+	                     TAP_IOCTL_CONFIG_DHCPV6_SET_OPT,
+	                     buffer, /* InBuffer */
+	                     buflen,
+	                     buffer, /* OutBuffer */
+	                     buflen,
+	                     &len, NULL)) {
+		taplog_log(&tapcfg->taplog, TAPLOG_ERR, "Calling DeviceIoControl failed\n");
+		return -1;
+	}
+
+	return 0;
+}

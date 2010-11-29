@@ -21,7 +21,7 @@ using System.Runtime.InteropServices;
 
 namespace TAPNet {
 	public class VirtualDevice : IDisposable {
-		private const int TAPCFG_VERSION = ((1 << 16) | 0);
+		private const int TAPCFG_VERSION = ((1 << 16) | 1);
 
 		private NativeLib _tapcfg;
 
@@ -191,6 +191,8 @@ namespace TAPNet {
 
 			if (address.AddressFamily == AddressFamily.InterNetwork) {
 				ret = _tapcfg.iface_set_ipv4(_handle, address.ToString(), netbits);
+			} else if (address.AddressFamily == AddressFamily.InterNetworkV6) {
+				ret = _tapcfg.iface_set_ipv6(_handle, address.ToString(), netbits);
 			} else {
 				return;
 			}
@@ -202,6 +204,14 @@ namespace TAPNet {
 
 		public void SetDHCPOptions(byte[] options) {
 			int ret = _tapcfg.iface_set_dhcp_options(_handle, options, options.Length);
+
+			if (ret < 0) {
+				throw new Exception("Error setting DHCP options to interface");
+			}
+		}
+
+		public void SetDHCPv6Options(byte[] options) {
+			int ret = _tapcfg.iface_set_dhcpv6_options(_handle, options, options.Length);
 
 			if (ret < 0) {
 				throw new Exception("Error setting DHCP options to interface");

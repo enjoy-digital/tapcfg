@@ -50,7 +50,9 @@ namespace TAPNet {
 		public abstract int iface_get_mtu(IntPtr tapcfg);
 		public abstract int iface_set_mtu(IntPtr tapcfg, int mtu);
 		public abstract int iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
+		public abstract int iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits);
 		public abstract int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
+		public abstract int iface_set_dhcpv6_options(IntPtr tapcfg, byte[] buffer, int buflen);
 
 		public static NativeLib GetInstance() {
 			if (IntPtr.Size == 8)
@@ -170,8 +172,16 @@ namespace TAPNet {
 				return tapcfg_iface_set_ipv4(tapcfg, addr, netbits);
 			}
 
+			public override int iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits) {
+				return tapcfg_iface_set_ipv6(tapcfg, addr, netbits);
+			}
+
 			public override int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen) {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
+			}
+
+			public override int iface_set_dhcpv6_options(IntPtr tapcfg, byte[] buffer, int buflen) {
+				return tapcfg_iface_set_dhcpv6_options(tapcfg, buffer, buflen);
 			}
 
 			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
@@ -220,7 +230,11 @@ namespace TAPNet {
 			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
+			private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits);
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
+			[DllImport("tapcfg32", CallingConvention=CallingConvention.Cdecl)]
+			private static extern int tapcfg_iface_set_dhcpv6_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 
 		private class NativeLib64 : NativeLib {
@@ -314,8 +328,16 @@ namespace TAPNet {
 				return tapcfg_iface_set_ipv4(tapcfg, addr, netbits);
 			}
 
+			public override int iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits) {
+				return tapcfg_iface_set_ipv6(tapcfg, addr, netbits);
+			}
+
 			public override int iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen) {
 				return tapcfg_iface_set_dhcp_options(tapcfg, buffer, buflen);
+			}
+
+			public override int iface_set_dhcpv6_options(IntPtr tapcfg, byte[] buffer, int buflen) {
+				return tapcfg_iface_set_dhcpv6_options(tapcfg, buffer, buflen);
 			}
 
 			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
@@ -364,7 +386,11 @@ namespace TAPNet {
 			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_ipv4(IntPtr tapcfg, string addr, byte netbits);
 			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
+			private static extern int tapcfg_iface_set_ipv6(IntPtr tapcfg, string addr, byte netbits);
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
 			private static extern int tapcfg_iface_set_dhcp_options(IntPtr tapcfg, byte[] buffer, int buflen);
+			[DllImport("tapcfg64", CallingConvention=CallingConvention.Cdecl)]
+			private static extern int tapcfg_iface_set_dhcpv6_options(IntPtr tapcfg, byte[] buffer, int buflen);
 		}
 	}
 }

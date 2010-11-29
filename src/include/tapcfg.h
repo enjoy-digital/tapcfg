@@ -10,7 +10,7 @@
 
 /* Current API version number, should be kept up to date */
 #define TAPCFG_VERSION_MAJOR  1
-#define TAPCFG_VERSION_MINOR  0
+#define TAPCFG_VERSION_MINOR  1
 #define TAPCFG_VERSION ((TAPCFG_VERSION_MAJOR << 16) | TAPCFG_VERSION_MINOR)
 
 /* Define syslog style log levels */
@@ -256,7 +256,18 @@ TAPCFG_API int tapcfg_iface_set_mtu(tapcfg_t *tapcfg, int mtu);
 TAPCFG_API int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
 
 /**
- * Set a DHCP option if the IPv4 address of the interface is configured by
+ * Set the IPv6 address and netmask of the interface and update
+ * the routing tables accordingly.
+ * @param tapcfg is a pointer to an inited structure
+ * @param addr is a string containing the address in standard numeric format
+ * @param netbits is the number of bits in the netmask for this subnet,
+ *        must be between [1, 128]
+ * @return Negative value if an error happened, non-negative otherwise.
+ */
+TAPCFG_API int tapcfg_iface_set_ipv6(tapcfg_t *tapcfg, const char *addr, unsigned char netbits);
+
+/**
+ * Set a DHCP options if the IPv4 address of the interface is configured by
  * using DHCP instead of basic IPv4 address setting. Basically this function
  * works only on Windows platform and should return -1 on all other systems.
  * It can be used for example to add DNS servers to the interface cleanly on
@@ -269,6 +280,21 @@ TAPCFG_API int tapcfg_iface_set_ipv4(tapcfg_t *tapcfg, const char *addr, unsigne
  * @return Negative value if an error happened, non-negative otherwise.
  */
 TAPCFG_API int tapcfg_iface_set_dhcp_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
+
+/**
+ * Set a DHCPv6 options if the IPv6 address of the interface is configured by
+ * using DHCPv6 instead of basic IPv6 address setting. Basically this function
+ * works only on Windows platform and should return -1 on all other systems.
+ * It can be used for example to add DNS servers to the interface cleanly on
+ * Windows. The buffer should include DHCPv6 option data as defined by RFC3315.
+ * Notice that each call to this function will overwrite the values defined
+ * earlier!
+ * @param tapcfg is a pointer to an inited structure
+ * @param buffer is a pointer to the DHCPv6 option data buffer
+ * @param buflen is the length of the option data buffer
+ * @return Negative value if an error happened, non-negative otherwise.
+ */
+TAPCFG_API int tapcfg_iface_set_dhcpv6_options(tapcfg_t *tapcfg, unsigned char *buffer, int buflen);
 
 #endif /* TAPCFG_H */
 
