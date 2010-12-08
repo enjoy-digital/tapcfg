@@ -41,8 +41,8 @@
 
 #define TAP_DEVICE_DIR	                  "\\\\.\\Global\\"
 
-#define TAP_WINDOWS_MIN_MAJOR               8
-#define TAP_WINDOWS_MIN_MINOR               1
+#define TAP_WINDOWS_MIN_MAJOR               9
+#define TAP_WINDOWS_MIN_MINOR               8
 
 typedef unsigned char MACADDR [6];
 typedef unsigned long IPADDR;
@@ -604,7 +604,7 @@ tapcfg_iface_set_ipv6(tapcfg_t *tapcfg, const char *addrstr, unsigned char netbi
 	result = NULL;
 
 	/* Initialize the other variables in buffer */
-	lbuffer[4] = (netbits << 24);
+	lbuffer[4] = netbits;
 	lbuffer[5] = 0;
 	lbuffer[6] = 3600;
 
