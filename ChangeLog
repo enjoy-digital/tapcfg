@@ -4,7 +4,7 @@ Version 1.0.0
 
 * Several small fixes and cleanups around the code and SCons
 * Add AssemblyInfo in .NET bindings to include some metadata
-* Support setting the log level aos in managed .NET bindings
+* Support setting the log level also in managed .NET bindings
 * Fix bugs in EthernetFrame and add some new header values
 * Drop support for Windows 2000, easy to re-enable in Scons
 * Fix crashes on 32-bit Windows by defining calling convention
