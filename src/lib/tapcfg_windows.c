@@ -150,25 +150,25 @@ tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback)
 				   (int) GetLastError());
 			CloseHandle(dev_handle);
 			dev_handle = INVALID_HANDLE_VALUE;
-		}
+		} else {
+			taplog_log(&tapcfg->taplog, TAPLOG_DEBUG,
+				   "TAP Driver Version %d.%d %s",
+				   (int) info[0],
+				   (int) info[1],
+				   info[2] ? "(DEBUG)" : "");
 
-		taplog_log(&tapcfg->taplog, TAPLOG_DEBUG,
-			   "TAP Driver Version %d.%d %s",
-			   (int) info[0],
-			   (int) info[1],
-			   info[2] ? "(DEBUG)" : "");
+			if (info[0] < TAP_WINDOWS_MIN_MAJOR ||
+			    (info[0] == TAP_WINDOWS_MIN_MAJOR && info[1] < TAP_WINDOWS_MIN_MINOR)) {
+				taplog_log(&tapcfg->taplog, TAPLOG_ERR,
+					   "A TAP driver is required that is at least version %d.%d",
+					   TAP_WINDOWS_MIN_MAJOR, TAP_WINDOWS_MIN_MINOR);
+				taplog_log(&tapcfg->taplog, TAPLOG_INFO,
+					   "If you recently upgraded your TAP driver, a reboot is probably "
+					   "required at this point to get Windows to see the new driver.");
 
-		if (info[0] < TAP_WINDOWS_MIN_MAJOR ||
-		    (info[0] == TAP_WINDOWS_MIN_MAJOR && info[1] < TAP_WINDOWS_MIN_MINOR)) {
-			taplog_log(&tapcfg->taplog, TAPLOG_ERR,
-			           "A TAP driver is required that is at least version %d.%d",
-			           TAP_WINDOWS_MIN_MAJOR, TAP_WINDOWS_MIN_MINOR);
-			taplog_log(&tapcfg->taplog, TAPLOG_INFO,
-			           "If you recently upgraded your TAP driver, a reboot is probably "
-			           "required at this point to get Windows to see the new driver.");
-
-			CloseHandle(dev_handle);
-			dev_handle = INVALID_HANDLE_VALUE;
+				CloseHandle(dev_handle);
+				dev_handle = INVALID_HANDLE_VALUE;
+			}
 		}
 	}
 
