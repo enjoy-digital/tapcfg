@@ -17,10 +17,9 @@
  *
  *  $Id: tun.c,v 1.12 2000/06/20 03:14:17 maxk Exp
  */
-/*
- *  Modified by: Kazuyoshi <admin2@whiteboard.ne.jp>
+/* 
+ *  Modified by: Kazuyoshi Aizawa <admin2@whiteboard.ne.jp>
  *  Modified for supporting Ethernet tunneling driver as known as TAP.
- *  $Date: 2009/11/16 07:58:58 $, $Revision: 1.15 $
  */
 
 #include <sys/types.h>
@@ -142,13 +141,13 @@ static	struct dev_ops tun_ops = {
   tundetach,		/* devo_detach */
   nodev,		/* devo_reset */
   &tun_cb_ops,		/* devo_cb_ops */
-  NULL,			/* devo_bus_ops */
-  ddi_power		/* devo_power */
+  (struct bus_ops *)NULL,/* devo_bus_ops */
+  NULL		         /* devo_power */
 };
 
 static struct modldrv modldrv = {
   &mod_driverops,	/* Type of module(driver) */
-  "TUN/TAP driver "TUN_VER,
+  "TUN/TAP driver for Solaris "TUN_VER,
   &tun_ops		/* driver ops */
 };
 
@@ -229,7 +228,11 @@ static int tundetach(dev_info_t *dev, ddi_detach_cmd_t cmd)
      ddi_prop_remove_all(dev);
      ddi_remove_minor_node(dev, NULL);
      return (DDI_SUCCESS);
-  } else if( (cmd == DDI_SUSPEND) || (cmd == DDI_PM_SUSPEND) ){
+  } else if( (cmd == DDI_SUSPEND)
+#ifndef SOL11             
+             || (cmd == DDI_PM_SUSPEND)
+#endif /* ifdef SOL11 */
+             ){
      return (DDI_SUCCESS);
   } else
      return (DDI_FAILURE);
@@ -391,7 +394,7 @@ static void tun_ioctl(queue_t *wq, mblk_t *mp)
 
         /* Reverted to original code */
         p = *(int *)mp->b_cont->b_rptr;
-        //p = -1;
+        /* p = -1; */
 
 	if( p < -1 || p > TUNMAXPPA){
            tuniocack(wq, mp, M_IOCNAK, 0, EINVAL);
