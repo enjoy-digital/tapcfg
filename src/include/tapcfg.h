@@ -111,6 +111,11 @@ TAPCFG_API int tapcfg_start(tapcfg_t *tapcfg, const char *ifname, int fallback);
  */
 TAPCFG_API void tapcfg_stop(tapcfg_t *tapcfg);
 
+/**
+ * Get the file descriptor attached to the device.
+ * @param tapcfg is a pointer to an inited structure
+ */
+TAPCFG_API int tapcfg_get_fd(tapcfg_t *tapcfg);
 
 /**
  * Wait for data to be available for reading. This can
