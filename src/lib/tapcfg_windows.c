@@ -226,6 +226,12 @@ tapcfg_stop(tapcfg_t *tapcfg)
 	}
 }
 
+int
+tapcfg_get_fd(tapcfg_t *tapcfg)
+{
+  return _open_osfhandle(tapcfg->dev_handle, _O_APPEND);
+}
+
 static int
 tapcfg_wait_for_data(tapcfg_t *tapcfg, DWORD timeout)
 {

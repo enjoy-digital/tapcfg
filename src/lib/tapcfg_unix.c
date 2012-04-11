@@ -161,6 +161,12 @@ tapcfg_stop(tapcfg_t *tapcfg)
 }
 
 int
+tapcfg_get_fd(tapcfg_t *tapcfg)
+{
+  return tapcfg->tap_fd;
+}
+
+int
 tapcfg_wait_readable(tapcfg_t *tapcfg, int msec)
 {
 	fd_set rfds;
